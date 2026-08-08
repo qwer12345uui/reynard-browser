@@ -33,8 +33,9 @@ jobs:
       - name: Install build dependencies
         run: |
           brew update
-          brew install ldid
+          brew install ldid llvm
           rustup target add aarch64-apple-ios
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
 
       - name: Restore build caches
         uses: actions/cache@v4
@@ -64,6 +65,10 @@ jobs:
         shell: bash
         run: |
           set +e
+          LLVM_PREFIX="$(brew --prefix llvm)"
+          export PATH="$LLVM_PREFIX/bin:$PATH"
+          export CC="$LLVM_PREFIX/bin/clang"
+          export CXX="$LLVM_PREFIX/bin/clang++"
           ./tools/development/build-gecko.sh 2>&1 | tee gecko-build.log
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
