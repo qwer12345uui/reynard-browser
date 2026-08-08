@@ -33,7 +33,7 @@ jobs:
       - name: Install build dependencies
         run: |
           brew update
-          brew install ldid llvm cbindgen
+          brew install ldid llvm cbindgen wasi-sdk
           rustup target add aarch64-apple-ios
           echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
 
@@ -59,13 +59,27 @@ jobs:
         run: ./tools/development/build-idevice.sh
 
       - name: Prepare Gecko build configuration
-        run: test -f engine/firefox/.mozconfig || touch engine/firefox/.mozconfig
+        shell: bash
+        run: |
+          test -f engine/firefox/.mozconfig || touch engine/firefox/.mozconfig
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('tools/development/build-gecko.sh')
+          text = path.read_text()
+          needle = '\techo "ac_add_options --disable-tests"\n'
+          replacement = needle + '\techo "ac_add_options --with-wasi-sysroot=${WASI_SYSROOT}"\n'
+          if needle not in text:
+              raise SystemExit('Could not patch build-gecko.sh for WASI SDK')
+          path.write_text(text.replace(needle, replacement, 1))
+          PY
 
       - name: Build Gecko engine
         shell: bash
         run: |
           set +e
           LLVM_PREFIX="$(brew --prefix llvm)"
+          export WASI_SYSROOT="$(brew --prefix wasi-sdk)/share/wasi-sysroot"
+          test -d "$WASI_SYSROOT"
           TOOLCHAIN_DIR="$RUNNER_TEMP/reynard-toolchain"
           mkdir -p "$TOOLCHAIN_DIR"
           cat > "$TOOLCHAIN_DIR/ld64.lld" <<'EOF'
