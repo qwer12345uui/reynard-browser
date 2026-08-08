@@ -55,6 +55,9 @@ jobs:
       - name: Build idevice dependency
         run: ./tools/development/build-idevice.sh
 
+      - name: Prepare Gecko build configuration
+        run: test -f engine/firefox/.mozconfig || touch engine/firefox/.mozconfig
+
       - name: Build Gecko engine
         run: ./tools/development/build-gecko.sh
 
