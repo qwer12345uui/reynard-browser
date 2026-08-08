@@ -33,10 +33,9 @@ jobs:
       - name: Install build dependencies
         run: |
           brew update
-          brew install ldid llvm lld cbindgen wasi-libc
+          brew install ldid llvm cbindgen
           rustup target add aarch64-apple-ios
           echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
-          echo "$(brew --prefix lld)/bin" >> "$GITHUB_PATH"
 
       - name: Restore build caches
         uses: actions/cache@v4
@@ -68,9 +67,9 @@ jobs:
           path = Path('tools/development/build-gecko.sh')
           text = path.read_text()
           needle = '\techo "ac_add_options --disable-tests"\n'
-          replacement = needle + '\techo "ac_add_options --with-wasi-sysroot=${WASI_SYSROOT}"\n'
+          replacement = needle + '\techo "ac_add_options --without-wasm-sandboxed-libraries"\n'
           if needle not in text:
-              raise SystemExit('Could not patch build-gecko.sh for WASI sysroot')
+              raise SystemExit('Could not patch build-gecko.sh')
           path.write_text(text.replace(needle, replacement, 1))
           PY
 
@@ -79,9 +78,6 @@ jobs:
         run: |
           set +e
           LLVM_PREFIX="$(brew --prefix llvm)"
-          LLD_PREFIX="$(brew --prefix lld)"
-          export WASI_SYSROOT="$(brew --prefix wasi-libc)/share/wasi-sysroot"
-          test -d "$WASI_SYSROOT"
           TOOLCHAIN_DIR="$RUNNER_TEMP/reynard-toolchain"
           mkdir -p "$TOOLCHAIN_DIR"
           cat > "$TOOLCHAIN_DIR/ld64.lld" <<'EOF'
@@ -95,7 +91,7 @@ jobs:
           exec "$(xcrun --find ld)" "$@"
           EOF
           chmod +x "$TOOLCHAIN_DIR/ld64.lld"
-          export PATH="$LLVM_PREFIX/bin:$LLD_PREFIX/bin:$TOOLCHAIN_DIR:$PATH"
+          export PATH="$LLVM_PREFIX/bin:$TOOLCHAIN_DIR:$PATH"
           export CC="$LLVM_PREFIX/bin/clang -B$TOOLCHAIN_DIR"
           export CXX="$LLVM_PREFIX/bin/clang++ -B$TOOLCHAIN_DIR"
           ./tools/development/build-gecko.sh 2>&1 | tee gecko-build.log
