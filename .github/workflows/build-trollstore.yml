@@ -85,7 +85,7 @@ jobs:
           ./tools/development/build-gecko.sh 2>&1 | tee gecko-build.log
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
-            MESSAGE="$(tail -n 100 gecko-build.log)"
+            MESSAGE="$(tail -n 25 gecko-build.log)"
             MESSAGE="${MESSAGE//'%'/'%25'}"
             MESSAGE="${MESSAGE//$'\n'/'%0A'}"
             MESSAGE="${MESSAGE//$'\r'/'%0D'}"
