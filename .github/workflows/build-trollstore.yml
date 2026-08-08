@@ -97,11 +97,12 @@ jobs:
           ./tools/development/build-gecko.sh 2>&1 | tee gecko-build.log
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
-            MESSAGE="$(tail -n 25 gecko-build.log)"
+            MESSAGE="$(grep -nE 'fatal error:|(^|[^[:alpha:]])error(\[[^]]+\]|:)|Undefined symbols|undefined reference|ld:' gecko-build.log | tail -n 30)"
+            if [ -z "$MESSAGE" ]; then MESSAGE="$(tail -n 30 gecko-build.log)"; fi
             MESSAGE="${MESSAGE//'%'/'%25'}"
             MESSAGE="${MESSAGE//$'\n'/'%0A'}"
             MESSAGE="${MESSAGE//$'\r'/'%0D'}"
-            echo "::error file=.github/workflows/build-trollstore.yml,title=Gecko build failed::$MESSAGE"
+            echo "::error file=.github/workflows/build-trollstore.yml,title=Gecko compiler diagnostics::$MESSAGE"
             exit "$STATUS"
           fi
 
