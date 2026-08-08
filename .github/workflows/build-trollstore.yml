@@ -79,16 +79,18 @@ jobs:
           set +e
           LLVM_PREFIX="$(brew --prefix llvm)"
           TOOLCHAIN_DIR="$RUNNER_TEMP/reynard-toolchain"
+          REAL_LD="$(xcrun --find ld)"
+          test -x "$REAL_LD"
           mkdir -p "$TOOLCHAIN_DIR"
-          cat > "$TOOLCHAIN_DIR/ld64.lld" <<'EOF'
+          cat > "$TOOLCHAIN_DIR/ld64.lld" <<EOF
           #!/bin/bash
-          for arg in "$@"; do
-            if [ "$arg" = "--version" ]; then
+          for arg in "\$@"; do
+            if [ "\$arg" = "--version" ]; then
               echo "LLD 19.1.0 (Apple ld compatibility wrapper)"
               exit 0
             fi
           done
-          exec "$(xcrun --find ld)" "$@"
+          exec "$REAL_LD" "\$@"
           EOF
           chmod +x "$TOOLCHAIN_DIR/ld64.lld"
           export PATH="$LLVM_PREFIX/bin:$TOOLCHAIN_DIR:$PATH"
