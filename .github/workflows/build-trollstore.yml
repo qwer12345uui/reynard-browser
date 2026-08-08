@@ -59,7 +59,19 @@ jobs:
         run: test -f engine/firefox/.mozconfig || touch engine/firefox/.mozconfig
 
       - name: Build Gecko engine
-        run: ./tools/development/build-gecko.sh
+        shell: bash
+        run: |
+          set +e
+          ./tools/development/build-gecko.sh 2>&1 | tee gecko-build.log
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            MESSAGE="$(tail -n 100 gecko-build.log)"
+            MESSAGE="${MESSAGE//'%'/'%25'}"
+            MESSAGE="${MESSAGE//$'\n'/'%0A'}"
+            MESSAGE="${MESSAGE//$'\r'/'%0D'}"
+            echo "::error file=.github/workflows/build-trollstore.yml,title=Gecko build failed::$MESSAGE"
+            exit "$STATUS"
+          fi
 
       - name: Archive Reynard app
         env:
