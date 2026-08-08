@@ -33,7 +33,7 @@ jobs:
       - name: Install build dependencies
         run: |
           brew update
-          brew install ldid llvm
+          brew install ldid llvm cbindgen
           rustup target add aarch64-apple-ios
           echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
 
