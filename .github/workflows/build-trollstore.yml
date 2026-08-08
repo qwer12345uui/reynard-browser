@@ -66,9 +66,22 @@ jobs:
         run: |
           set +e
           LLVM_PREFIX="$(brew --prefix llvm)"
-          export PATH="$LLVM_PREFIX/bin:$PATH"
-          export CC="$LLVM_PREFIX/bin/clang"
-          export CXX="$LLVM_PREFIX/bin/clang++"
+          TOOLCHAIN_DIR="$RUNNER_TEMP/reynard-toolchain"
+          mkdir -p "$TOOLCHAIN_DIR"
+          cat > "$TOOLCHAIN_DIR/ld64.lld" <<'EOF'
+          #!/bin/bash
+          for arg in "$@"; do
+            if [ "$arg" = "--version" ]; then
+              echo "LLD 19.1.0 (Apple ld compatibility wrapper)"
+              exit 0
+            fi
+          done
+          exec "$(xcrun --find ld)" "$@"
+          EOF
+          chmod +x "$TOOLCHAIN_DIR/ld64.lld"
+          export PATH="$LLVM_PREFIX/bin:$TOOLCHAIN_DIR:$PATH"
+          export CC="$LLVM_PREFIX/bin/clang -B$TOOLCHAIN_DIR"
+          export CXX="$LLVM_PREFIX/bin/clang++ -B$TOOLCHAIN_DIR"
           ./tools/development/build-gecko.sh 2>&1 | tee gecko-build.log
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
