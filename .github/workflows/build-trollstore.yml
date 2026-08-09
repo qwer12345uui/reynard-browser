@@ -1,6 +1,6 @@
 name: Build TrollStore package
 
-# Build trigger: runs on manual dispatch and on pushes that modify this workflow file.
+# Build trigger: runs on manual dispatch and on pushes that modify this workflow file. Rebuild after upstream merge (35adf15).
 on:
   workflow_dispatch:
   push:
