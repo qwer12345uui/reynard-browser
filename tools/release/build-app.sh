@@ -16,23 +16,31 @@ cp "$XCCONFIG_PATH" "$DIST_DIR/Reynard.xcconfig"
 BUILD_SHA=$(git -C "$ROOT_DIR" rev-parse HEAD | cut -c1-7)
 sed -i '' "s/CURRENT_BUILD = .*/CURRENT_BUILD = $BUILD_SHA/" "$DIST_DIR/Reynard.xcconfig"
 
-# Ad-hoc sign ("-") instead of disabling signing entirely. The build scripts
-# (AddGecko.sh) and the embedded-binary validation step expect a concrete
-# signing identity; ad-hoc signing requires no certificate, provisioning
-# profile, or developer account, and create-ipa.sh later re-signs with ldid
-# for TrollStore anyway.
-xcodebuild archive \
+# Build unsigned with a plain "build" action instead of "archive". The
+# archive pipeline forces embedded-binary validation that cannot pass
+# without a real signing identity, while the iOS 26.5 SDK rejects ad-hoc
+# ("-") identities for device builds. create-ipa.sh only needs
+# dist/Reynard.xcarchive/Products/Applications/<App>.app, which we assemble
+# manually from the build products afterwards.
+xcodebuild build \
 	-scheme "Reynard" \
-	-archivePath "$DIST_DIR/Reynard.xcarchive" \
 	-project "$PROJECT_PATH" \
 	-sdk iphoneos \
 	-arch arm64 \
 	-configuration Release \
+	-derivedDataPath "$DIST_DIR/DerivedData" \
 	-xcconfig "$DIST_DIR/Reynard.xcconfig" \
 	CODE_SIGN_STYLE=Manual \
-	CODE_SIGN_IDENTITY="-" \
-	EXPANDED_CODE_SIGN_IDENTITY="-" \
+	CODE_SIGNING_ALLOWED=NO \
 	CODE_SIGNING_REQUIRED=NO \
+	CODE_SIGN_IDENTITY="" \
+	EXPANDED_CODE_SIGN_IDENTITY="-" \
 	DEVELOPMENT_TEAM="" \
 	PROVISIONING_PROFILE_SPECIFIER="" \
 	VALIDATE_PRODUCT=NO
+
+PRODUCTS_DIR="$DIST_DIR/DerivedData/Build/Products/Release-iphoneos"
+test -d "$PRODUCTS_DIR/Reynard.app"
+
+mkdir -p "$DIST_DIR/Reynard.xcarchive/Products/Applications"
+cp -R "$PRODUCTS_DIR/Reynard.app" "$DIST_DIR/Reynard.xcarchive/Products/Applications/"
