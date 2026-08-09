@@ -92,6 +92,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     var onBack: (() -> Void)?
     var onForward: (() -> Void)?
     var onHistorySwipeBegan: (() -> Void)?
+    var onHistorySwipeEnded: (() -> Void)?
     var onVerticalScroll: ((CGFloat) -> Void)?
     
     private var topConstraint: NSLayoutConstraint?
@@ -801,6 +802,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         historySwipeState = .idle
         activeHistorySwipeDirection = nil
         updatePullToRefreshAvailability()
+        onHistorySwipeEnded?()
     }
     
     private func updatePullToRefreshAvailability() {

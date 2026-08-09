@@ -135,7 +135,7 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
         guard disposition != .backgroundTab else {
             return
         }
-
+        
         captureThumbnail(forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode) { [weak self] _ in
             guard let self else {
                 return
@@ -187,6 +187,7 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
     }
     
     func addressBarDidBeginEditing(_ addressBar: AddressBar) {
+        toolbarController.lock(for: .addressBarEditing)
         homepageOverlayCoordinator.addressBarDidBeginEditing(addressBar)
         searchOverlayCoordinator.addressBarDidBeginEditing(addressBar)
     }
@@ -194,6 +195,7 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
     func addressBarDidEndEditing(_ addressBar: AddressBar) {
         homepageOverlayCoordinator.addressBarDidEndEditing(addressBar)
         searchOverlayCoordinator.addressBarDidEndEditing(addressBar)
+        toolbarController.unlock(for: .addressBarEditing)
     }
     
     func addressBar(_ addressBar: AddressBar, didChangeText text: String, previousText: String, isDelete: Bool) {

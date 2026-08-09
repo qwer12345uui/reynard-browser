@@ -8,6 +8,17 @@
 import UIKit
 
 final class ToolbarController {
+    enum LockReason: Hashable {
+        case actionBar
+        case addressBarTransition
+        case addressBarEditing
+        case historyNavigation
+        case homepageOverlay
+        case searchOverlay
+        case tabOverview
+        case viewPresentation
+    }
+    
     private enum UX {
         static let toolbarScrollFactor: CGFloat = 0.5
         static let snapDelay: TimeInterval = 0.1
@@ -24,9 +35,11 @@ final class ToolbarController {
     private var maxToolbarOffset: CGFloat = 0
     private var maxTopToolbarOffset: CGFloat = 0
     private var snapOrigin: CGFloat = 0
+    private var targetOffset: CGFloat = 0
     private var snapStartTime: CFTimeInterval = 0
     private var pendingSnap: DispatchWorkItem?
     private var snapDisplayLink: CADisplayLink?
+    private var lockReasons = Set<LockReason>()
     
     // MARK: - Lifecycle
     
@@ -40,6 +53,25 @@ final class ToolbarController {
         self.tabBar = tabBar
         self.contentView = contentView
         self.rootView = rootView
+        
+        let historySwipeHandler = contentView.onHistorySwipeBegan
+        contentView.onHistorySwipeBegan = { [weak self] in
+            self?.lock(for: .historyNavigation)
+            historySwipeHandler?()
+        }
+        
+        contentView.onHistorySwipeEnded = { [weak self] in
+            self?.unlock(for: .historyNavigation)
+        }
+        
+        browserChrome.onActionBarVisibilityChanged = { [weak self] visible in
+            if visible {
+                self?.lock(for: .actionBar)
+            } else {
+                self?.unlock(for: .actionBar)
+            }
+        }
+        
         contentView.onVerticalScroll = { [weak self] scrollDelta in
             self?.handleScroll(delta: scrollDelta)
         }
@@ -58,7 +90,7 @@ final class ToolbarController {
         if self.chromeMode != chromeMode
             || abs(maxToolbarOffset - self.maxToolbarOffset) > 0.5
             || abs(maxTopToolbarOffset - self.maxTopToolbarOffset) > 0.5 {
-            resetToolbar()
+            reset(animated: false)
             self.chromeMode = chromeMode
             self.maxToolbarOffset = maxToolbarOffset
             self.maxTopToolbarOffset = maxTopToolbarOffset
@@ -86,9 +118,9 @@ final class ToolbarController {
         }
     }
     
-    private func setToolbarOffset(_ requestedOffset: CGFloat) {
+    private func setToolbarOffset(_ requestedOffset: CGFloat, refresh: Bool = false) {
         let clampedToolbarOffset = min(max(0, requestedOffset), maxToolbarOffset)
-        guard clampedToolbarOffset != toolbarOffset else {
+        guard refresh || clampedToolbarOffset != toolbarOffset else {
             return
         }
         toolbarOffset = clampedToolbarOffset
@@ -137,10 +169,22 @@ final class ToolbarController {
         )
     }
     
+    // MARK: - Locking
+    
+    func lock(for reason: LockReason) {
+        guard lockReasons.insert(reason).inserted else { return }
+        reset()
+    }
+    
+    func unlock(for reason: LockReason) {
+        lockReasons.remove(reason)
+    }
+    
     // MARK: - Scroll Handling
     
     private func handleScroll(delta: CGFloat) {
-        guard maxToolbarOffset > 0 else {
+        guard maxToolbarOffset > 0,
+              lockReasons.isEmpty else {
             return
         }
         cancelSnap()
@@ -158,11 +202,12 @@ final class ToolbarController {
         DispatchQueue.main.asyncAfter(deadline: .now() + UX.snapDelay, execute: snap)
     }
     
-    private func beginSnap() {
+    private func beginSnap(to destination: CGFloat? = nil) {
         pendingSnap = nil
         snapOrigin = toolbarOffset
-        let snapTarget = snapOrigin < maxToolbarOffset / 2 ? 0 : maxToolbarOffset
-        guard snapOrigin != snapTarget else {
+        targetOffset = destination ?? (snapOrigin < maxToolbarOffset / 2 ? 0 : maxToolbarOffset)
+        guard snapOrigin != targetOffset else {
+            setToolbarOffset(targetOffset, refresh: true)
             return
         }
         snapStartTime = CACurrentMediaTime()
@@ -175,8 +220,7 @@ final class ToolbarController {
         let elapsed = CACurrentMediaTime() - snapStartTime
         let progress = min(CGFloat(elapsed / UX.snapDuration), 1)
         let easedProgress = 1 - pow(1 - progress, 2)
-        let snapTarget = snapOrigin < maxToolbarOffset / 2 ? 0 : maxToolbarOffset
-        let requestedOffset = snapOrigin + (snapTarget - snapOrigin) * easedProgress
+        let requestedOffset = snapOrigin + (targetOffset - snapOrigin) * easedProgress
         setToolbarOffset(requestedOffset)
         if progress == 1 {
             snapDisplayLink?.invalidate()
@@ -193,16 +237,12 @@ final class ToolbarController {
     
     // MARK: - Reset
     
-    private func resetToolbar() {
+    func reset(animated: Bool = true) {
         cancelSnap()
-        toolbarOffset = 0
-        browserChrome.setToolbarTransition(
-            topOffset: 0,
-            bottomOffset: 0,
-            topContentAlpha: 1,
-            bottomContentAlpha: 1
-        )
-        tabBar.transform = .identity
-        contentView.applyToolbarOffsets(top: 0, bottom: 0)
+        guard animated else {
+            setToolbarOffset(0, refresh: true)
+            return
+        }
+        beginSnap(to: 0)
     }
 }

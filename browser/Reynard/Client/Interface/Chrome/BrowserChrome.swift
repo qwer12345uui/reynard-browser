@@ -58,6 +58,7 @@ final class BrowserChrome: UIView {
     var onNewTab: (() -> Void)?
     var onTabOverview: (() -> Void)?
     var onOverlayDismiss: (() -> Void)?
+    var onActionBarVisibilityChanged: ((Bool) -> Void)?
     var onPageZoomOut: (() -> Void)?
     var onPageZoomIn: (() -> Void)?
     var onPageZoomReset: (() -> Void)?
@@ -205,6 +206,7 @@ final class BrowserChrome: UIView {
         
         let finish = {
             self.actionBar.setItem(nil)
+            self.onActionBarVisibilityChanged?(false)
         }
         
         guard animated else {
@@ -590,6 +592,7 @@ final class BrowserChrome: UIView {
     
     private func showActionBar(animated: Bool) {
         actionBar.isHidden = false
+        onActionBarVisibilityChanged?(true)
         let animations = {
             self.actionBar.alpha = 1
         }

@@ -173,9 +173,17 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
         setTabOverviewVisible(true, animated: animated)
     }
     
-    func addressBarGestureWillBegin() {
+    func addressBarTransitionWillBegin(prepareForGesture: Bool) {
+        toolbarController.lock(for: .addressBarTransition)
+        guard prepareForGesture else {
+            return
+        }
         browserChrome.dismissActionBar(animated: false)
         captureTabThumbnailIfNeeded()
+    }
+    
+    func addressBarTransitionDidEnd() {
+        toolbarController.unlock(for: .addressBarTransition)
     }
     
     private func captureTabThumbnailIfNeeded() {

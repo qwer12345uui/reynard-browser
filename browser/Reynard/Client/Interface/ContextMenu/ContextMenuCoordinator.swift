@@ -177,12 +177,25 @@ extension ContextMenuCoordinator: UIContextMenuInteractionDelegate {
         }
         isPresenting = false
         
-        if let imageConfiguration = ImagePreviewMenu.configuration(
+        if case let .image(url, _) = context.target,
+           let imageConfiguration = ImagePreviewMenu.configuration(
             for: context,
             showsPreview: context.allowsPreview && Prefs.BrowsingSettings.showImagePreviews,
             presentingController: host.contextMenuPresenter,
-            sourceView: host.contextMenuSourceView
-        ) {
+            sourceView: host.contextMenuSourceView,
+            openLinkInNewTab: { [weak host] url in
+                host?.contextMenuOpenLink(url, disposition: .newTab)
+            },
+            openLinkInNewPrivateTab: { [weak host] url in
+                host?.contextMenuOpenLink(url, disposition: .newPrivateTab)
+            },
+            openLinkInBackground: { [weak host] url in
+                host?.contextMenuOpenLink(url, disposition: .backgroundTab)
+            },
+            openImageInNewTab: { [weak host] in
+                host?.contextMenuOpenLink(url, disposition: .newTab)
+            }
+           ) {
             return imageConfiguration
         }
         

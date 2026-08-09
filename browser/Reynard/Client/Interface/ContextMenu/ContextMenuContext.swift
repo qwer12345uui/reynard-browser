@@ -10,7 +10,7 @@ import UIKit
 struct ContextMenuContext {
     enum Target {
         case link(URL)
-        case image(URL)
+        case image(URL, linkURL: URL?)
     }
     
     let target: Target

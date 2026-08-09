@@ -61,6 +61,7 @@ extension BrowserViewController {
     }
     
     func createNewTab() {
+        toolbarController.reset()
         dismissAddressBarEditingAndOverlays()
         
         if tabOverview.isPresented {

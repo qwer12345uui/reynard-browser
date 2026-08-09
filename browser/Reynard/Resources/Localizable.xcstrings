@@ -3336,30 +3336,22 @@
         }
       }
     },
-    "Copy" : {
+    "Copy Image" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copy"
+            "value" : "Copy Image"
           }
-        },
-        "fr" : {
+        }
+      }
+    },
+    "Copy Image Address" : {
+      "localizations" : {
+        "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copier"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скопировать\n"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拷贝"
+            "value" : "Copy Image Address"
           }
         }
       }
@@ -6995,6 +6987,16 @@
         }
       }
     },
+    "Open Image in New Tab" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Image in New Tab"
+          }
+        }
+      }
+    },
     "Open in\nFiles" : {
       "comment" : "Line break intentional",
       "localizations" : {
@@ -7020,16 +7022,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在“文件”中\n打开"
-          }
-        }
-      }
-    },
-    "Open in Background" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open in Background"
           }
         }
       }
@@ -7114,6 +7106,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在新标签页中打开"
+          }
+        }
+      }
+    },
+    "Open Link in Background" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Link in Background"
+          }
+        }
+      }
+    },
+    "Open Link in New Private Tab" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Link in New Private Tab"
+          }
+        }
+      }
+    },
+    "Open Link in New Tab" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Link in New Tab"
           }
         }
       }

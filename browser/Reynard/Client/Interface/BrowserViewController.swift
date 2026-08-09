@@ -42,7 +42,7 @@ final class BrowserViewController: UIViewController {
     let tabOverview = TabOverview()
     let contentView = ContentView()
     lazy var browserChrome = BrowserChrome()
-    private lazy var toolbarController = ToolbarController(
+    private(set) lazy var toolbarController = ToolbarController(
         browserChrome: browserChrome,
         tabBar: tabBar,
         contentView: contentView,
@@ -52,11 +52,13 @@ final class BrowserViewController: UIViewController {
     lazy var overlayCoordinator = OverlayCoordinator(host: self)
     lazy var homepageOverlayCoordinator = HomepageOverlayCoordinator(
         delegate: self,
-        overlayCoordinator: overlayCoordinator
+        overlayCoordinator: overlayCoordinator,
+        toolbarController: toolbarController
     )
     lazy var searchOverlayCoordinator = SearchOverlayCoordinator(
         delegate: self,
-        overlayCoordinator: overlayCoordinator
+        overlayCoordinator: overlayCoordinator,
+        toolbarController: toolbarController
     )
     lazy var contextMenuCoordinator = ContextMenuCoordinator(host: self, sessionManager: sessionManager)
     lazy var downloadsCoordinator = DownloadsCoordinator(delegate: self)
@@ -157,6 +159,7 @@ final class BrowserViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        toolbarController.unlock(for: .viewPresentation)
         performContentLifecycle {
             syncBrowserNavigationChrome(animated: animated)
         }
@@ -165,6 +168,7 @@ final class BrowserViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         performContentLifecycle {
+            toolbarController.lock(for: .viewPresentation)
             shouldRestoreContentFocus =
             tabManager.selectedTab?.session.engineView?.isFirstResponder == true
             view.endEditing(true)
@@ -211,6 +215,7 @@ final class BrowserViewController: UIViewController {
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         performContentLifecycle {
+            toolbarController.reset(animated: false)
             coordinator.animate { _ in
                 self.syncBrowserNavigationChrome(animated: false)
                 self.browserChrome.syncSidebarButton(splitViewController: self.splitViewController)
@@ -299,10 +304,12 @@ final class BrowserViewController: UIViewController {
             self?.sidebarCoordinator.toggle(animated: true)
         }
         browserChrome.onBack = { [weak self] in
+            self?.toolbarController.reset()
             self?.captureOutgoingHistoryThumbnail()
             self?.tabManager.goBack()
         }
         browserChrome.onForward = { [weak self] in
+            self?.toolbarController.reset()
             self?.captureOutgoingHistoryThumbnail()
             self?.tabManager.goForward()
         }
@@ -322,6 +329,7 @@ final class BrowserViewController: UIViewController {
             self?.setTabOverviewVisible(true, animated: true)
         }
         browserChrome.onOverlayDismiss = { [weak self] in
+            self?.toolbarController.reset()
             self?.dismissAddressBarEditingAndChromeOverlay()
         }
         browserChrome.onPageZoomOut = { [weak self] in

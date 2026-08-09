@@ -23,7 +23,8 @@ protocol AddressBarGestureDelegate: AnyObject {
     func createTabForSwipe() -> Int
     func setPendingTabExpansion(at index: Int?)
     func presentTabOverviewFromGesture(animated: Bool)
-    func addressBarGestureWillBegin()
+    func addressBarTransitionWillBegin(prepareForGesture: Bool)
+    func addressBarTransitionDidEnd()
     func storedContentPreview(from tab: Tab) -> UIImage?
 }
 
@@ -96,7 +97,7 @@ final class AddressBarGestures: NSObject {
     
     // MARK: - Transition Lifecycle
     
-    func resetHorizontalTransition() {
+    func resetHorizontalTransition(preservingLock: Bool = false) {
         horizontalTransitionGeneration += 1
         delegate?.transitionContentView.setTransitionTransform(.identity)
         delegate?.transitionContentView.setTransitionHidden(false)
@@ -114,6 +115,9 @@ final class AddressBarGestures: NSObject {
         horizontalTargetBarView = nil
         horizontalTargetIndex = nil
         horizontalDirection = 0
+        if !preservingLock {
+            delegate?.addressBarTransitionDidEnd()
+        }
     }
     
     func performAfterTransition(_ completion: @escaping () -> Void) -> Bool {
@@ -158,6 +162,7 @@ final class AddressBarGestures: NSObject {
         
         searchPanMode = .blocked
         resetHorizontalTransition()
+        delegate.addressBarTransitionWillBegin(prepareForGesture: false)
         
         let transitionGeneration = horizontalTransitionGeneration
         UIView.animate(withDuration: UX.addressBarAutomaticNewTabTransitionDuration, delay: 0, options: [.curveEaseOut]) {
@@ -219,6 +224,7 @@ final class AddressBarGestures: NSObject {
         
         searchPanMode = .blocked
         resetHorizontalTransition()
+        delegate.addressBarTransitionWillBegin(prepareForGesture: false)
         horizontalDirection = 1
         prepareHorizontalTarget(for: tab, direction: 1, pageWidth: width, delegate: delegate)
         
@@ -396,7 +402,7 @@ final class AddressBarGestures: NSObject {
         let direction = translationX < 0 ? 1 : -1
         
         if horizontalDirection != direction {
-            resetHorizontalTransition()
+            resetHorizontalTransition(preservingLock: true)
             horizontalDirection = direction
         }
         
@@ -658,6 +664,7 @@ final class AddressBarGestures: NSObject {
             }
             delegate.transitionContentView.setTransitionHidden(false)
             self.addressBar.isHidden = false
+            self.delegate?.addressBarTransitionDidEnd()
             self.runTransitionCompletion()
         }
     }
@@ -853,7 +860,7 @@ final class AddressBarGestures: NSObject {
             searchPanMode = .undecided
             clearHorizontalFinishingViews()
             resetHorizontalTransition()
-            delegate.addressBarGestureWillBegin()
+            delegate.addressBarTransitionWillBegin(prepareForGesture: true)
             Haptics.prepareRigid()
             
         case .changed:
@@ -901,8 +908,9 @@ final class AddressBarGestures: NSObject {
             return
         }
         
-        delegate.addressBarGestureWillBegin()
+        delegate.addressBarTransitionWillBegin(prepareForGesture: true)
         delegate.presentTabOverviewFromGesture(animated: true)
+        delegate.addressBarTransitionDidEnd()
     }
 }
 

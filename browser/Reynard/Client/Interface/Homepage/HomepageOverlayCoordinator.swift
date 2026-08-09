@@ -34,6 +34,7 @@ final class HomepageOverlayCoordinator {
     
     private weak var delegate: HomepageOverlayCoordinatorDelegate?
     private let overlayCoordinator: OverlayCoordinator
+    private unowned let toolbarController: ToolbarController
     private let homepageViewController: HomepageViewController
     private let homepageThumbnailRenderer: HomepageThumbnailRenderer
     private var presentationIntent: HomepagePresentationIntent = .inactive
@@ -46,9 +47,14 @@ final class HomepageOverlayCoordinator {
     
     // MARK: - Lifecycle
     
-    init(delegate: HomepageOverlayCoordinatorDelegate, overlayCoordinator: OverlayCoordinator) {
+    init(
+        delegate: HomepageOverlayCoordinatorDelegate,
+        overlayCoordinator: OverlayCoordinator,
+        toolbarController: ToolbarController
+    ) {
         self.delegate = delegate
         self.overlayCoordinator = overlayCoordinator
+        self.toolbarController = toolbarController
         homepageViewController = HomepageViewController()
         homepageThumbnailRenderer = HomepageThumbnailRenderer(homepageViewController: homepageViewController)
         homepageViewController.homepageDelegate = self
@@ -63,6 +69,7 @@ final class HomepageOverlayCoordinator {
             return
         }
         
+        toolbarController.lock(for: .homepageOverlay)
         presentHomepage(presentation, animated: animated)
     }
     
@@ -91,6 +98,7 @@ final class HomepageOverlayCoordinator {
     func resetPresentationSession() {
         presentationIntent = .inactive
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
+        toolbarController.unlock(for: .homepageOverlay)
     }
     
     // MARK: - Thumbnails
@@ -172,8 +180,26 @@ final class HomepageOverlayCoordinator {
     }
     
     private func dismiss(animated: Bool) {
-        overlayCoordinator.dismiss(.homepage, on: .embedded, animated: animated)
-        overlayCoordinator.dismiss(.homepage, on: .detached, animated: animated)
+        var dismissalsRemaining = 2
+        let finishDismissal = { [weak self] in
+            dismissalsRemaining -= 1
+            guard dismissalsRemaining == 0 else {
+                return
+            }
+            self?.toolbarController.unlock(for: .homepageOverlay)
+        }
+        overlayCoordinator.dismiss(
+            .homepage,
+            on: .embedded,
+            animated: animated,
+            completion: finishDismissal
+        )
+        overlayCoordinator.dismiss(
+            .homepage,
+            on: .detached,
+            animated: animated,
+            completion: finishDismissal
+        )
     }
     
     private func configureOverlay(for presentation: HomepagePresentation) {

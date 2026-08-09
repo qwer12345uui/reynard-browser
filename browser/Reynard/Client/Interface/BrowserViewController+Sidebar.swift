@@ -57,6 +57,7 @@ extension BrowserViewController: SidebarContentController, SidebarCoordinatorHos
     }
     
     func sidebarCoordinatorDidChangeVisibility(_ coordinator: SidebarCoordinator, animated: Bool) {
+        toolbarController.reset()
         updateBrowserLayout(animated: animated)
     }
 }
