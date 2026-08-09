@@ -1,13 +1,27 @@
 name: Build TrollStore package
 
-# Build trigger: runs on manual dispatch and on pushes that modify this workflow file. Rebuild with script invocation fix.
+# Two-stage build: the Gecko engine is compiled once and stored as a workflow
+# artifact keyed by its build inputs. As long as engine inputs (release tag,
+# patches, build scripts) stay unchanged, later runs reuse the artifact and
+# only re-run the packaging stage, which takes minutes instead of hours.
 on:
   workflow_dispatch:
+    inputs:
+      rebuild_gecko:
+        description: "Force a full Gecko engine rebuild"
+        type: boolean
+        default: false
   push:
     paths:
       - ".github/workflows/build-trollstore.yml"
+      - "tools/release/**"
+      - "tools/development/**"
+      - "browser/Scripts/**"
+      - "patches/**"
+      - "engine/release.txt"
 
 permissions:
+  actions: read
   contents: write
 
 concurrency:
@@ -15,10 +29,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  gecko:
     runs-on: macos-26
     timeout-minutes: 360
-
+    outputs:
+      key: ${{ steps.key.outputs.value }}
     steps:
       - name: Check out latest source
         uses: actions/checkout@v4
@@ -26,39 +41,55 @@ jobs:
           fetch-depth: 0
           submodules: false
 
+      - name: Compute Gecko input key
+        id: key
+        env:
+          GECKO_HASH: ${{ hashFiles('engine/release.txt', 'patches/**/*.patch', 'tools/development/build-gecko.sh', 'tools/development/apply-patches.sh', 'tools/development/update-gecko.sh') }}
+        run: echo "value=$GECKO_HASH" >> "$GITHUB_OUTPUT"
+
+      - name: Check for reusable Gecko build
+        id: probe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ inputs.rebuild_gecko }}" = "true" ]; then
+            echo "Forced rebuild requested."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          NAME="gecko-dist-${{ steps.key.outputs.value }}"
+          FOUND=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$NAME&per_page=100" \
+            --jq '[.artifacts[] | select(.expired == false)] | length')
+          echo "Reusable artifacts named $NAME: $FOUND"
+          if [ "$FOUND" -gt 0 ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Verify Xcode and iOS SDK
+        if: steps.probe.outputs.found != 'true'
         run: |
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
 
       - name: Install build dependencies
+        if: steps.probe.outputs.found != 'true'
         run: |
           brew update
           brew install ldid cbindgen
           rustup target add aarch64-apple-ios
 
-      - name: Restore build caches
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            support/idevice/target
-            engine/firefox/obj-aarch64-apple-ios
-          key: reynard-ios-appleclang-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/release.txt', 'patches/**/*.patch', 'support/idevice/Cargo.lock') }}
-          restore-keys: |
-            reynard-ios-appleclang-v1-${{ runner.os }}-${{ runner.arch }}-
-
       - name: Sync Gecko source
+        if: steps.probe.outputs.found != 'true'
         run: ./tools/development/update-gecko.sh
 
       - name: Apply Reynard patches
+        if: steps.probe.outputs.found != 'true'
         run: ./tools/development/apply-patches.sh </dev/null
 
-      - name: Build idevice dependency
-        run: ./tools/development/build-idevice.sh
-
       - name: Prepare Gecko build configuration
+        if: steps.probe.outputs.found != 'true'
         shell: bash
         run: |
           test -f engine/firefox/.mozconfig || touch engine/firefox/.mozconfig
@@ -74,6 +105,7 @@ jobs:
           PY
 
       - name: Build Gecko engine
+        if: steps.probe.outputs.found != 'true'
         shell: bash
         run: |
           set +e
@@ -121,15 +153,94 @@ jobs:
             exit "$STATUS"
           fi
 
-      - name: Archive Reynard app
+      - name: Upload Gecko build products
+        if: steps.probe.outputs.found != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gecko-dist-${{ steps.key.outputs.value }}
+          path: |
+            engine/firefox/obj-aarch64-apple-ios/dist
+            engine/firefox/toolkit/mozapps/extensions/default-theme
+          if-no-files-found: error
+          retention-days: 30
+
+  package:
+    runs-on: macos-26
+    timeout-minutes: 90
+    needs: gecko
+    steps:
+      - name: Check out latest source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Restore Gecko build products
+        id: restore
         env:
-          CODE_SIGNING_ALLOWED: "NO"
-          CODE_SIGNING_REQUIRED: "NO"
-          EXPANDED_CODE_SIGN_IDENTITY: "-"
-        run: sh ./tools/release/build-app.sh
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GECKO_KEY: ${{ needs.gecko.outputs.key }}
+        shell: bash
+        run: |
+          set -e
+          NAME="gecko-dist-$GECKO_KEY"
+          ARTIFACT_ID=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$NAME&per_page=100" \
+            --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id')
+          if [ -z "$ARTIFACT_ID" ] || [ "$ARTIFACT_ID" = "null" ]; then
+            echo "::error title=Missing Gecko artifact::No usable artifact named $NAME was found."
+            exit 1
+          fi
+          echo "Downloading Gecko build products from artifact $ARTIFACT_ID"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > gecko-dist.zip
+          rm -rf "$RUNNER_TEMP/gecko-dist"
+          mkdir -p "$RUNNER_TEMP/gecko-dist"
+          unzip -q gecko-dist.zip -d "$RUNNER_TEMP/gecko-dist"
+          mkdir -p engine/firefox/toolkit/mozapps/extensions
+          cp -R "$RUNNER_TEMP/gecko-dist/obj-aarch64-apple-ios" engine/firefox/
+          cp -R "$RUNNER_TEMP/gecko-dist/toolkit/mozapps/extensions/default-theme" engine/firefox/toolkit/mozapps/extensions/
+          test -d engine/firefox/obj-aarch64-apple-ios/dist/bin
+          test -d engine/firefox/toolkit/mozapps/extensions/default-theme
+          echo "Gecko build products restored."
+
+      - name: Install packaging dependencies
+        run: |
+          brew update
+          brew install ldid cbindgen
+          rustup target add aarch64-apple-ios
+
+      - name: Build idevice dependency
+        run: ./tools/development/build-idevice.sh
+
+      - name: Archive Reynard app
+        shell: bash
+        run: |
+          set +e
+          sh ./tools/release/build-app.sh 2>&1 | tee archive.log
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            MESSAGE="$(grep -nE ' error:|fatal error|ARCHIVE FAILED|build commands failed|PhaseScriptExecution|ValidateEmbeddedBinary|CodeSign|codesign|Command /|Script-' archive.log | tail -n 50)"
+            if [ -z "$MESSAGE" ]; then MESSAGE="$(tail -n 50 archive.log)"; fi
+            MESSAGE="${MESSAGE//'%'/'%25'}"
+            MESSAGE="${MESSAGE//$'\n'/'%0A'}"
+            MESSAGE="${MESSAGE//$'\r'/'%0D'}"
+            echo "::error title=Archive diagnostics::$MESSAGE"
+            exit "$STATUS"
+          fi
 
       - name: Package TrollStore build
-        run: sh ./tools/release/create-ipa.sh
+        shell: bash
+        run: |
+          set +e
+          sh ./tools/release/create-ipa.sh 2>&1 | tee package.log
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            MESSAGE="$(tail -n 50 package.log)"
+            MESSAGE="${MESSAGE//'%'/'%25'}"
+            MESSAGE="${MESSAGE//$'\n'/'%0A'}"
+            MESSAGE="${MESSAGE//$'\r'/'%0D'}"
+            echo "::error title=Packaging diagnostics::$MESSAGE"
+            exit "$STATUS"
+          fi
 
       - name: Verify package
         run: |
