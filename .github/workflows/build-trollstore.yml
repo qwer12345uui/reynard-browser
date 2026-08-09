@@ -1,6 +1,6 @@
 name: Build TrollStore package
 
-# Build trigger: runs on manual dispatch and on pushes that modify this workflow file. Rebuild with unsigned archive fix.
+# Build trigger: runs on manual dispatch and on pushes that modify this workflow file. Rebuild with script invocation fix.
 on:
   workflow_dispatch:
   push:
@@ -126,10 +126,10 @@ jobs:
           CODE_SIGNING_ALLOWED: "NO"
           CODE_SIGNING_REQUIRED: "NO"
           EXPANDED_CODE_SIGN_IDENTITY: "-"
-        run: ./tools/release/build-app.sh
+        run: sh ./tools/release/build-app.sh
 
       - name: Package TrollStore build
-        run: ./tools/release/create-ipa.sh
+        run: sh ./tools/release/create-ipa.sh
 
       - name: Verify package
         run: |
