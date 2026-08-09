@@ -1,8 +1,8 @@
 diff --git a/widget/uikit/GeckoViewSwiftSupport.h b/widget/uikit/GeckoViewSwiftSupport.h
-index e68fca9134c0..3f617d05c3a6 100644
+index e68fca9134c0..dabe93138c31 100644
 --- a/widget/uikit/GeckoViewSwiftSupport.h
 +++ b/widget/uikit/GeckoViewSwiftSupport.h
-@@ -18,14 +18,56 @@
+@@ -18,14 +18,66 @@
  #endif
  
  #import <Foundation/Foundation.h>
@@ -35,6 +35,12 @@ index e68fca9134c0..3f617d05c3a6 100644
 +  GeckoEdgeSwipeDirectionRight = 1 << 1,
 +};
 +
++typedef NS_ENUM(NSUInteger, GeckoOrientationLockResult) {
++  GeckoOrientationLockResultSuccess,
++  GeckoOrientationLockResultRejected,
++  GeckoOrientationLockResultNotSupported,
++};
++
 +@protocol GeckoViewInteractionDelegate <NSObject>
 +- (void)touchSequenceDidBegin:(uint64_t)sequenceId;
 +- (void)touchSequence:(uint64_t)sequenceId
@@ -53,13 +59,17 @@ index e68fca9134c0..3f617d05c3a6 100644
  @protocol SwiftGeckoViewRuntime <NSObject>
  - (id<SwiftEventDispatcher>)runtimeDispatcher;
  - (id<SwiftEventDispatcher>)dispatcherByName:(const char*)name;
++- (void)lockScreenOrientation:(NSUInteger)orientationMask
++                   completion:
++                       (void (^)(GeckoOrientationLockResult result))completion;
++- (void)unlockScreenOrientation;
 +@optional
 +- (void)childProcessDidStartWithPID:(int32_t)pid
 +                        processType:(NSString*)processType;
  @end
  
  @protocol GeckoProcessExtension <NSObject>
-@@ -55,8 +97,23 @@
+@@ -55,8 +107,24 @@
  @end
  
  @protocol GeckoViewWindow <NSObject>
@@ -76,6 +86,7 @@ index e68fca9134c0..3f617d05c3a6 100644
 +// Layout
 +- (void)setDynamicToolbarMaxHeight:(CGFloat)height;
 +- (void)setFixedBottomOffset:(CGFloat)offset;
++- (void)updateScreenOrientation:(NSInteger)interfaceOrientation;
 +
 +// Keyboard
 +- (BOOL)focusForHardwareKeyboard;

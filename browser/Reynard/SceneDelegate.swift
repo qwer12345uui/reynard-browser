@@ -37,6 +37,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
         
+        browserViewController.startScreenOrientationHandling()
         browserViewController.sessionManager.applicationDidBecomeActive()
         browserViewController.tabManager.applicationDidBecomeActive()
     }
@@ -46,8 +47,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
         
+        browserViewController.stopScreenOrientationHandling()
         browserViewController.tabManager.applicationWillResignActive()
         browserViewController.sessionManager.applicationWillResignActive()
+    }
+    
+    func windowScene(
+        _ windowScene: UIWindowScene,
+        didUpdate previousCoordinateSpace: UICoordinateSpace,
+        interfaceOrientation previousInterfaceOrientation: UIInterfaceOrientation,
+        traitCollection previousTraitCollection: UITraitCollection
+    ) {
+        (window?.rootViewController as? BrowserViewController)?
+            .screenOrientationChanged(to: windowScene.interfaceOrientation)
     }
     
     func sceneWillEnterForeground(_ scene: UIScene) {

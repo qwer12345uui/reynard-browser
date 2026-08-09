@@ -118,6 +118,10 @@ public class GeckoSession {
         return pictureInPictureHandler.displayLayer
     }
     
+    public func notifyScreenOrientationChanged(to orientation: UIInterfaceOrientation) {
+        window?.updateScreenOrientation(orientation.rawValue)
+    }
+    
     // MARK: - Session Handlers
     
     lazy var sessionHandlers: [GeckoSessionHandlerCommon] = [
