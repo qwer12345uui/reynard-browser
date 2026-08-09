@@ -1,5 +1,6 @@
 name: Build TrollStore package
 
+# Build trigger: runs on manual dispatch and on pushes that modify this workflow file.
 on:
   workflow_dispatch:
   push:
