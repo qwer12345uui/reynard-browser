@@ -80,9 +80,11 @@ jobs:
           REAL_LD="$(xcrun --find ld)"
           APPLE_CLANG="$(xcrun --find clang)"
           APPLE_CLANGXX="$(xcrun --find clang++)"
+          MACOS_SDK="$(find "$(xcode-select -p)/Platforms/MacOSX.platform/Developer/SDKs" -maxdepth 1 -type d -name 'MacOSX*.sdk' | sort -V | tail -n 1)"
           test -x "$REAL_LD"
           test -x "$APPLE_CLANG"
           test -x "$APPLE_CLANGXX"
+          test -d "$MACOS_SDK"
           mkdir -p "$TOOLCHAIN_DIR"
           cat > "$TOOLCHAIN_DIR/ld64.lld" <<EOF
           #!/bin/bash
@@ -98,6 +100,7 @@ jobs:
           export PATH="$TOOLCHAIN_DIR:$PATH"
           export CC="$APPLE_CLANG -B$TOOLCHAIN_DIR"
           export CXX="$APPLE_CLANGXX -B$TOOLCHAIN_DIR"
+          export SDKROOT="$MACOS_SDK"
           ./tools/development/build-gecko.sh 2>&1 | tee gecko-build.log
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
