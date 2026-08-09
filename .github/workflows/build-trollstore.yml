@@ -1,9 +1,9 @@
 name: Build TrollStore package
 
-# Two-stage build: the Gecko engine is compiled once and stored as a workflow
-# artifact keyed by its build inputs. As long as engine inputs (release tag,
-# patches, build scripts) stay unchanged, later runs reuse the artifact and
-# only re-run the packaging stage, which takes minutes instead of hours.
+# Two-stage build: the gecko job compiles the engine once and stores the
+# products as a workflow artifact keyed by engine inputs (release tag,
+# patches, build scripts). The package job reuses the artifact, so
+# app/packaging-only iterations finish in minutes instead of hours.
 on:
   workflow_dispatch:
     inputs:
@@ -211,6 +211,20 @@ jobs:
       - name: Build idevice dependency
         run: ./tools/development/build-idevice.sh
 
+      - name: Prepare unsigned build
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('browser/Reynard.xcodeproj/project.pbxproj')
+          text = path.read_text()
+          needle = '\t\t\t\t02PROCOPY2F3000000000001 /* Embed Process Extensions */,\n'
+          if needle in text:
+              path.write_text(text.replace(needle, '', 1))
+              print('Removed the Embed Process Extensions phase for the unsigned CI build.')
+          else:
+              print('::warning title=Unsigned build patch::Embed Process Extensions phase not found; project left unchanged.')
+          PY
+
       - name: Archive Reynard app
         shell: bash
         run: |
@@ -218,8 +232,12 @@ jobs:
           sh ./tools/release/build-app.sh 2>&1 | tee archive.log
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
-            MESSAGE="$(grep -nE ' error:|fatal error|ARCHIVE FAILED|build commands failed|PhaseScriptExecution|ValidateEmbeddedBinary|CodeSign|codesign|Command /|Script-' archive.log | tail -n 50)"
-            if [ -z "$MESSAGE" ]; then MESSAGE="$(tail -n 50 archive.log)"; fi
+            {
+              grep -nE 'error: |Command .* failed|BUILD FAILED|ValidateEmbeddedBinary|PhaseScriptExecution|CodeSign' archive.log | head -n 40
+              echo '--- log tail ---'
+              tail -n 20 archive.log
+            } | cut -c1-400 > diagnostics.txt
+            MESSAGE="$(cat diagnostics.txt)"
             MESSAGE="${MESSAGE//'%'/'%25'}"
             MESSAGE="${MESSAGE//$'\n'/'%0A'}"
             MESSAGE="${MESSAGE//$'\r'/'%0D'}"
@@ -234,7 +252,7 @@ jobs:
           sh ./tools/release/create-ipa.sh 2>&1 | tee package.log
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
-            MESSAGE="$(tail -n 50 package.log)"
+            MESSAGE="$(tail -n 50 package.log | cut -c1-400)"
             MESSAGE="${MESSAGE//'%'/'%25'}"
             MESSAGE="${MESSAGE//$'\n'/'%0A'}"
             MESSAGE="${MESSAGE//$'\r'/'%0D'}"
@@ -271,3 +289,14 @@ jobs:
             --title "Automated TrollStore build ${SHORT_SHA}" \
             --notes "Automated unsigned TrollStore build from commit ${GITHUB_SHA}." \
             --prerelease
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-logs-${{ github.sha }}
+          path: |
+            archive.log
+            package.log
+          if-no-files-found: ignore
+          retention-days: 7
