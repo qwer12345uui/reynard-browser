@@ -33,9 +33,8 @@ jobs:
       - name: Install build dependencies
         run: |
           brew update
-          brew install ldid llvm cbindgen
+          brew install ldid cbindgen
           rustup target add aarch64-apple-ios
-          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
 
       - name: Restore build caches
         uses: actions/cache@v4
@@ -45,9 +44,9 @@ jobs:
             ~/.cargo/git
             support/idevice/target
             engine/firefox/obj-aarch64-apple-ios
-          key: reynard-ios-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/release.txt', 'patches/**/*.patch', 'support/idevice/Cargo.lock') }}
+          key: reynard-ios-appleclang-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/release.txt', 'patches/**/*.patch', 'support/idevice/Cargo.lock') }}
           restore-keys: |
-            reynard-ios-${{ runner.os }}-${{ runner.arch }}-
+            reynard-ios-appleclang-v1-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Sync Gecko source
         run: ./tools/development/update-gecko.sh
@@ -77,10 +76,13 @@ jobs:
         shell: bash
         run: |
           set +e
-          LLVM_PREFIX="$(brew --prefix llvm)"
           TOOLCHAIN_DIR="$RUNNER_TEMP/reynard-toolchain"
           REAL_LD="$(xcrun --find ld)"
+          APPLE_CLANG="$(xcrun --find clang)"
+          APPLE_CLANGXX="$(xcrun --find clang++)"
           test -x "$REAL_LD"
+          test -x "$APPLE_CLANG"
+          test -x "$APPLE_CLANGXX"
           mkdir -p "$TOOLCHAIN_DIR"
           cat > "$TOOLCHAIN_DIR/ld64.lld" <<EOF
           #!/bin/bash
@@ -93,9 +95,9 @@ jobs:
           exec "$REAL_LD" "\$@"
           EOF
           chmod +x "$TOOLCHAIN_DIR/ld64.lld"
-          export PATH="$LLVM_PREFIX/bin:$TOOLCHAIN_DIR:$PATH"
-          export CC="$LLVM_PREFIX/bin/clang -B$TOOLCHAIN_DIR"
-          export CXX="$LLVM_PREFIX/bin/clang++ -B$TOOLCHAIN_DIR"
+          export PATH="$TOOLCHAIN_DIR:$PATH"
+          export CC="$APPLE_CLANG -B$TOOLCHAIN_DIR"
+          export CXX="$APPLE_CLANGXX -B$TOOLCHAIN_DIR"
           ./tools/development/build-gecko.sh 2>&1 | tee gecko-build.log
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
