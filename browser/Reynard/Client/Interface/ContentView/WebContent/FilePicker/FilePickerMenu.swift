@@ -77,7 +77,7 @@ extension FilePicker {
         }
         for action in availableActions {
             alert.addAction(UIAlertAction(title: title(for: action), style: .default) { [weak self] _ in
-                self?.pendingMenuAction = action
+                self?.launchFollowupPicker(action)
             })
         }
         alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
@@ -99,7 +99,19 @@ extension FilePicker {
             image: UIImage(named: symbol),
             attributes: canPerform(action) ? [] : .disabled
         ) { [weak self] _ in
-            self?.pendingMenuAction = action
+            self?.launchFollowupPicker(action)
+        }
+    }
+    
+    // Fork fix: launch the selected picker as soon as the menu action fires,
+    // instead of waiting for the menu-dismissal callback. The programmatically
+    // presented context menu does not reliably deliver that callback on every
+    // setup, which left taps on Photo Library / Take Photo / Choose File
+    // without any effect.
+    private func launchFollowupPicker(_ action: PickerAction) {
+        pendingMenuAction = action
+        DispatchQueue.main.async { [weak self] in
+            self?.performAction(action)
         }
     }
     
@@ -166,11 +178,9 @@ extension FilePicker {
     func handleMenuDismissed() {
         anchorButton?.removeFromSuperview()
         anchorButton = nil
-        if let action = pendingMenuAction {
-            pendingMenuAction = nil
-            performAction(action)
-        } else {
-            finish(with: nil)
+        if pendingMenuAction != nil {
+            return
         }
+        finish(with: nil)
     }
 }

@@ -1,9 +1,9 @@
 name: Build TrollStore package
 
-# Two-stage build: the gecko job compiles the engine once and stores the
-# products as a workflow artifact keyed by engine inputs (release tag,
-# patches, build scripts). The package job reuses the artifact, so
-# app/packaging-only iterations finish in minutes instead of hours.
+# Build trigger: manual dispatch, or pushes that touch build inputs
+# (workflow, build tools, browser sources, engine patches, engine release).
+# The gecko job stores the compiled engine as an artifact keyed by its
+# inputs; app-only changes reuse it and finish in minutes instead of hours.
 on:
   workflow_dispatch:
     inputs:
@@ -16,7 +16,7 @@ on:
       - ".github/workflows/build-trollstore.yml"
       - "tools/release/**"
       - "tools/development/**"
-      - "browser/Scripts/**"
+      - "browser/**"
       - "patches/**"
       - "engine/release.txt"
 
