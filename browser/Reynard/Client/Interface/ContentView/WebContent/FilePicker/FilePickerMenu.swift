@@ -70,17 +70,17 @@ extension FilePicker {
             return
         }
         
-        let alert = PromptAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        alert.onDismissed = { [weak self] in
-            self?.presentedController = nil
-            self?.handleMenuDismissed()
-        }
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         for action in availableActions {
             alert.addAction(UIAlertAction(title: title(for: action), style: .default) { [weak self] _ in
-                self?.launchFollowupPicker(action)
+                self?.launchFollowupPicker {
+                    self?.performAction(action)
+                }
             })
         }
-        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel) { [weak self] _ in
+            self?.finish(with: nil)
+        })
         
         if let popover = alert.popoverPresentationController {
             popover.sourceView = geckoView
@@ -99,19 +99,9 @@ extension FilePicker {
             image: UIImage(named: symbol),
             attributes: canPerform(action) ? [] : .disabled
         ) { [weak self] _ in
-            self?.launchFollowupPicker(action)
-        }
-    }
-    
-    // Fork fix: launch the selected picker as soon as the menu action fires,
-    // instead of waiting for the menu-dismissal callback. The programmatically
-    // presented context menu does not reliably deliver that callback on every
-    // setup, which left taps on Photo Library / Take Photo / Choose File
-    // without any effect.
-    private func launchFollowupPicker(_ action: PickerAction) {
-        pendingMenuAction = action
-        DispatchQueue.main.async { [weak self] in
-            self?.performAction(action)
+            self?.launchFollowupPicker {
+                self?.performAction(action)
+            }
         }
     }
     
@@ -175,10 +165,15 @@ extension FilePicker {
         }
     }
     
+    func launchFollowupPicker(_ action: @escaping @MainActor () -> Void) {
+        launchedFollowupPicker = true
+        DispatchQueue.main.async(execute: action)
+    }
+    
     func handleMenuDismissed() {
         anchorButton?.removeFromSuperview()
         anchorButton = nil
-        if pendingMenuAction != nil {
+        if launchedFollowupPicker {
             return
         }
         finish(with: nil)
