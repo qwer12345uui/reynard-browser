@@ -12,5 +12,14 @@
     <true/>
 	<key>platform-application</key>
     <true/>
+	<!-- Fork fix: grant the web content process the same storage access as the
+	     main app. The author builds with a development identity, which implicitly
+	     lets the embedded extension reach the app's containers; the unsigned CI
+	     build does not, so uploads (reads) and downloads (writes) fail. These two
+	     permissions let the helper read staged files and write downloaded files. -->
+	<key>com.apple.private.security.storage.AppDataContainers</key>
+    <true/>
+    <key>com.apple.private.security.storage.MobileDocuments</key>
+    <true/>
 </dict>
 </plist>
