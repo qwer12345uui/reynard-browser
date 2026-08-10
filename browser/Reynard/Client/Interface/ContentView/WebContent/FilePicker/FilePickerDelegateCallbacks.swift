@@ -8,22 +8,31 @@
 @preconcurrency import PhotosUI
 import UIKit
 
+// Fork fix: the photo and document pickers have already dismissed themselves
+// (or are mid-dismissal) when these delegate callbacks fire, so staging the
+// selection inside a dismiss(animated:completion:) completion never runs and
+// the picked file is never added. Stage immediately and dismiss the picker
+// fire-and-forget, matching the behavior of the released 0.9.0 build.
+
 extension FilePicker: UIDocumentPickerDelegate {
     nonisolated func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            dismissPicker(controller) { picker in
-                let result = await picker.prepareDocumentResult(from: urls)
-                picker.finish(with: result?.promptResult)
-            }
+            presentedController = nil
+            isCompletingPicker = true
+            controller.dismiss(animated: true)
+            let result = await prepareDocumentResult(from: urls)
+            finish(with: result?.promptResult)
         }
     }
     
     nonisolated func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         Task { @MainActor [weak self] in
-            self?.dismissPicker(controller) { picker in
-                picker.finish(with: nil)
-            }
+            guard let self else { return }
+            presentedController = nil
+            isCompletingPicker = true
+            controller.dismiss(animated: true)
+            finish(with: nil)
         }
     }
 }
@@ -33,10 +42,11 @@ extension FilePicker: PHPickerViewControllerDelegate {
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            dismissPicker(picker) { filePicker in
-                let result = await filePicker.preparePhotoLibraryResult(from: results)
-                filePicker.finish(with: result?.promptResult)
-            }
+            presentedController = nil
+            isCompletingPicker = true
+            picker.dismiss(animated: true)
+            let result = await preparePhotoLibraryResult(from: results)
+            finish(with: result?.promptResult)
         }
     }
 }
@@ -44,9 +54,11 @@ extension FilePicker: PHPickerViewControllerDelegate {
 extension FilePicker: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     nonisolated func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         Task { @MainActor [weak self] in
-            self?.dismissPicker(picker) { filePicker in
-                filePicker.finish(with: nil)
-            }
+            guard let self else { return }
+            presentedController = nil
+            isCompletingPicker = true
+            picker.dismiss(animated: true)
+            finish(with: nil)
         }
     }
     
@@ -60,10 +72,11 @@ extension FilePicker: UIImagePickerControllerDelegate, UINavigationControllerDel
         
         Task { @MainActor [weak self] in
             guard let self else { return }
-            dismissPicker(picker) { filePicker in
-                let result = await filePicker.prepareMediaResult(mediaURL: mediaURL, imageURL: imageURL, imageData: imageData)
-                filePicker.finish(with: result?.promptResult)
-            }
+            presentedController = nil
+            isCompletingPicker = true
+            picker.dismiss(animated: true)
+            let result = await prepareMediaResult(mediaURL: mediaURL, imageURL: imageURL, imageData: imageData)
+            finish(with: result?.promptResult)
         }
     }
 }
