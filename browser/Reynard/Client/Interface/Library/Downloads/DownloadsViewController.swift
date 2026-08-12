@@ -263,14 +263,167 @@ final class DownloadsViewController: UIViewController, UITableViewDataSource, UI
     }
     
     fileprivate func makeDownloadsMenu() -> UIMenu {
-        UIMenu(title: "", children: [
-            UIAction(title: NSLocalizedString("Open in Files", comment: ""), image: UIImage(named: "reynard.folder")) { [weak self] _ in
-                self?.openDownloadsFolder()
+        let managementActions = UIMenu(options: .displayInline, children: [
+            UIAction(title: NSLocalizedString("New Folder", comment: ""), image: UIImage(systemName: "folder.badge.plus")) { [weak self] _ in
+                self?.showNewFolderPrompt()
             },
-            UIAction(title: NSLocalizedString("Clear Downloads", comment: ""), image: UIImage(named: "reynard.arrow.down.circle.badge.xmark")) { [weak self] _ in
-                self?.showClearDownloads()
+            UIAction(title: NSLocalizedString("New Download Task", comment: ""), image: UIImage(systemName: "arrow.down.circle")) { [weak self] _ in
+                self?.showNewDownloadPrompt()
+            },
+            UIAction(title: NSLocalizedString("New Video Playback", comment: ""), image: UIImage(systemName: "play.rectangle")) { [weak self] _ in
+                self?.showNewVideoPlaybackPrompt()
             },
         ])
+
+        let transferActions = UIMenu(options: .displayInline, children: [
+            UIAction(title: NSLocalizedString("Pause All Downloads", comment: ""), image: UIImage(systemName: "pause.circle")) { _ in
+                DownloadStore.shared.pauseAll()
+            },
+            UIAction(title: NSLocalizedString("Resume All Downloads", comment: ""), image: UIImage(systemName: "play.circle")) { _ in
+                DownloadStore.shared.resumeAll()
+            },
+        ])
+
+        let settingsActions = UIMenu(options: .displayInline, children: [
+            UIAction(title: NSLocalizedString("Download Settings", comment: ""), image: UIImage(systemName: "slider.horizontal.3")) { [weak self] _ in
+                self?.navigationController?.pushViewController(DownloadPreferencesViewController(), animated: true)
+            },
+            UIAction(title: NSLocalizedString("Playback Settings", comment: ""), image: UIImage(systemName: "slider.horizontal.3")) { [weak self] _ in
+                self?.navigationController?.pushViewController(PlaybackPreferencesViewController(), animated: true)
+            },
+        ])
+
+        return UIMenu(title: "", children: [managementActions, transferActions, settingsActions])
+    }
+
+    private func showNewFolderPrompt() {
+        let alert = UIAlertController(
+            title: NSLocalizedString("New Folder", comment: ""),
+            message: NSLocalizedString("Create a folder in Downloads.", comment: ""),
+            preferredStyle: .alert
+        )
+        alert.addTextField { field in
+            field.placeholder = NSLocalizedString("Folder Name", comment: "")
+            field.autocapitalizationType = .words
+        }
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Create", comment: ""), style: .default) { [weak self, weak alert] _ in
+            guard let name = alert?.textFields?.first?.text,
+                  DownloadStore.shared.createFolder(named: name) != nil else {
+                self?.showMessage(
+                    title: NSLocalizedString("Unable to Create Folder", comment: ""),
+                    message: NSLocalizedString("Enter a valid folder name and try again.", comment: "")
+                )
+                return
+            }
+            self?.openDownloadsFolder()
+        })
+        present(alert, animated: true)
+    }
+
+    private func showNewDownloadPrompt() {
+        let alert = UIAlertController(
+            title: NSLocalizedString("New Download Task", comment: ""),
+            message: NSLocalizedString("Enter a direct HTTP or HTTPS download URL.", comment: ""),
+            preferredStyle: .alert
+        )
+        alert.addTextField { field in
+            field.placeholder = "https://example.com/file"
+            field.keyboardType = .URL
+            field.autocapitalizationType = .none
+            field.autocorrectionType = .no
+        }
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Add", comment: ""), style: .default) { [weak self, weak alert] _ in
+            guard let submittedText = alert?.textFields?.first?.text,
+                  let url = URLUtils.normalizedCustomURL(from: submittedText),
+                  url.scheme?.lowercased() == "http" || url.scheme?.lowercased() == "https" else {
+                self?.showMessage(
+                    title: NSLocalizedString("Invalid Download URL", comment: ""),
+                    message: NSLocalizedString("Enter a valid HTTP or HTTPS URL.", comment: "")
+                )
+                return
+            }
+            self?.startManualDownload(from: url)
+        })
+        present(alert, animated: true)
+    }
+
+    private func showNewVideoPlaybackPrompt() {
+        let alert = UIAlertController(
+            title: NSLocalizedString("New Video Playback", comment: ""),
+            message: NSLocalizedString("Enter the URL of the video page to play.", comment: ""),
+            preferredStyle: .alert
+        )
+        alert.addTextField { field in
+            field.placeholder = "https://example.com/video"
+            field.keyboardType = .URL
+            field.autocapitalizationType = .none
+            field.autocorrectionType = .no
+        }
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Play", comment: ""), style: .default) { [weak self, weak alert] _ in
+            guard let submittedText = alert?.textFields?.first?.text,
+                  let url = URLUtils.normalizedCustomURL(from: submittedText),
+                  url.scheme?.lowercased() == "http" || url.scheme?.lowercased() == "https" else {
+                self?.showMessage(
+                    title: NSLocalizedString("Invalid Video URL", comment: ""),
+                    message: NSLocalizedString("Enter a valid HTTP or HTTPS URL.", comment: "")
+                )
+                return
+            }
+            self?.startVideoPlayback(at: url)
+        })
+        present(alert, animated: true)
+    }
+
+    private func startManualDownload(from url: URL) {
+        let start = {
+            DownloadStore.shared.startManualDownload(from: url)
+        }
+
+        guard Prefs.DownloadSettings.confirmManualDownloads else {
+            start()
+            return
+        }
+
+        AlertPresenter.show(
+            title: NSLocalizedString("Start Download?", comment: ""),
+            message: url.absoluteString,
+            buttons: [
+                AlertPresenter.Button(title: NSLocalizedString("Cancel", comment: ""), style: .cancel),
+                AlertPresenter.Button(title: NSLocalizedString("Start Download", comment: ""), handler: start),
+            ]
+        )
+    }
+
+    private func startVideoPlayback(at url: URL) {
+        guard let browserController = findBrowserViewController() else {
+            showMessage(
+                title: NSLocalizedString("Unable to Start Playback", comment: ""),
+                message: NSLocalizedString("Return to the browser and try again.", comment: "")
+            )
+            return
+        }
+
+        browserController.dismiss(animated: true) {
+            browserController.startVideoPlayback(at: url)
+        }
+    }
+
+    private func findBrowserViewController() -> BrowserViewController? {
+        var controller: UIViewController? = self
+        while let current = controller {
+            if let browserController = current as? BrowserViewController {
+                return browserController
+            }
+            controller = current.parent ?? current.presentingViewController
+        }
+        return nil
+    }
+
+    private func showMessage(title: String, message: String) {
+        AlertPresenter.show(title: title, message: message)
     }
     
     private func openDownloadsFolder() {
@@ -448,7 +601,7 @@ final class DownloadsViewController: UIViewController, UITableViewDataSource, UI
         }
         
         switch item.state {
-        case .downloading:
+        case .downloading, .paused:
             let cancelAction = UIContextualAction(style: .destructive, title: NSLocalizedString("Cancel", comment: "")) { [weak self] _, _, completion in
                 self?.confirmCancelDownload(for: item, completion: completion)
             }

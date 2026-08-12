@@ -29,6 +29,7 @@ struct DownloadStoreSnapshot {
 struct DownloadItemSnapshot {
     enum State: Equatable {
         case downloading
+        case paused
         case completed
     }
     
@@ -88,6 +89,7 @@ final class DownloadStore: NSObject {
         var expectedBytes: Int64?
         var downloadedBytes: Int64
         var bytesPerSecond: Int64
+        var isPaused: Bool
         var lastProgressSample: ProgressSample?
         
         init(
@@ -111,6 +113,7 @@ final class DownloadStore: NSObject {
             self.expectedBytes = nil
             self.downloadedBytes = 0
             self.bytesPerSecond = 0
+            self.isPaused = false
         }
     }
     
@@ -205,6 +208,78 @@ final class DownloadStore: NSObject {
         }
     }
     
+    func downloadsDirectory() -> URL {
+        stateQueue.sync {
+            prepareStorageLocked()
+            return storage.downloadsDirectoryURL
+        }
+    }
+
+    @discardableResult
+    func createFolder(named name: String) -> URL? {
+        stateQueue.sync {
+            prepareStorageLocked()
+            let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedName.isEmpty else {
+                return nil
+            }
+
+            let folderName = sanitizeFileName(trimmedName)
+            let destinationURL = makeUniqueDirectoryURLLocked(for: folderName)
+            do {
+                try fileManager.createDirectory(at: destinationURL, withIntermediateDirectories: false)
+                return destinationURL
+            } catch {
+                return nil
+            }
+        }
+    }
+
+    func startManualDownload(from sourceURL: URL) {
+        guard sourceURL.scheme?.lowercased() == "http" || sourceURL.scheme?.lowercased() == "https" else {
+            return
+        }
+
+        enqueueDownload(
+            sourceURL: sourceURL,
+            originalURL: nil,
+            suggestedFileName: nil,
+            mimeType: nil
+        )
+    }
+
+    func pauseAll() {
+        stateQueue.async {
+            var didChange = false
+            for active in self.activeDownloads.values where !active.isPaused {
+                active.task.suspend()
+                active.isPaused = true
+                active.bytesPerSecond = 0
+                didChange = true
+            }
+
+            if didChange {
+                self.postDidChange()
+            }
+        }
+    }
+
+    func resumeAll() {
+        stateQueue.async {
+            var didChange = false
+            for active in self.activeDownloads.values where active.isPaused {
+                active.task.resume()
+                active.isPaused = false
+                active.lastProgressSample = nil
+                didChange = true
+            }
+
+            if didChange {
+                self.postDidChange()
+            }
+        }
+    }
+
     // MARK: - Pending Downloads
     
     func pendingDownload(from response: ExternalResponseInfo) -> PendingDownload? {
@@ -456,7 +531,7 @@ final class DownloadStore: NSObject {
                     sourceURL: active.sourceURL,
                     originalURL: active.originalURL,
                     mimeType: active.mimeType,
-                    state: .downloading,
+                    state: active.isPaused ? .paused : .downloading,
                     fileExists: true,
                     totalBytes: active.expectedBytes,
                     downloadedBytes: active.downloadedBytes,
@@ -611,6 +686,21 @@ final class DownloadStore: NSObject {
         return sanitized.isEmpty ? NSLocalizedString("Download", comment: "") : sanitized
     }
     
+    private func makeUniqueDirectoryURLLocked(for folderName: String) -> URL {
+        let candidateURL = storage.downloadsDirectoryURL.appendingPathComponent(folderName, isDirectory: true)
+        guard !fileManager.fileExists(atPath: candidateURL.path) else {
+            for index in 2...10_000 {
+                let candidateName = "\(folderName) \(index)"
+                let candidateURL = storage.downloadsDirectoryURL.appendingPathComponent(candidateName, isDirectory: true)
+                if !fileManager.fileExists(atPath: candidateURL.path) {
+                    return candidateURL
+                }
+            }
+            return storage.downloadsDirectoryURL.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        }
+        return candidateURL
+    }
+
     private func makeUniqueDestinationURLLocked(for fileName: String) -> URL {
         let candidateURL = storage.downloadsDirectoryURL.appendingPathComponent(fileName, isDirectory: false)
         let activeNames = Set(

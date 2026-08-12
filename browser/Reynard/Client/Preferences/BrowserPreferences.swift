@@ -53,6 +53,12 @@ final class BrowserPreferences {
             // Experimental
             key("ExperimentalSettings", "isVideoPictureInPictureEnabled"): false,
             
+            // Downloads
+            key("DownloadSettings", "confirmManualDownloads"): true,
+
+            // Playback
+            key("PlaybackSettings", "openVideosInNewTab"): true,
+
             // Compatibility
             key("CompatibilitySettings", "androidUserAgentDomains"): [],
             key("CompatibilitySettings", "useAndroidUserAgent"): true,
@@ -254,6 +260,30 @@ final class BrowserPreferences {
         }
     }
     
+    // MARK: - Downloads
+    struct DownloadSettings {
+        static var confirmManualDownloads: Bool {
+            get {
+                prefs.bool(forSetting: "DownloadSettings", key: "confirmManualDownloads")
+            }
+            set {
+                prefs.set(newValue, forSetting: "DownloadSettings", key: "confirmManualDownloads")
+            }
+        }
+    }
+
+    // MARK: - Playback
+    struct PlaybackSettings {
+        static var openVideosInNewTab: Bool {
+            get {
+                prefs.bool(forSetting: "PlaybackSettings", key: "openVideosInNewTab")
+            }
+            set {
+                prefs.set(newValue, forSetting: "PlaybackSettings", key: "openVideosInNewTab")
+            }
+        }
+    }
+
     // MARK: - Browsing
     struct BrowsingSettings {
         static var requestDesktopWebsite: Bool {

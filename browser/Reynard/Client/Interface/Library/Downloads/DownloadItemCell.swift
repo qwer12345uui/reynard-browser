@@ -164,6 +164,24 @@ final class DownloadItemCell: UITableViewCell {
             fileIconView.transform = .identity
             fileIconView.tintColor = placeholderIcon == nil ? .label : nil
             
+        case .paused:
+            representedFileURL = nil
+            representedDownloadID = item.id
+            let downloadedText = Self.formattedByteCount(item.downloadedBytes)
+            let sizeText = item.totalBytes.map { Self.formattedByteCount($0) }
+            statusLabel.text = sizeText.map { String(format: NSLocalizedString("Paused · %@ of %@", comment: "Paused download progress"), downloadedText, $0) }
+                ?? String(format: NSLocalizedString("Paused · %@", comment: "Paused downloaded size"), downloadedText)
+            progressView.isHidden = false
+            if let totalBytes = item.totalBytes, totalBytes > 0 {
+                progressView.progress = min(max(Float(item.downloadedBytes) / Float(totalBytes), 0), 1)
+            } else {
+                progressView.progress = 0
+            }
+            let placeholderIcon = Self.iconProvider.genericPlaceholderIcon()
+            fileIconView.image = placeholderIcon
+            fileIconView.transform = .identity
+            fileIconView.tintColor = placeholderIcon == nil ? .label : nil
+
         case .completed:
             representedDownloadID = item.id
             statusLabel.text = item.fileExists ? (item.totalBytes.map { Self.formattedByteCount($0) } ?? NSLocalizedString("Unknown size", comment: "")) : NSLocalizedString("Deleted", comment: "")
