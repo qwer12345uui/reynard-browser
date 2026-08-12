@@ -61,6 +61,7 @@ final class BrowserPreferences {
             key("BrowsingSettings", "requestDesktopWebsite"): UIDevice.current.userInterfaceIdiom == .pad,
             key("BrowsingSettings", "showLinkPreviews"): true,
             key("BrowsingSettings", "showImagePreviews"): true,
+            key("BrowsingSettings", "openLinksInExternalApps"): true,
             key("BrowsingSettings", "defaultPageZoomLevel"): PageZoomLevels.defaultLevel,
             
             // New Tab
@@ -279,6 +280,15 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue, forSetting: "BrowsingSettings", key: "showImagePreviews")
+            }
+        }
+        
+        static var openLinksInExternalApps: Bool {
+            get {
+                return prefs.bool(forSetting: "BrowsingSettings", key: "openLinksInExternalApps")
+            }
+            set {
+                prefs.set(newValue, forSetting: "BrowsingSettings", key: "openLinksInExternalApps")
             }
         }
         

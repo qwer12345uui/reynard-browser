@@ -9,7 +9,6 @@ import UIKit
 
 final class ToolbarController {
     enum LockReason: Hashable {
-        case actionBar
         case addressBarTransition
         case addressBarEditing
         case historyNavigation
@@ -62,14 +61,6 @@ final class ToolbarController {
         
         contentView.onHistorySwipeEnded = { [weak self] in
             self?.unlock(for: .historyNavigation)
-        }
-        
-        browserChrome.onActionBarVisibilityChanged = { [weak self] visible in
-            if visible {
-                self?.lock(for: .actionBar)
-            } else {
-                self?.unlock(for: .actionBar)
-            }
         }
         
         contentView.onVerticalScroll = { [weak self] scrollDelta in
@@ -184,7 +175,8 @@ final class ToolbarController {
     
     private func handleScroll(delta: CGFloat) {
         guard maxToolbarOffset > 0,
-              lockReasons.isEmpty else {
+              lockReasons.isEmpty,
+              !browserChrome.isShowingFindInPage else {
             return
         }
         cancelSnap()
@@ -236,6 +228,15 @@ final class ToolbarController {
     }
     
     // MARK: - Reset
+    
+    func collapse(animated: Bool = true) {
+        cancelSnap()
+        guard animated else {
+            setToolbarOffset(maxToolbarOffset, refresh: true)
+            return
+        }
+        beginSnap(to: maxToolbarOffset)
+    }
     
     func reset(animated: Bool = true) {
         cancelSnap()

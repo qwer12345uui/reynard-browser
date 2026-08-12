@@ -1,5 +1,5 @@
 diff --git a/widget/uikit/ScreenHelperUIKit.mm b/widget/uikit/ScreenHelperUIKit.mm
-index f597b1d5dffa..04943b2fb502 100644
+index b800da5aaa15..b773928af3f8 100644
 --- a/widget/uikit/ScreenHelperUIKit.mm
 +++ b/widget/uikit/ScreenHelperUIKit.mm
 @@ -4,8 +4,9 @@
@@ -62,21 +62,26 @@ index f597b1d5dffa..04943b2fb502 100644
    LayoutDeviceIntRect rect;
    rect.x = NSToIntRound(bounds.origin.x * contentsScaleFactor.scale);
    rect.y = NSToIntRound(bounds.origin.y * contentsScaleFactor.scale);
-@@ -54,22 +83,26 @@
-            dpi));
- 
-   NSInteger fps = [aScreen maximumFramesPerSecond];
--  auto screen =
--      MakeRefPtr<Screen>(rect, rect, pixelDepth, pixelDepth, fps,
--                         contentsScaleFactor, defaultCssScaleFactor, dpi,
--                         Screen::IsPseudoDisplay::No, Screen::IsHDR::No);
+@@ -58,29 +87,33 @@
+   // values and pretend the SDR content brightness is 100 which is mentioned in
+   // Apple docs as typical.
+   float displayHDRHeadroom = 1.0f;
+-  if (@available(iOS 16.0, *)) {
++  if ([aScreen respondsToSelector:@selector(potentialEDRHeadroom)]) {
+     displayHDRHeadroom = [aScreen potentialEDRHeadroom];
+   }
+   float sdrContentBrightness = 100.0f;
+   float hdrPeakBrightness = displayHDRHeadroom * sdrContentBrightness;
+   bool isHDR = displayHDRHeadroom > 1.0f;
 +  hal::ScreenOrientation orientation = hal::ScreenOrientation::None;
 +  Screen::OrientationAngle angle = 0;
 +  GetOrientationDetails(aInterfaceOrientation, orientation, angle);
-+  auto screen = MakeRefPtr<Screen>(rect, rect, pixelDepth, pixelDepth, fps,
-+                                   contentsScaleFactor, defaultCssScaleFactor,
-+                                   dpi, Screen::IsPseudoDisplay::No,
-+                                   Screen::IsHDR::No, orientation, angle);
+   auto screen = MakeRefPtr<Screen>(
+       rect, rect, pixelDepth, pixelDepth, fps, contentsScaleFactor,
+       defaultCssScaleFactor, dpi, Screen::IsPseudoDisplay::No,
+       isHDR ? Screen::IsHDR::Yes : Screen::IsHDR::No, sdrContentBrightness,
+-      hdrPeakBrightness);
++      hdrPeakBrightness, orientation, angle);
    return screen.forget();
  
    NS_OBJC_END_TRY_BLOCK_RETURN(nullptr);

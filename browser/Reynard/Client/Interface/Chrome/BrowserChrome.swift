@@ -58,10 +58,12 @@ final class BrowserChrome: UIView {
     var onNewTab: (() -> Void)?
     var onTabOverview: (() -> Void)?
     var onOverlayDismiss: (() -> Void)?
-    var onActionBarVisibilityChanged: ((Bool) -> Void)?
     var onPageZoomOut: (() -> Void)?
     var onPageZoomIn: (() -> Void)?
     var onPageZoomReset: (() -> Void)?
+    var onFindInPage: ((_ query: String?, _ backwards: Bool) async -> (current: Int, total: Int)?)?
+    var onClearFindInPage: (() -> Void)?
+    var onFindInPageVisibilityChanged: ((Bool) -> Void)?
     
     private let addressBar: AddressBar = {
         let view = AddressBar()
@@ -88,6 +90,8 @@ final class BrowserChrome: UIView {
     private var overlayCenterXConstraint: NSLayoutConstraint?
     private var actionBarTopConstraint: NSLayoutConstraint?
     private var actionBarBottomConstraint: NSLayoutConstraint?
+    private var actionBarKeyboardBottomConstraint: NSLayoutConstraint?
+    private var actionBarDockOffset: CGFloat = 0
     
     private var state: State?
     
@@ -189,6 +193,33 @@ final class BrowserChrome: UIView {
         bottomToolbar.setVerticalOffset(offset)
     }
     
+    func dockActionBar(offset: CGFloat) {
+        actionBarDockOffset = offset
+        if offset == 0 {
+            actionBarKeyboardBottomConstraint?.isActive = false
+            actionBarKeyboardBottomConstraint = nil
+            actionBarBottomConstraint?.constant = -UX.actionBarSpacing
+            actionBarBottomConstraint?.isActive = true
+            actionBar.transform = CGAffineTransform(translationX: 0, y: bottomToolbar.transform.ty)
+            return
+        }
+        
+        actionBarBottomConstraint?.isActive = false
+        if actionBarKeyboardBottomConstraint == nil {
+            actionBarKeyboardBottomConstraint = actionBar.bottomAnchor.constraint(
+                equalTo: bottomAnchor,
+                constant: offset
+            )
+        }
+        actionBarKeyboardBottomConstraint?.constant = offset
+        actionBarKeyboardBottomConstraint?.isActive = true
+        actionBar.transform = .identity
+    }
+    
+    var isShowingFindInPage: Bool {
+        return actionBar.isShowingFindInPage
+    }
+    
     // MARK: - Action Bar
     
     func showActionBar(_ item: ActionBar.Item, animated: Bool) {
@@ -197,16 +228,26 @@ final class BrowserChrome: UIView {
             return
         }
         
+        let wasShowingFindInPage = actionBar.isShowingFindInPage
         actionBar.setItem(item)
+        if wasShowingFindInPage != actionBar.isShowingFindInPage {
+            onFindInPageVisibilityChanged?(actionBar.isShowingFindInPage)
+        }
         showActionBar(animated: animated)
     }
     
     func dismissActionBar(animated: Bool) {
         guard !actionBar.isHidden else { return }
         
+        dockActionBar(offset: 0)
+        actionBar.prepareForDismissal()
+        let wasShowingFindInPage = actionBar.isShowingFindInPage
+        
         let finish = {
             self.actionBar.setItem(nil)
-            self.onActionBarVisibilityChanged?(false)
+            if wasShowingFindInPage {
+                self.onFindInPageVisibilityChanged?(false)
+            }
         }
         
         guard animated else {
@@ -447,6 +488,10 @@ final class BrowserChrome: UIView {
         actionBar.onPageZoomOut = { [weak self] in self?.onPageZoomOut?() }
         actionBar.onPageZoomIn = { [weak self] in self?.onPageZoomIn?() }
         actionBar.onPageZoomReset = { [weak self] in self?.onPageZoomReset?() }
+        actionBar.onFindInPage = { [weak self] query, backwards in
+            return await self?.onFindInPage?(query, backwards)
+        }
+        actionBar.onClearFindInPage = { [weak self] in self?.onClearFindInPage?() }
         actionBar.onClose = { [weak self] in self?.dismissActionBar(animated: true) }
     }
     
@@ -478,14 +523,18 @@ final class BrowserChrome: UIView {
         topToolbar.setContentAlpha(topContentAlpha)
         bottomToolbar.transform = CGAffineTransform(translationX: 0, y: bottomOffset)
         bottomToolbar.setContentAlpha(bottomContentAlpha)
-        actionBar.transform = CGAffineTransform(translationX: 0, y: bottomOffset)
+        actionBar.transform = actionBarKeyboardBottomConstraint == nil
+        ? CGAffineTransform(translationX: 0, y: bottomOffset)
+        : .identity
     }
     
     func setChromeTransition(topAlpha: CGFloat, bottomAlpha: CGFloat, bottomTranslationY: CGFloat = 0) {
         topToolbar.alpha = topAlpha
         bottomToolbar.alpha = bottomAlpha
         bottomToolbar.transform = CGAffineTransform(translationX: 0, y: bottomTranslationY)
-        actionBar.transform = CGAffineTransform(translationX: 0, y: bottomTranslationY)
+        actionBar.transform = actionBarKeyboardBottomConstraint == nil
+        ? CGAffineTransform(translationX: 0, y: bottomTranslationY)
+        : .identity
     }
     
     func setBottomToolbarHidden(_ hidden: Bool) {
@@ -569,7 +618,12 @@ final class BrowserChrome: UIView {
     }
     
     private func attachActionBar(for mode: BrowserChromeMode) {
-        NSLayoutConstraint.deactivate([actionBarTopConstraint, actionBarBottomConstraint].compactMap { $0 })
+        NSLayoutConstraint.deactivate([
+            actionBarTopConstraint,
+            actionBarBottomConstraint,
+            actionBarKeyboardBottomConstraint,
+        ].compactMap { $0 })
+        actionBarKeyboardBottomConstraint = nil
         switch mode {
         case .pad:
             let constraint = actionBar.bottomAnchor.constraint(
@@ -588,11 +642,19 @@ final class BrowserChrome: UIView {
             actionBarBottomConstraint = constraint
             actionBarTopConstraint = nil
         }
+        
+        if actionBarDockOffset != 0 {
+            actionBarBottomConstraint?.isActive = false
+            actionBarKeyboardBottomConstraint = actionBar.bottomAnchor.constraint(
+                equalTo: bottomAnchor,
+                constant: actionBarDockOffset
+            )
+            actionBarKeyboardBottomConstraint?.isActive = true
+        }
     }
     
     private func showActionBar(animated: Bool) {
         actionBar.isHidden = false
-        onActionBarVisibilityChanged?(true)
         let animations = {
             self.actionBar.alpha = 1
         }
@@ -628,4 +690,5 @@ final class BrowserChrome: UIView {
             }
         }
     }
+    
 }

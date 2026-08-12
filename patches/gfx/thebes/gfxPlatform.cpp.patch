@@ -1,5 +1,5 @@
 diff --git a/gfx/thebes/gfxPlatform.cpp b/gfx/thebes/gfxPlatform.cpp
-index 320023934d52..e452f051a98d 100644
+index 2bfb6601831a..0eb20e11c1b6 100644
 --- a/gfx/thebes/gfxPlatform.cpp
 +++ b/gfx/thebes/gfxPlatform.cpp
 @@ -3402,7 +3402,7 @@ void gfxPlatform::InitWebGPUConfig() {

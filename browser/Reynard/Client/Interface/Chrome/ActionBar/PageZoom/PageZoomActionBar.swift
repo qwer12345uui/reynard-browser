@@ -15,12 +15,8 @@ final class PageZoomActionBar: UIView {
         static let controlButtonWidth: CGFloat = 55
         static let separatorWidth: CGFloat = 1
         static let controlsCornerRadius: CGFloat = 19
-        static let closeButtonSize: CGFloat = 28
-        static let closeButtonCornerRadius: CGFloat = 14
-        static let horizontalInset: CGFloat = 13
         static let percentFontSize: CGFloat = 16
         static let controlSymbolPointSize: CGFloat = 14
-        static let closeSymbolPointSize: CGFloat = 10
         static let animationDuration: TimeInterval = 0.12
         static let backgroundAlpha: CGFloat = 0.34
         static let disabledAlpha: CGFloat = 0.32
@@ -35,7 +31,6 @@ final class PageZoomActionBar: UIView {
     var onZoomOut: (() -> Void)?
     var onZoomIn: (() -> Void)?
     var onReset: (() -> Void)?
-    var onClose: (() -> Void)?
     
     private(set) var zoomLevel = Prefs.BrowsingSettings.defaultPageZoomLevel
     
@@ -81,40 +76,6 @@ final class PageZoomActionBar: UIView {
         return button
     }()
     
-    private let closeShadowView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .clear
-        view.layer.cornerCurve = .continuous
-        view.layer.cornerRadius = UX.closeButtonCornerRadius
-        view.layer.shadowOpacity = UX.shadowOpacity
-        view.layer.shadowRadius = UX.shadowRadius
-        view.layer.shadowOffset = UX.shadowOffset
-        return view
-    }()
-    
-    private let closeBackground: UIVisualEffectView = {
-        let view = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.contentView.backgroundColor = UIColor.systemBackground.withAlphaComponent(UX.backgroundAlpha)
-        view.layer.cornerCurve = .continuous
-        view.layer.cornerRadius = UX.closeButtonCornerRadius
-        view.layer.borderWidth = UX.borderWidth
-        view.clipsToBounds = true
-        return view
-    }()
-    
-    private lazy var closeButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        let configuration = UIImage.SymbolConfiguration(pointSize: UX.closeSymbolPointSize, weight: .regular)
-        button.setImage(UIImage(named: "reynard.xmark", in: .main, with: configuration), for: .normal)
-        button.tintColor = .secondaryLabel
-        button.backgroundColor = .clear
-        button.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
-        return button
-    }()
-    
     private let leadingSeparator = PageZoomActionBar.makeSeparator()
     private let trailingSeparator = PageZoomActionBar.makeSeparator()
     
@@ -139,10 +100,6 @@ final class PageZoomActionBar: UIView {
         controlsShadowView.layer.shadowPath = UIBezierPath(
             roundedRect: controlsShadowView.bounds,
             cornerRadius: UX.controlsCornerRadius
-        ).cgPath
-        closeShadowView.layer.shadowPath = UIBezierPath(
-            roundedRect: closeShadowView.bounds,
-            cornerRadius: UX.closeButtonCornerRadius
         ).cgPath
     }
     
@@ -195,10 +152,6 @@ final class PageZoomActionBar: UIView {
         onReset?()
     }
     
-    @objc private func closeTapped() {
-        onClose?()
-    }
-    
     // MARK: - View Setup
     
     private func configureAppearance() {
@@ -209,10 +162,7 @@ final class PageZoomActionBar: UIView {
     private func configureHierarchy() {
         addSubview(backgroundView)
         addSubview(controlsShadowView)
-        addSubview(closeShadowView)
         controlsShadowView.addSubview(controlsBackground)
-        closeShadowView.addSubview(closeBackground)
-        closeShadowView.addSubview(closeButton)
         [zoomOutButton, leadingSeparator, resetButton, trailingSeparator, zoomInButton].forEach {
             controlsBackground.contentView.addSubview($0)
         }
@@ -262,33 +212,17 @@ final class PageZoomActionBar: UIView {
             zoomInButton.bottomAnchor.constraint(equalTo: controlsBackground.contentView.bottomAnchor),
             zoomInButton.widthAnchor.constraint(equalToConstant: UX.controlButtonWidth),
             
-            closeShadowView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -UX.horizontalInset),
-            closeShadowView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            closeShadowView.widthAnchor.constraint(equalToConstant: UX.closeButtonSize),
-            closeShadowView.heightAnchor.constraint(equalToConstant: UX.closeButtonSize),
-            
-            closeBackground.topAnchor.constraint(equalTo: closeShadowView.topAnchor),
-            closeBackground.leadingAnchor.constraint(equalTo: closeShadowView.leadingAnchor),
-            closeBackground.trailingAnchor.constraint(equalTo: closeShadowView.trailingAnchor),
-            closeBackground.bottomAnchor.constraint(equalTo: closeShadowView.bottomAnchor),
-            
-            closeButton.topAnchor.constraint(equalTo: closeShadowView.topAnchor),
-            closeButton.leadingAnchor.constraint(equalTo: closeShadowView.leadingAnchor),
-            closeButton.trailingAnchor.constraint(equalTo: closeShadowView.trailingAnchor),
-            closeButton.bottomAnchor.constraint(equalTo: closeShadowView.bottomAnchor),
         ])
     }
     
     private func updateShadowColor() {
         let color: UIColor = traitCollection.userInterfaceStyle == .dark ? .white : .black
         controlsShadowView.layer.shadowColor = color.cgColor
-        closeShadowView.layer.shadowColor = color.cgColor
     }
     
     private func updateBorderColor() {
         let color = UIColor.separator.withAlphaComponent(0.2)
         controlsBackground.layer.borderColor = color.cgColor
-        closeBackground.layer.borderColor = color.cgColor
     }
     
     private func makeControlButton(named: String, action: Selector) -> UIButton {

@@ -344,6 +344,34 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         browserChrome.onPageZoomReset = { [weak self] in
             self?.setSelectedPageZoomLevel(Prefs.BrowsingSettings.defaultPageZoomLevel)
         }
+        browserChrome.onFindInPage = { [weak self] query, backwards in
+            guard let self,
+                  let session = self.tabManager.selectedTab?.session else {
+                return nil
+            }
+            
+            if query != nil {
+                session.setFindInPageMatchHighlighting(true)
+            }
+            let result = try? await session.findInPage(query, backwards: backwards)
+            guard self.tabManager.selectedTab?.session === session else {
+                return nil
+            }
+            guard let result else {
+                return nil
+            }
+            return (result.current, result.total)
+        }
+        browserChrome.onClearFindInPage = { [weak self] in
+            self?.tabManager.selectedTab?.session.clearFindInPageMatches()
+        }
+        browserChrome.onFindInPageVisibilityChanged = { [weak self] visible in
+            if visible {
+                self?.toolbarController.collapse(animated: false)
+            } else {
+                self?.toolbarController.reset()
+            }
+        }
     }
     
     func updateBrowserLayout(
@@ -757,6 +785,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             0,
             view.bounds.maxY - keyboardFrame.minY - view.safeAreaInsets.bottom
         )
+        let keyboardOverlap = max(0, view.bounds.maxY - keyboardFrame.minY)
         let animation = keyboardAnimation(from: notification)
         let isInHardwareKeyboardMode = tabManager.selectedTab?.session.isInHardwareKeyboardMode() == true
         if !searchOverlayCoordinator.isFocused
@@ -775,10 +804,17 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             )
         }
         
-        let shouldDockChrome = browserLayout.chromeMode == .phone
-        && searchOverlayCoordinator.isFocused
-        && !tabOverview.isPresented
+        let shouldDockActionBar = !tabOverview.isPresented
         && keyboardInset > 0
+        && !isInHardwareKeyboardMode
+        && browserChrome.isShowingFindInPage
+        let shouldDockChrome = !tabOverview.isPresented
+        && keyboardInset > 0
+        && !isInHardwareKeyboardMode
+        && (
+            browserLayout.chromeMode == .phone && searchOverlayCoordinator.isFocused
+        )
+        browserChrome.dockActionBar(offset: shouldDockActionBar ? -keyboardOverlap : 0)
         browserChrome.dockAddressBar(offset: shouldDockChrome ? -keyboardInset : 0)
         animateLayout(animation)
     }
@@ -789,6 +825,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             animationDuration: animation.duration,
             animationOptions: animation.curve
         )
+        browserChrome.dockActionBar(offset: 0)
         browserChrome.dockAddressBar(offset: 0)
         animateLayout(animation)
     }

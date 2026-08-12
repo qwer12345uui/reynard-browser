@@ -1,0 +1,113 @@
+diff --git a/docshell/base/nsDocShell.cpp b/docshell/base/nsDocShell.cpp
+index 723b4c0a54a8..002f9506ab5f 100644
+--- a/docshell/base/nsDocShell.cpp
++++ b/docshell/base/nsDocShell.cpp
+@@ -5629,23 +5629,35 @@ nsDocShell::OnLocationChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
+   return NS_OK;
+ }
+ 
+-void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
+-                                       nsIChannel* aNewChannel,
+-                                       uint32_t aRedirectFlags,
+-                                       uint32_t aStateFlags) {
++MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult nsDocShell::OnRedirectStateChange(
++    nsIChannel* aOldChannel, nsIChannel* aNewChannel, uint32_t aRedirectFlags,
++    uint32_t aStateFlags) {
+   NS_ASSERTION(aStateFlags & STATE_REDIRECTING,
+                "Calling OnRedirectStateChange when there is no redirect");
+ 
+   if (!(aStateFlags & STATE_IS_DOCUMENT)) {
+-    return;  // not a toplevel document
++    return NS_OK;  // not a document load
+   }
+ 
+   nsCOMPtr<nsIURI> oldURI, newURI;
+   aOldChannel->GetURI(getter_AddRefs(oldURI));
+   aNewChannel->GetURI(getter_AddRefs(newURI));
+   if (!oldURI || !newURI) {
+-    return;
++    return NS_OK;
++  }
++
++  nsCOMPtr<nsILoadInfo> loadInfo = aNewChannel->LoadInfo();
++  nsCOMPtr<nsIPrincipal> triggeringPrincipal;
++  bool loadTriggeredFromExternal = false;
++  if (loadInfo) {
++    loadInfo->GetTriggeringPrincipal(getter_AddRefs(triggeringPrincipal));
++    loadInfo->GetLoadTriggeredFromExternal(&loadTriggeredFromExternal);
+   }
++  MOZ_TRY(MaybeHandlePreNavigation(
++      newURI, nsIWebNavigation::LOAD_FLAGS_IS_REDIRECT, mLoadType,
++      triggeringPrincipal,
++      loadInfo && loadInfo->GetHasValidUserGestureActivation(),
++      loadTriggeredFromExternal));
+ 
+   // DocumentChannel adds redirect chain to global history in the parent
+   // process. The redirect chain can't be queried from the content process, so
+@@ -5694,6 +5706,8 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
+       mLoadType & (LOAD_CMD_RELOAD | LOAD_CMD_HISTORY)) {
+     mLoadType = LOAD_NORMAL_REPLACE;
+   }
++
++  return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+@@ -8452,6 +8466,41 @@ static void MaybeConvertToReplaceLoad(nsDocShellLoadState* aLoadState,
+   }
+ }
+ 
++MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult nsDocShell::MaybeHandlePreNavigation(
++    nsIURI* aURI, uint32_t aLoadFlags, uint32_t aLoadType,
++    nsIPrincipal* aTriggeringPrincipal, bool aHasValidUserGestureActivation,
++    bool aBrowserUIActivation) {
++  if (!mBrowsingContext->IsTopContent() || !aURI ||
++      !(aURI->SchemeIs("http") || aURI->SchemeIs("https"))) {
++    return NS_OK;
++  }
++
++  const bool isLinkNavigation =
++      LOAD_TYPE_HAS_FLAGS(aLoadType, nsIWebNavigation::LOAD_FLAGS_IS_LINK);
++  const bool isHistoryOrReload =
++      (aLoadType &
++       (nsIDocShell::LOAD_CMD_RELOAD | nsIDocShell::LOAD_CMD_HISTORY |
++        nsIDocShell::LOAD_CMD_PUSHSTATE)) != 0;
++  const bool isBrowserUI =
++      aBrowserUIActivation ||
++      (aLoadFlags & nsIWebNavigation::LOAD_FLAGS_FROM_EXTERNAL);
++  const bool isUserInitiatedNavigation =
++      isLinkNavigation && !isHistoryOrReload && !isBrowserUI &&
++      aTriggeringPrincipal && !aTriggeringPrincipal->IsSystemPrincipal() &&
++      aHasValidUserGestureActivation;
++
++  nsCOMPtr<nsILoadURIDelegate> loadURIDelegate = GetLoadURIDelegate();
++  if (!loadURIDelegate) {
++    return NS_OK;
++  }
++
++  bool handled = false;
++  MOZ_TRY(loadURIDelegate->PreNavigation(aURI, aLoadFlags, aTriggeringPrincipal,
++                                         aHasValidUserGestureActivation,
++                                         isUserInitiatedNavigation, &handled));
++  return handled ? NS_ERROR_ABORT : NS_OK;
++}
++
+ // InternalLoad performs several of the steps from
+ // https://html.spec.whatwg.org/#navigate.
+ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
+@@ -8505,6 +8554,15 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
+ 
+   MOZ_TRY(CheckDisallowedJavascriptLoad(aLoadState));
+ 
++  if (!aLoadState->GetPendingRedirectedChannel()) {
++    MOZ_TRY(MaybeHandlePreNavigation(
++        aLoadState->URI(), aLoadState->LoadFlags(), aLoadState->LoadType(),
++        aLoadState->TriggeringPrincipal(),
++        aLoadState->HasValidUserGestureActivation(),
++        aLoadState->UserNavigationInvolvement() ==
++            mozilla::dom::UserNavigationInvolvement::BrowserUI));
++  }
++
+   // If we don't have a target, we're loading into ourselves, and our load
+   // delegate may want to intercept that load.
+   SameDocumentNavigationState sameDocumentNavigationState;

@@ -11,6 +11,7 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
     private enum Section: CaseIterable {
         case previews
         case content
+        case external
         
         var text: SettingsSectionText {
             switch self {
@@ -18,6 +19,8 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
                 return SettingsSectionText(headerTitle: NSLocalizedString("Previews", comment: "Browsing settings section title"))
             case .content:
                 return SettingsSectionText(headerTitle: NSLocalizedString("Content", comment: "Browsing settings section title"))
+            case .external:
+                return SettingsSectionText()
             }
         }
     }
@@ -32,8 +35,13 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
         case pageZoom
     }
     
+    private enum ExternalAppsRow: CaseIterable {
+        case openLinks
+    }
+    
     private let showLinkPreviewsSwitch = UISwitch()
     private let showImagePreviewsSwitch = UISwitch()
+    private let openLinksInExternalAppsSwitch = UISwitch()
     
     init() {
         super.init(style: .insetGrouped)
@@ -70,6 +78,8 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
             return PreviewsRow.allCases.count
         case .content:
             return ContentRow.allCases.count
+        case .external:
+            return ExternalAppsRow.allCases.count
         }
     }
     
@@ -119,6 +129,15 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
             }
             cell.accessoryType = .disclosureIndicator
             return cell
+        case .external:
+            guard ExternalAppsRow.allCases.indices.contains(indexPath.row) else {
+                return UITableViewCell()
+            }
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = NSLocalizedString("Open Links in External Apps", comment: "")
+            cell.selectionStyle = .none
+            cell.accessoryView = openLinksInExternalAppsSwitch
+            return cell
         }
     }
     
@@ -141,17 +160,21 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
             case .pageZoom:
                 navigationController?.pushViewController(PageZoomPreferencesViewController(), animated: true)
             }
+        case .external:
+            return
         }
     }
     
     private func configureSwitch() {
         showLinkPreviewsSwitch.addTarget(self, action: #selector(showLinkPreviewsSwitchDidChange(_:)), for: .valueChanged)
         showImagePreviewsSwitch.addTarget(self, action: #selector(showImagePreviewsSwitchDidChange(_:)), for: .valueChanged)
+        openLinksInExternalAppsSwitch.addTarget(self, action: #selector(openLinksInExternalAppsSwitchDidChange(_:)), for: .valueChanged)
     }
     
     private func refreshDisplayedState() {
         showLinkPreviewsSwitch.isOn = Prefs.BrowsingSettings.showLinkPreviews
         showImagePreviewsSwitch.isOn = Prefs.BrowsingSettings.showImagePreviews
+        openLinksInExternalAppsSwitch.isOn = Prefs.BrowsingSettings.openLinksInExternalApps
     }
     
     @objc private func showLinkPreviewsSwitchDidChange(_ sender: UISwitch) {
@@ -160,5 +183,9 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
     
     @objc private func showImagePreviewsSwitchDidChange(_ sender: UISwitch) {
         Prefs.BrowsingSettings.showImagePreviews = sender.isOn
+    }
+    
+    @objc private func openLinksInExternalAppsSwitchDidChange(_ sender: UISwitch) {
+        Prefs.BrowsingSettings.openLinksInExternalApps = sender.isOn
     }
 }

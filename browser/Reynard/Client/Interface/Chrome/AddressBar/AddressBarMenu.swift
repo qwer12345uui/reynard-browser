@@ -23,6 +23,7 @@ enum AddressBarMenu {
         usesDesktopWebsite: Bool?,
         addonItems: [AddonItem],
         onAddonSelected: @escaping (AddonMenuItem) -> Void,
+        onFindInPage: @escaping () -> Void,
         onPageZoom: @escaping () -> Void,
         onChangeWebsiteMode: @escaping () -> Void,
         onWebsiteSettings: @escaping () -> Void,
@@ -73,6 +74,9 @@ enum AddressBarMenu {
         if url?.host != nil {
             pageActions.append(UIAction(title: NSLocalizedString("Page Zoom", comment: ""), image: UIImage(named: "reynard.textformat.size")) { _ in
                 onPageZoom()
+            })
+            pageActions.append(UIAction(title: NSLocalizedString("Find in Page", comment: ""), image: UIImage(named: "reynard.magnifyingglass")) { _ in
+                onFindInPage()
             })
         }
         

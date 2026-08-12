@@ -1139,6 +1139,8 @@ extension TabManagerImplementation: NavigationDelegate {
             return
         }
         
+        sessionManager.universalLinkManager.didCommitNavigation(in: session)
+        
         if let normalizedURL, !normalizedURL.isEmpty {
             tab.state.suppressInitialNavigation = false
         }
@@ -1201,7 +1203,11 @@ extension TabManagerImplementation: NavigationDelegate {
     }
     
     func onLoadRequest(session: GeckoSession, request: LoadRequest) async -> AllowOrDeny {
-        return .allow
+        return await sessionManager.universalLinkManager.decideHandoff(for: request, in: session)
+    }
+    
+    func onPreNavigation(session: GeckoSession, request: LoadRequest) async -> AllowOrDeny {
+        return await sessionManager.universalLinkManager.decideHandoff(for: request, in: session)
     }
     
     func onSubframeLoadRequest(session: GeckoSession, request: LoadRequest) async -> AllowOrDeny {
@@ -1220,6 +1226,7 @@ extension TabManagerImplementation: NavigationDelegate {
             opening: .external,
             delegates: sessionDelegates
         )
+        sessionManager.universalLinkManager.didCreateNewSession(from: session, for: uri)
         let newTab = Tab(id: tabID, session: newSession, isPrivate: sourceIsPrivate)
         permissionCoordinator.restorePermissions(for: newSession, at: uri)
         newTab.url = uri

@@ -18,6 +18,18 @@ public enum GeckoSessionLoadFlags {
     public static let replaceHistory = 1 << 6
 }
 
+public struct GeckoFindInPageResult {
+    public let found: Bool
+    public let current: Int
+    public let total: Int
+    
+    public init(found: Bool, current: Int, total: Int) {
+        self.found = found
+        self.current = current
+        self.total = total
+    }
+}
+
 public class GeckoSession {
     // MARK: - State
     
@@ -280,6 +292,52 @@ public class GeckoSession {
             message: [
                 "userInteraction": userInteraction
             ])
+    }
+    
+    // MARK: - Find in Page
+    
+    @MainActor
+    public func findInPage(
+        _ searchString: String? = nil,
+        backwards: Bool = false
+    ) async throws -> GeckoFindInPageResult {
+        var message: [String: Any?] = [:]
+        if let searchString {
+            message["searchString"] = searchString
+        }
+        if backwards {
+            message["backwards"] = true
+        }
+        let response = try await dispatcher.query(type: "GeckoView:FindInPage", message: message)
+        let payload: [String: Any?]
+        if let values = response as? [String: Any] {
+            payload = values.mapValues { $0 }
+        } else if let values = response as? [String: Any?] {
+            payload = values
+        } else {
+            throw GeckoHandlerError("Invalid find-in-page response")
+        }
+        return GeckoFindInPageResult(
+            found: PayloadValue.bool(payload["found"]) ?? false,
+            current: PayloadValue.int(payload["current"]) ?? 0,
+            total: PayloadValue.int(payload["total"]) ?? 0
+        )
+    }
+    
+    public func setFindInPageMatchHighlighting(_ enabled: Bool) {
+        dispatcher.dispatch(
+            type: "GeckoView:DisplayMatches",
+            message: [
+                "highlightAll": enabled,
+                "dimPage": true,
+                "drawOutline": false,
+            ]
+        )
+    }
+    
+    public func clearFindInPageMatches() {
+        dispatcher.dispatch(type: "GeckoView:ClearMatches")
+        setFindInPageMatchHighlighting(false)
     }
     
     public func scrollTo(_ position: CGPoint, animated: Bool = true) {

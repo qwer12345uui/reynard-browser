@@ -22,6 +22,7 @@ final class SessionManager {
     private let sessionSettings: SessionSettingsManager
     private let history: NavigationHistory
     private let permissionStore: SitePermissionStore
+    let universalLinkManager = UniversalLinkManager()
     let trackingProtection: TrackingProtectionManager
     
     private var sessionsRequestedActive: [ObjectIdentifier: GeckoSession] = [:]

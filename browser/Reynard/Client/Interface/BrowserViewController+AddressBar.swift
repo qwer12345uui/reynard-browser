@@ -67,6 +67,14 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
         addonCoordinator.activateMenuItem(item)
     }
     
+    func addressBarDidRequestFindInPage(_ addressBar: AddressBar) {
+        guard tabManager.selectedTab != nil else {
+            return
+        }
+        
+        browserChrome.showActionBar(.findInPage, animated: true)
+    }
+    
     func addressBarDidRequestPageZoom(_ addressBar: AddressBar) {
         guard let selectedTab = tabManager.selectedTab else {
             return

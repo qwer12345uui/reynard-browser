@@ -5045,6 +5045,27 @@
         }
       }
     },
+    "Find" : {
+      "comment" : "Find in page search placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find"
+          }
+        }
+      }
+    },
+    "Find in Page" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find in Page"
+          }
+        }
+      }
+    },
     "Firefox for Android" : {
       "localizations" : {
         "en" : {
@@ -7136,6 +7157,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open Link in New Tab"
+          }
+        }
+      }
+    },
+    "Open Links in External Apps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Links in External Apps"
           }
         }
       }
