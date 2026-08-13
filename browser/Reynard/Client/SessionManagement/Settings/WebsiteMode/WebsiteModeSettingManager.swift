@@ -35,6 +35,9 @@ final class WebsiteModeSettingManager {
         let mode = usesDesktopMode ? BrowsingMode.desktop : BrowsingMode.mobile
         return WebsiteModeSetting(
             userAgentOverride: userAgent.override,
+            platformOverride: userAgent.platformOverride,
+            appVersionOverride: userAgent.appVersionOverride,
+            oscpuOverride: userAgent.oscpuOverride,
             userAgentMode: mode,
             viewportMode: mode
         )

@@ -12,6 +12,7 @@ protocol HomepageOverlayCoordinatorDelegate: AnyObject {
     var homepageGridWidth: HomepageGridWidth { get }
     var homepageSelectedTab: Tab? { get }
     var isHomepageTabOverviewPresented: Bool { get }
+    var isHomepageTabOverviewTransitionRunning: Bool { get }
     var isHomepageShowingFullscreenMedia: Bool { get }
     var homepageChrome: BrowserChrome { get }
     var homepageContentView: ContentView { get }
@@ -85,6 +86,17 @@ final class HomepageOverlayCoordinator {
         configureOverlay(for: presentation)
     }
     
+    func updateVisibleContentInsets() {
+        guard let delegate,
+              let presentation = homepagePresentation,
+              presentation.host == .embedded,
+              overlayCoordinator.contains(.homepage, on: presentation.host) else {
+            return
+        }
+        
+        homepageViewController.setVisibleContentInsets(visibleContentInsets(in: delegate.homepageContentView))
+    }
+    
     func tabOverviewWillPresent() {
         if let tab = delegate?.homepageSelectedTab,
            (showsHomepageForBlankTabs || tab.state.showsStartupHomepage),
@@ -131,6 +143,8 @@ final class HomepageOverlayCoordinator {
             visibleRect: geometry.visibleRect,
             contentMode: embeddedContentMode(layout: delegate.homepageLayout),
             isPrivateBrowsing: tab.isPrivate,
+            capturesWindow: !delegate.isHomepageTabOverviewPresented &&
+            !delegate.isHomepageTabOverviewTransitionRunning,
             completion: completion
         )
     }
@@ -146,7 +160,8 @@ final class HomepageOverlayCoordinator {
             size: geometry.size,
             visibleRect: geometry.visibleRect,
             contentMode: embeddedContentMode(layout: delegate.homepageLayout),
-            isPrivateBrowsing: tab.isPrivate
+            isPrivateBrowsing: tab.isPrivate,
+            capturesWindow: false
         )
     }
     
@@ -203,13 +218,28 @@ final class HomepageOverlayCoordinator {
     }
     
     private func configureOverlay(for presentation: HomepagePresentation) {
-        guard presentation.host == .detached,
-              let delegate else {
+        guard let delegate else {
             return
         }
         
+        guard presentation.host == .detached else {
+            return
+        }
+        
+        homepageViewController.setVisibleContentInsets(.zero)
         delegate.homepageChrome.setOverlayHeightMode(.default)
         delegate.homepageChrome.setOverlayAvailableContentHeight(delegate.homepageContentView.bounds.height)
+    }
+    
+    private func visibleContentInsets(in contentView: UIView) -> UIEdgeInsets {
+        let visibleFrame = contentView.convert(contentView.bounds, to: homepageViewController.view)
+        let homepageBounds = homepageViewController.view.bounds
+        return UIEdgeInsets(
+            top: max(0, visibleFrame.minY - homepageBounds.minY),
+            left: 0,
+            bottom: max(0, homepageBounds.maxY - visibleFrame.maxY),
+            right: 0
+        )
     }
     
     // MARK: - Presentation Resolution

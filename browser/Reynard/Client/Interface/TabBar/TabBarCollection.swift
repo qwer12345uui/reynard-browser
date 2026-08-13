@@ -117,9 +117,6 @@ final class TabBarCollection: UICollectionView, UIGestureRecognizerDelegate {
         
         isScrollEnabled = shouldScroll
         collectionViewLayout.invalidateLayout()
-        guard tabBar?.visibility != .hidden else {
-            return
-        }
         layoutIfNeeded()
     }
     

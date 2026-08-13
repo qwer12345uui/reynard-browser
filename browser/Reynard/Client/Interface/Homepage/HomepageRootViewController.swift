@@ -39,8 +39,17 @@ final class HomepageRootViewController: UIViewController {
     private let sections: [HomepageSection]
     private var isPrivateBrowsing: Bool
     private var contentMode: HomepageContentMode = .embeddedNarrow
+    private var visibleContentInsets: UIEdgeInsets = .zero
     private var sectionViewControllers: [HomepageSection: UIViewController] = [:]
     private var sectionStackWidthConstraint: NSLayoutConstraint?
+    
+    private let wallpaperImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        return imageView
+    }()
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -112,7 +121,12 @@ final class HomepageRootViewController: UIViewController {
         }
         privateBrowsingSectionViewController?.setContentMode(contentMode)
         favoritesSectionViewController?.setContentMode(contentMode)
+        frequentlyVisitedSectionViewController?.setContentMode(contentMode)
         recentlyClosedTabsSectionViewController?.setContentMode(contentMode)
+        if isViewLoaded {
+            updateWallpaper()
+            updateScrollInsets()
+        }
         updateSectionStackWidth()
     }
     
@@ -137,23 +151,47 @@ final class HomepageRootViewController: UIViewController {
         privateBrowsingSectionViewController?.setPrivateBrowsing(isPrivateBrowsing)
     }
     
+    func setVisibleContentInsets(_ visibleContentInsets: UIEdgeInsets) {
+        guard self.visibleContentInsets != visibleContentInsets else {
+            return
+        }
+        
+        self.visibleContentInsets = visibleContentInsets
+        guard isViewLoaded else {
+            return
+        }
+        updateScrollInsets()
+    }
+    
     // MARK: - Configuration
     
     private func configureScrollView() {
         scrollView.delegate = self
         scrollView.contentInsetAdjustmentBehavior = .never
-        scrollView.contentInset = UIEdgeInsets(
-            top: folder == nil ? UX.topInset : UX.folderTopInset,
+        updateScrollInsets()
+    }
+    
+    private func updateScrollInsets() {
+        let isAtTop = scrollView.contentOffset.y <= -scrollView.contentInset.top
+        let effectiveVisibleContentInsets = contentMode.isDetached ? .zero : visibleContentInsets
+        let contentInset = UIEdgeInsets(
+            top: effectiveVisibleContentInsets.top + (folder == nil ? UX.topInset : UX.folderTopInset),
             left: 0,
-            bottom: UX.bottomInset,
+            bottom: effectiveVisibleContentInsets.bottom + UX.bottomInset,
             right: 0
         )
-        scrollView.scrollIndicatorInsets = scrollView.contentInset
+        scrollView.contentInset = contentInset
+        scrollView.scrollIndicatorInsets = contentInset
+        if isAtTop {
+            scrollView.contentOffset.y = -contentInset.top
+        }
     }
     
     private func configureHierarchy() {
+        view.addSubview(wallpaperImageView)
         view.addSubview(scrollView)
         scrollView.addSubview(sectionStackView)
+        updateWallpaper()
     }
     
     private func configureConstraints() {
@@ -161,6 +199,11 @@ final class HomepageRootViewController: UIViewController {
         sectionStackWidthConstraint = widthConstraint
         
         NSLayoutConstraint.activate([
+            wallpaperImageView.topAnchor.constraint(equalTo: view.topAnchor),
+            wallpaperImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            wallpaperImageView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            wallpaperImageView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
@@ -239,6 +282,7 @@ final class HomepageRootViewController: UIViewController {
         case .frequentlyVisited:
             let viewController = FrequentlyVisitedSectionViewController()
             viewController.delegate = self
+            viewController.setContentMode(contentMode)
             return viewController
             
         case .recentlyClosedTabs:
@@ -261,6 +305,15 @@ final class HomepageRootViewController: UIViewController {
         sectionStackWidthConstraint?.constant = min(width, maximumWidth)
     }
     
+    private func updateWallpaper() {
+        guard Prefs.HomepageSettings.showsWallpaper,
+              !contentMode.isDetached else {
+            wallpaperImageView.image = nil
+            return
+        }
+        wallpaperImageView.image = HomepageWallpaper.image
+    }
+    
     // MARK: - Helpers
     
     private var recommendationViewControllers: [HomepageRecommendationViewController] {
@@ -279,6 +332,10 @@ final class HomepageRootViewController: UIViewController {
     
     private var favoritesSectionViewController: FavoritesSectionViewController? {
         return sectionViewControllers[.favorites] as? FavoritesSectionViewController
+    }
+    
+    private var frequentlyVisitedSectionViewController: FrequentlyVisitedSectionViewController? {
+        return sectionViewControllers[.frequentlyVisited] as? FrequentlyVisitedSectionViewController
     }
     
     private var recentlyClosedTabsSectionViewController: RecentlyClosedTabsSectionViewController? {
@@ -322,6 +379,7 @@ final class HomepageRootViewController: UIViewController {
     }
     
     @objc private func homepageSettingsDidChange() {
+        updateWallpaper()
         reloadSections()
     }
     

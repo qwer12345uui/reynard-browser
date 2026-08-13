@@ -1,0 +1,15 @@
+diff --git a/dom/base/Navigator.h b/dom/base/Navigator.h
+index d303ab778fb5..13e5e562ab9d 100644
+--- a/dom/base/Navigator.h
++++ b/dom/base/Navigator.h
+@@ -160,6 +160,10 @@ class Navigator final : public nsISupports, public nsWrapperCache {
+   // Navigator_Binding::ClearCachedPlatformValue(this);
+   void ClearPlatformCache();
+ 
++  void ClearAppVersionCache();
++
++  void ClearOscpuCache();
++
+   // Clears the user agent cache by calling:
+   // Navigator_Binding::ClearCachedUserAgentValue(this);
+   void ClearUserAgentCache();

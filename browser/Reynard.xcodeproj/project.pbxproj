@@ -508,6 +508,7 @@
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Location access lets websites in this browser provide location-based content such as maps, directions, and nearby places.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access lets websites in this browser capture your voice for calls and audio recordings.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Photo library access lets this browser save images and other media you download from websites to Photos.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo library access lets this browser upload photos and videos from your library and save images and other media you download from websites to Photos.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -576,6 +577,7 @@
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Location access lets websites in this browser provide location-based content such as maps, directions, and nearby places.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access lets websites in this browser capture your voice for calls and audio recordings.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Photo library access lets this browser save images and other media you download from websites to Photos.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo library access lets this browser upload photos and videos from your library and save images and other media you download from websites to Photos.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

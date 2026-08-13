@@ -342,8 +342,8 @@ final class TabOverview: UIView {
         let visibleCount = mode == .privateTabs
         ? dataSource?.privateTabs.count ?? 0
         : regularCount
-        topToolbar.apply(tabCount: regularCount, hasVisibleTab: visibleCount > 0)
-        bottomToolbar.apply(tabCount: regularCount, hasVisibleTab: visibleCount > 0)
+        topToolbar.apply(tabCount: regularCount, visibleTabCount: visibleCount, hasVisibleTab: visibleCount > 0)
+        bottomToolbar.apply(tabCount: regularCount, visibleTabCount: visibleCount, hasVisibleTab: visibleCount > 0)
     }
 }
 

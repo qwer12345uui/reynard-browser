@@ -106,7 +106,17 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
         view.layer.cornerCurve = .continuous
         view.layer.cornerRadius = UX.cornerRadius
         view.clipsToBounds = true
-        view.backgroundColor = .systemGray6
+        view.backgroundColor = .clear
+        return view
+    }()
+    
+    private let backgroundView: UIVisualEffectView = {
+        let view = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isUserInteractionEnabled = false
+        view.layer.cornerCurve = .continuous
+        view.layer.cornerRadius = UX.cornerRadius
+        view.clipsToBounds = true
         return view
     }()
     
@@ -237,6 +247,7 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
     
     private func configureHierarchy() {
         view.addSubview(cardView)
+        cardView.addSubview(backgroundView)
         cardView.addSubview(textStackView)
         
         textStackView.addArrangedSubview(titleLabel)
@@ -255,6 +266,11 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
             cardView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: UX.horizontalInset),
             cardView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -UX.horizontalInset),
             cardView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -UX.sectionBottomSpacing),
+            
+            backgroundView.topAnchor.constraint(equalTo: cardView.topAnchor),
+            backgroundView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
             
             textStackView.topAnchor.constraint(equalTo: cardView.layoutMarginsGuide.topAnchor),
             textStackView.leadingAnchor.constraint(equalTo: cardView.layoutMarginsGuide.leadingAnchor),

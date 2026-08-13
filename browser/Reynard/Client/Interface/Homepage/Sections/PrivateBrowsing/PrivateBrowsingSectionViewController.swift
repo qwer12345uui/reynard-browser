@@ -36,9 +36,17 @@ final class PrivateBrowsingSectionViewController: UIViewController {
         view.layer.cornerCurve = .continuous
         view.layer.cornerRadius = UX.cornerRadius
         view.clipsToBounds = true
-        view.backgroundColor = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark ? .systemGray6 : UIColor.black.withAlphaComponent(0.7)
-        }
+        view.backgroundColor = .clear
+        return view
+    }()
+    
+    private let backgroundView: UIVisualEffectView = {
+        let view = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isUserInteractionEnabled = false
+        view.layer.cornerCurve = .continuous
+        view.layer.cornerRadius = UX.cornerRadius
+        view.clipsToBounds = true
         return view
     }()
     
@@ -131,6 +139,7 @@ final class PrivateBrowsingSectionViewController: UIViewController {
     
     private func configureHierarchy() {
         view.addSubview(cardView)
+        cardView.addSubview(backgroundView)
         cardView.addSubview(textContainerView)
         textContainerView.addSubview(textStackView)
         textStackView.addArrangedSubview(titleLabel)
@@ -148,6 +157,11 @@ final class PrivateBrowsingSectionViewController: UIViewController {
             cardView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: UX.horizontalInset),
             cardView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -UX.horizontalInset),
             cardView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -UX.sectionBottomSpacing),
+            
+            backgroundView.topAnchor.constraint(equalTo: cardView.topAnchor),
+            backgroundView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
             
             textContainerView.topAnchor.constraint(equalTo: cardView.layoutMarginsGuide.topAnchor),
             textContainerView.bottomAnchor.constraint(equalTo: cardView.layoutMarginsGuide.bottomAnchor),

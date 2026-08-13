@@ -2970,6 +2970,16 @@
         }
       }
     },
+    "Choose Wallpaper…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Wallpaper…"
+          }
+        }
+      }
+    },
     "Clear" : {
       "comment" : "Destructive button\nSwipe action",
       "localizations" : {
@@ -3163,6 +3173,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "清除时间范围"
+          }
+        }
+      }
+    },
+    "Close %d Tabs" : {
+      "comment" : "Tab count",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Close %d Tab"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Close %d Tabs"
+                }
+              }
+            }
           }
         }
       }
@@ -9361,6 +9394,16 @@
         }
       }
     },
+    "Show Wallpaper" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Wallpaper"
+          }
+        }
+      }
+    },
     "Sign In" : {
       "localizations" : {
         "en" : {
@@ -10903,6 +10946,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "查看源代码"
+          }
+        }
+      }
+    },
+    "Wallpaper" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallpaper"
           }
         }
       }

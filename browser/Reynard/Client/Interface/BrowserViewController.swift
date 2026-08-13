@@ -198,6 +198,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             chromeMode: browserLayout.chromeMode,
             isToolbarEnabled: !isShowingFullscreenMedia
         )
+        homepageOverlayCoordinator.updateVisibleContentInsets()
         invalidateNavigationThumbnailsIfNeeded()
     }
     

@@ -86,6 +86,7 @@ final class BrowserPreferences {
             key("HomepageSettings", "recentlyClosedTabLimit"): 10,
             key("HomepageSettings", "showsRecommendations"): true,
             key("HomepageSettings", "showsNewUpdates"): true,
+            key("HomepageSettings", "showsWallpaper"): false,
             key("HomepageSettings", "donationRecommendationMultiplier"): 1,
             
             // Appearance
@@ -630,6 +631,16 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue, forSetting: "HomepageSettings", key: "showsNewUpdates")
+                NotificationCenter.default.post(name: .homepageSettingsDidChange, object: nil)
+            }
+        }
+        
+        static var showsWallpaper: Bool {
+            get {
+                return prefs.bool(forSetting: "HomepageSettings", key: "showsWallpaper")
+            }
+            set {
+                prefs.set(newValue, forSetting: "HomepageSettings", key: "showsWallpaper")
                 NotificationCenter.default.post(name: .homepageSettingsDidChange, object: nil)
             }
         }

@@ -119,6 +119,7 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
         }
         
         self.contentMode = contentMode
+        updateForegroundColor()
         invalidateCollectionLayout()
     }
     
@@ -126,6 +127,13 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
     
     private func configureAppearance() {
         view.backgroundColor = .clear
+        updateForegroundColor()
+    }
+    
+    private func updateForegroundColor() {
+        let foregroundColor = HomepageWallpaper.foregroundColor(for: contentMode)
+        titleLabel.textColor = foregroundColor
+        clearAllButton.tintColor = foregroundColor
     }
     
     private func configureHierarchy() {

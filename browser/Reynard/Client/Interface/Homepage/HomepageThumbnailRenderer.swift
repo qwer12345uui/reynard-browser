@@ -32,6 +32,7 @@ final class HomepageThumbnailRenderer {
         visibleRect: CGRect,
         contentMode: HomepageContentMode,
         isPrivateBrowsing: Bool,
+        capturesWindow: Bool,
         completion: @escaping (UIImage?) -> Void
     ) {
         guard size.width > 1,
@@ -47,7 +48,8 @@ final class HomepageThumbnailRenderer {
                 size: size,
                 visibleRect: visibleRect,
                 contentMode: contentMode,
-                isPrivateBrowsing: isPrivateBrowsing
+                isPrivateBrowsing: isPrivateBrowsing,
+                capturesWindow: capturesWindow
             ))
         }
     }
@@ -56,7 +58,8 @@ final class HomepageThumbnailRenderer {
         size: CGSize,
         visibleRect: CGRect,
         contentMode: HomepageContentMode,
-        isPrivateBrowsing: Bool
+        isPrivateBrowsing: Bool,
+        capturesWindow: Bool
     ) -> UIImage? {
         guard size.width > 1,
               size.height > 1,
@@ -70,6 +73,7 @@ final class HomepageThumbnailRenderer {
         homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
         homepageViewController.setContentMode(contentMode)
         homepageViewController.setShowsBackground(true)
+        homepageViewController.setVisibleContentInsets(visibleContentInsets(size: size, visibleRect: visibleRect))
         
         let view = homepageViewController.view!
         let originalFrame = view.frame
@@ -79,27 +83,35 @@ final class HomepageThumbnailRenderer {
         if temporarilyAttachedView {
             captureContainer = UIView(frame: CGRect(origin: .zero, size: size))
             captureContainer?.addSubview(view)
-            view.frame = visibleRect
+            view.frame = captureContainer?.bounds ?? .zero
         }
         
         captureContainer?.layoutIfNeeded()
         view.layoutIfNeeded()
         
+        let captureRoot = capturesWindow ? (view.window ?? view) : view
+        captureRoot.layoutIfNeeded()
+        let captureFrame = view.convert(view.bounds, to: captureRoot)
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { context in
             UIColor.systemBackground.setFill()
             context.fill(CGRect(origin: .zero, size: size))
             context.cgContext.saveGState()
-            context.cgContext.translateBy(x: visibleRect.minX, y: visibleRect.minY)
-            guard view.bounds.width > 1, view.bounds.height > 1 else {
+            guard captureFrame.width > 1, captureFrame.height > 1 else {
                 context.cgContext.restoreGState()
                 return
             }
-            context.cgContext.scaleBy(
-                x: visibleRect.width / view.bounds.width,
-                y: visibleRect.height / view.bounds.height
-            )
-            view.drawHierarchy(in: view.bounds, afterScreenUpdates: false)
+            let scaleX = size.width / captureFrame.width
+            let scaleY = size.height / captureFrame.height
+            context.cgContext.concatenate(CGAffineTransform(
+                a: scaleX,
+                b: 0,
+                c: 0,
+                d: scaleY,
+                tx: -captureFrame.minX * scaleX,
+                ty: -captureFrame.minY * scaleY
+            ))
+            captureRoot.drawHierarchy(in: captureRoot.bounds, afterScreenUpdates: false)
             context.cgContext.restoreGState()
         }
         
@@ -109,5 +121,14 @@ final class HomepageThumbnailRenderer {
         view.frame = originalFrame
         view.bounds = originalBounds
         return image
+    }
+    
+    private func visibleContentInsets(size: CGSize, visibleRect: CGRect) -> UIEdgeInsets {
+        return UIEdgeInsets(
+            top: max(0, visibleRect.minY),
+            left: 0,
+            bottom: max(0, size.height - visibleRect.maxY),
+            right: 0
+        )
     }
 }

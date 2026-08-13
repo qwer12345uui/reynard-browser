@@ -133,6 +133,7 @@ final class FavoritesSectionViewController: UIViewController {
         }
         
         self.contentMode = contentMode
+        updateForegroundColor()
         applyFavoriteItemLimit()
     }
     
@@ -141,6 +142,16 @@ final class FavoritesSectionViewController: UIViewController {
     private func configureAppearance() {
         view.backgroundColor = .clear
         headerView.isHidden = !showsSectionTitle
+        updateForegroundColor()
+    }
+    
+    private func updateForegroundColor() {
+        let foregroundColor = HomepageWallpaper.foregroundColor(for: contentMode)
+        titleLabel.textColor = foregroundColor
+        showAllButton.tintColor = foregroundColor
+        if isViewLoaded {
+            collectionView.reloadData()
+        }
     }
     
     private func configureHierarchy() {
@@ -571,7 +582,10 @@ extension FavoritesSectionViewController: UICollectionViewDataSource, UICollecti
                 withReuseIdentifier: FavoriteSiteCollectionViewCell.reuseIdentifier,
                 for: indexPath
             ) as! FavoriteSiteCollectionViewCell
-            cell.configure(favorite: bookmark)
+            cell.configure(
+                favorite: bookmark,
+                titleColor: HomepageWallpaper.foregroundColor(for: contentMode)
+            )
             return cell
             
         case let .folder(folder):
@@ -579,7 +593,11 @@ extension FavoritesSectionViewController: UICollectionViewDataSource, UICollecti
                 withReuseIdentifier: FavoriteFolderCollectionViewCell.reuseIdentifier,
                 for: indexPath
             ) as! FavoriteFolderCollectionViewCell
-            cell.configure(folder: folder, previewBookmarks: previewBookmarks(for: folder))
+            cell.configure(
+                folder: folder,
+                previewBookmarks: previewBookmarks(for: folder),
+                titleColor: HomepageWallpaper.foregroundColor(for: contentMode)
+            )
             return cell
         }
     }
