@@ -10,6 +10,7 @@ import UIKit
 struct GeneralSettingsSection {
     enum Row: CaseIterable {
         case addons
+        case userScripts
         case browsing
         case search
         case newTab
@@ -32,6 +33,8 @@ struct GeneralSettingsSection {
         switch Row.allCases[index] {
         case .addons:
             return SettingsViewUtils.disclosureCell(title: NSLocalizedString("Add-ons", comment: ""))
+        case .userScripts:
+            return SettingsViewUtils.disclosureCell(title: "用户脚本")
         case .browsing:
             return SettingsViewUtils.disclosureCell(title: NSLocalizedString("Browsing", comment: ""))
         case .search:
@@ -60,6 +63,8 @@ struct GeneralSettingsSection {
         switch Row.allCases[index] {
         case .addons:
             destination = AddonsPreferencesViewController()
+        case .userScripts:
+            destination = UserScriptsPreferencesViewController()
         case .browsing:
             destination = BrowsingPreferencesViewController()
         case .search:

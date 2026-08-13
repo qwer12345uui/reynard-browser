@@ -234,7 +234,7 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
             ToolboxItem(title: "缩放", icon: "arrow.up.left.and.arrow.down.right", action: .zoom),
             ToolboxItem(title: "超级嗅探", icon: "dot.radiowaves.left.and.right", action: .sniff),
             ToolboxItem(title: "检测\n二维码", icon: "qrcode.viewfinder", action: .detectQRCode),
-            ToolboxItem(title: "无图模式", icon: "photo.slash", action: .noImages),
+            ToolboxItem(title: "无图模式", icon: "eye.slash", action: .noImages),
         ]),
         ToolboxSection(title: "网页另存为", items: [
             ToolboxItem(title: "保存离线\n网页", icon: "doc.text", action: .saveOffline),
@@ -262,7 +262,7 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
             ToolboxItem(title: "UA&Cookie", icon: "person.crop.circle", action: .uaAndCookie),
             ToolboxItem(title: "eruda", icon: "ladybug", action: .eruda),
             ToolboxItem(title: "vConsole", icon: "terminal", action: .vConsole),
-            ToolboxItem(title: "脚本状态", icon: "chevron.left.slash.chevron.right", action: .scriptStatus),
+            ToolboxItem(title: "用户脚本", icon: "chevron.left.forwardslash.chevron.right", action: .scriptStatus),
             ToolboxItem(title: "清理网页\n缓存", icon: "trash", action: .clearPageCache),
         ]),
     ]
@@ -288,7 +288,7 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
             ToolboxItem(title: "UA&Cookie", icon: "person.crop.circle", action: .uaAndCookie),
             ToolboxItem(title: "eruda", icon: "ladybug", action: .eruda),
             ToolboxItem(title: "vConsole", icon: "terminal", action: .vConsole),
-            ToolboxItem(title: "脚本状态", icon: "chevron.left.slash.chevron.right", action: .scriptStatus),
+            ToolboxItem(title: "用户脚本", icon: "chevron.left.forwardslash.chevron.right", action: .scriptStatus),
             ToolboxItem(title: "清理网页\n缓存", icon: "trash", action: .clearPageCache),
         ]),
     ]

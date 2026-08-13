@@ -1,0 +1,394 @@
+//
+//  UserScriptsPreferencesViewController.swift
+//  Reynard
+//
+//  User script management with Greasy Fork/Sleazy Fork discovery and four import paths.
+//
+
+import UIKit
+import UniformTypeIdentifiers
+
+final class UserScriptsPreferencesViewController: SettingsTableViewController, UIDocumentPickerDelegate {
+    private enum Section {
+        case installed
+        case add
+
+        var text: SettingsSectionText {
+            switch self {
+            case .installed:
+                return SettingsSectionText(
+                    headerTitle: "用户脚本",
+                    footerTitle: "已启用的脚本会按脚本中的 @match 或 @include 规则匹配网页。脚本由用户自行管理，请仅安装可信来源的脚本。"
+                )
+            case .add:
+                return SettingsSectionText(headerTitle: "添加脚本")
+            }
+        }
+    }
+
+    private enum AddRow: CaseIterable {
+        case greasyFork
+        case sleazyFork
+        case importFile
+        case inputScript
+        case importLink
+    }
+
+    private let store = UserScriptStore.shared
+    private var scripts: [UserScriptSnapshot] = []
+    private var isImportingFromLink = false
+
+    init() {
+        super.init(style: .insetGrouped)
+        title = "用户脚本"
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        reloadScripts()
+        NotificationCenter.default.addObserver(self, selector: #selector(userScriptsDidChange), name: .userScriptStoreDidChange, object: store)
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: .userScriptStoreDidChange, object: store)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        reloadScripts()
+    }
+
+    override func numberOfSections(in tableView: UITableView) -> Int { 2 }
+
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        switch section {
+        case 0: return max(scripts.count, 1)
+        case 1: return AddRow.allCases.count
+        default: return 0
+        }
+    }
+
+    override func sectionText(for section: Int) -> SettingsSectionText {
+        switch section {
+        case 0: return scripts.isEmpty ? SettingsSectionText() : Section.installed.text
+        case 1: return Section.add.text
+        default: return SettingsSectionText()
+        }
+    }
+
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        switch indexPath.section {
+        case 0:
+            guard !scripts.isEmpty, scripts.indices.contains(indexPath.row) else {
+                let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+                cell.selectionStyle = .none
+                cell.textLabel?.text = "尚未添加用户脚本"
+                cell.textLabel?.textColor = .secondaryLabel
+                return cell
+            }
+            let script = scripts[indexPath.row]
+            let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+            cell.textLabel?.text = script.name
+            let version = script.version.map { "v\($0)" } ?? "未标注版本"
+            cell.detailTextLabel?.text = "\(script.isEnabled ? "已启用" : "已停用") · \(version)"
+            cell.detailTextLabel?.textColor = script.isEnabled ? .secondaryLabel : .tertiaryLabel
+            cell.imageView?.image = UIImage(systemName: "chevron.left.forwardslash.chevron.right")
+            cell.accessoryType = .disclosureIndicator
+            return cell
+        case 1:
+            guard AddRow.allCases.indices.contains(indexPath.row) else { return UITableViewCell() }
+            let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+            cell.textLabel?.textColor = view.tintColor
+            cell.detailTextLabel?.textColor = .secondaryLabel
+            switch AddRow.allCases[indexPath.row] {
+            case .greasyFork:
+                cell.textLabel?.text = "访问 greasyfork.org"
+                cell.detailTextLabel?.text = "浏览通用用户脚本"
+                cell.imageView?.image = UIImage(systemName: "safari")
+            case .sleazyFork:
+                cell.textLabel?.text = "访问 sleazyfork.org"
+                cell.detailTextLabel?.text = "浏览成人内容相关脚本"
+                cell.imageView?.image = UIImage(systemName: "safari")
+            case .importFile:
+                cell.textLabel?.text = "通过文件导入"
+                cell.detailTextLabel?.text = "选择 .js、.user.js 或纯文本脚本文件"
+                cell.imageView?.image = UIImage(systemName: "doc.badge.plus")
+            case .inputScript:
+                cell.textLabel?.text = "直接输入脚本"
+                cell.detailTextLabel?.text = "粘贴或编写 JavaScript 用户脚本"
+                cell.imageView?.image = UIImage(systemName: "square.and.pencil")
+            case .importLink:
+                cell.textLabel?.text = isImportingFromLink ? "正在通过链接导入…" : "通过链接导入"
+                cell.detailTextLabel?.text = "输入脚本的直接下载链接"
+                cell.imageView?.image = UIImage(systemName: "link.badge.plus")
+                if isImportingFromLink {
+                    cell.textLabel?.textColor = .secondaryLabel
+                    cell.selectionStyle = .none
+                }
+            }
+            return cell
+        default:
+            return UITableViewCell()
+        }
+    }
+
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        defer { tableView.deselectRow(at: indexPath, animated: true) }
+        if indexPath.section == 0, scripts.indices.contains(indexPath.row) {
+            navigationController?.pushViewController(UserScriptDetailsPreferencesViewController(script: scripts[indexPath.row], store: store), animated: true)
+            return
+        }
+        guard indexPath.section == 1, AddRow.allCases.indices.contains(indexPath.row) else { return }
+        switch AddRow.allCases[indexPath.row] {
+        case .greasyFork:
+            LibrarySharedUtils.openLinkInBrowser("https://greasyfork.org/", from: self)
+        case .sleazyFork:
+            LibrarySharedUtils.openLinkInBrowser("https://sleazyfork.org/", from: self)
+        case .importFile:
+            chooseScriptFile()
+        case .inputScript:
+            navigationController?.pushViewController(UserScriptEditorViewController { [weak self] source, name in
+                self?.install(source: source, sourceURL: nil, preferredName: name)
+            }, animated: true)
+        case .importLink:
+            guard !isImportingFromLink else { return }
+            presentImportLinkPrompt()
+        }
+    }
+
+    private func chooseScriptFile() {
+        let jsType = UTType(filenameExtension: "js") ?? .plainText
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [jsType, .plainText, .data], asCopy: true)
+        picker.delegate = self
+        picker.allowsMultipleSelection = false
+        present(picker, animated: true)
+    }
+
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let url = urls.first else { return }
+        do {
+            _ = try store.install(fromFile: url)
+            showResult(title: "脚本已添加", message: "已从文件导入用户脚本。")
+        } catch {
+            showResult(title: "无法导入脚本", message: error.localizedDescription)
+        }
+    }
+
+    private func presentImportLinkPrompt() {
+        let alert = UIAlertController(title: "通过链接导入", message: "请输入脚本文件的 HTTP 或 HTTPS 直链。", preferredStyle: .alert)
+        alert.addTextField { field in
+            field.placeholder = "https://example.com/script.user.js"
+            field.keyboardType = .URL
+            field.autocapitalizationType = .none
+            field.autocorrectionType = .no
+        }
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: "导入", style: .default) { [weak self, weak alert] _ in
+            guard let self,
+                  let value = alert?.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  let url = URL(string: value) else {
+                return
+            }
+            self.importScript(from: url)
+        })
+        present(alert, animated: true)
+    }
+
+    private func importScript(from url: URL) {
+        isImportingFromLink = true
+        tableView.reloadData()
+        store.install(fromRemoteURL: url) { [weak self] result in
+            guard let self else { return }
+            self.isImportingFromLink = false
+            self.tableView.reloadData()
+            switch result {
+            case .success:
+                self.showResult(title: "脚本已添加", message: "已通过链接导入用户脚本。")
+            case .failure(let error):
+                self.showResult(title: "无法导入脚本", message: error.localizedDescription)
+            }
+        }
+    }
+
+    private func install(source: String, sourceURL: URL?, preferredName: String?) {
+        do {
+            _ = try store.install(source: source, sourceURL: sourceURL, preferredName: preferredName)
+            showResult(title: "脚本已添加", message: "已保存并启用该用户脚本。")
+        } catch {
+            showResult(title: "无法保存脚本", message: error.localizedDescription)
+        }
+    }
+
+    private func reloadScripts() {
+        scripts = store.currentScripts()
+        if isViewLoaded { tableView.reloadData() }
+    }
+
+    private func showResult(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "好", style: .default))
+        present(alert, animated: true)
+    }
+
+    @objc private func userScriptsDidChange() { reloadScripts() }
+}
+
+private final class UserScriptDetailsPreferencesViewController: SettingsTableViewController {
+    private enum Row: CaseIterable {
+        case enabled
+        case matchRules
+        case sourceURL
+        case delete
+    }
+
+    private let script: UserScriptSnapshot
+    private let store: UserScriptStore
+    private let enabledSwitch = UISwitch()
+
+    init(script: UserScriptSnapshot, store: UserScriptStore) {
+        self.script = script
+        self.store = store
+        super.init(style: .insetGrouped)
+        title = script.name
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        enabledSwitch.isOn = script.isEnabled
+        enabledSwitch.addTarget(self, action: #selector(enabledDidChange(_:)), for: .valueChanged)
+    }
+
+    override func numberOfSections(in tableView: UITableView) -> Int { 2 }
+
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        section == 0 ? Row.allCases.count - 1 : 1
+    }
+
+    override func sectionText(for section: Int) -> SettingsSectionText {
+        section == 0
+            ? SettingsSectionText(headerTitle: "脚本设置")
+            : SettingsSectionText(footerTitle: "删除后无法恢复，请确认不再需要该脚本。")
+    }
+
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+        cell.detailTextLabel?.textColor = .secondaryLabel
+        if indexPath.section == 1 {
+            cell.textLabel?.text = "删除脚本"
+            cell.textLabel?.textColor = .systemRed
+            return cell
+        }
+        guard Row.allCases.indices.contains(indexPath.row) else { return cell }
+        switch Row.allCases[indexPath.row] {
+        case .enabled:
+            cell.textLabel?.text = "启用脚本"
+            cell.detailTextLabel?.text = "关闭后不会在网页中运行"
+            cell.selectionStyle = .none
+            cell.accessoryView = enabledSwitch
+        case .matchRules:
+            cell.textLabel?.text = "匹配规则"
+            cell.detailTextLabel?.text = script.matchPatterns.joined(separator: "\n")
+            cell.detailTextLabel?.numberOfLines = 0
+        case .sourceURL:
+            cell.textLabel?.text = "脚本来源"
+            cell.detailTextLabel?.text = script.sourceURL?.absoluteString ?? "直接输入"
+            cell.detailTextLabel?.numberOfLines = 0
+        case .delete:
+            break
+        }
+        return cell
+    }
+
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        defer { tableView.deselectRow(at: indexPath, animated: true) }
+        guard indexPath.section == 1 else { return }
+        let alert = UIAlertController(title: "删除脚本", message: "确定要删除“\(script.name)”吗？", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: "删除", style: .destructive) { [weak self] _ in
+            guard let self else { return }
+            store.remove(id: script.id)
+            navigationController?.popViewController(animated: true)
+        })
+        present(alert, animated: true)
+    }
+
+    @objc private func enabledDidChange(_ sender: UISwitch) {
+        store.setEnabled(sender.isOn, for: script.id)
+    }
+}
+
+private final class UserScriptEditorViewController: UIViewController {
+    private let onSave: (String, String?) -> Void
+    private let nameField = UITextField()
+    private let sourceView = UITextView()
+
+    init(onSave: @escaping (String, String?) -> Void) {
+        self.onSave = onSave
+        super.init(nibName: nil, bundle: nil)
+        title = "直接输入脚本"
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "保存", style: .done, target: self, action: #selector(save))
+        configureNameField()
+        configureSourceView()
+        view.addSubview(nameField)
+        view.addSubview(sourceView)
+        NSLayoutConstraint.activate([
+            nameField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            nameField.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            nameField.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            nameField.heightAnchor.constraint(equalToConstant: 44),
+            sourceView.topAnchor.constraint(equalTo: nameField.bottomAnchor, constant: 12),
+            sourceView.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            sourceView.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            sourceView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
+        ])
+    }
+
+    private func configureNameField() {
+        nameField.translatesAutoresizingMaskIntoConstraints = false
+        nameField.borderStyle = .roundedRect
+        nameField.placeholder = "脚本名称（可选，优先读取 @name）"
+        nameField.autocapitalizationType = .none
+        nameField.autocorrectionType = .no
+    }
+
+    private func configureSourceView() {
+        sourceView.translatesAutoresizingMaskIntoConstraints = false
+        sourceView.font = UIFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        sourceView.backgroundColor = .secondarySystemBackground
+        sourceView.layer.cornerRadius = 10
+        sourceView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
+        sourceView.text = "// ==UserScript==\n// @name 示例脚本\n// @match *://*/*\n// ==/UserScript==\n\n"
+        sourceView.autocapitalizationType = .none
+        sourceView.autocorrectionType = .no
+    }
+
+    @objc private func save() {
+        let source = sourceView.text ?? ""
+        guard !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            let alert = UIAlertController(title: "脚本内容不能为空", message: "请输入或粘贴 JavaScript 用户脚本。", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "好", style: .default))
+            present(alert, animated: true)
+            return
+        }
+        let name = nameField.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        onSave(source, name?.isEmpty == true ? nil : name)
+        navigationController?.popViewController(animated: true)
+    }
+}

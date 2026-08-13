@@ -10,6 +10,39 @@ import UIKit
 
 typealias Prefs = BrowserPreferences
 
+enum VideoDecoderPreference: String, CaseIterable {
+    case automatic
+}
+
+enum PlaybackSpeedPreference: Double, CaseIterable {
+    case one = 1.0
+    case oneAndHalf = 1.5
+    case two = 2.0
+}
+
+enum PlaybackSeekGesturePreference: String, CaseIterable {
+    case adaptive
+    case tenSeconds
+    case fifteenSeconds
+    case thirtySeconds
+}
+
+enum PlaybackTriggerCorner: String, CaseIterable {
+    case bottomRight
+    case bottomLeft
+}
+
+enum DownloadListSortOrder: String, CaseIterable {
+    case newestFirst
+    case oldestFirst
+    case fileName
+}
+
+enum ImageSaveLocation: String, CaseIterable {
+    case downloads
+    case photoLibrary
+}
+
 final class BrowserPreferences {
     static var shared = BrowserPreferences()
     
@@ -57,6 +90,15 @@ final class BrowserPreferences {
             key("DownloadSettings", "confirmManualDownloads"): true,
             key("DownloadSettings", "continuesInBackground"): true,
             key("DownloadSettings", "backgroundTimeLimit"): 300,
+            key("DownloadSettings", "listSortOrder"): DownloadListSortOrder.newestFirst.rawValue,
+            key("DownloadSettings", "imageSaveLocation"): ImageSaveLocation.downloads.rawValue,
+            key("DownloadSettings", "maxConcurrentDownloads"): 3,
+            key("DownloadSettings", "automaticallyMergeM3U8ToMP4"): true,
+            key("DownloadSettings", "allowsCellularDownloads"): true,
+            key("DownloadSettings", "automaticRetryCount"): 30,
+            key("DownloadSettings", "retryIndefinitely"): false,
+            key("DownloadSettings", "autoBookmarkDownloadedVideos"): false,
+            key("DownloadSettings", "playsCompletionSound"): true,
 
             // Security
             key("SecuritySettings", "gesturePasswordEnabled"): false,
@@ -70,6 +112,19 @@ final class BrowserPreferences {
 
             // Playback
             key("PlaybackSettings", "openVideosInNewTab"): true,
+            key("PlaybackSettings", "videoDecoder"): VideoDecoderPreference.automatic.rawValue,
+            key("PlaybackSettings", "longPressPlaybackSpeed"): PlaybackSpeedPreference.two.rawValue,
+            key("PlaybackSettings", "allowsMultiplePlayers"): true,
+            key("PlaybackSettings", "allowsWebMediaAutoplay"): true,
+            key("PlaybackSettings", "seekGesture"): PlaybackSeekGesturePreference.adaptive.rawValue,
+            key("PlaybackSettings", "allowsPictureInPicture"): false,
+            key("PlaybackSettings", "entersPictureInPictureInBackground"): false,
+            key("PlaybackSettings", "allowsBackgroundPlayback"): false,
+            key("PlaybackSettings", "mutesByDefault"): false,
+            key("PlaybackSettings", "remembersPlaybackPosition"): true,
+            key("PlaybackSettings", "swipeDownEntersMiniPlayer"): false,
+            key("PlaybackSettings", "triggerCorner"): PlaybackTriggerCorner.bottomRight.rawValue,
+            key("PlaybackSettings", "showsControls"): true,
 
             // Compatibility
             key("CompatibilitySettings", "androidUserAgentDomains"): [],
@@ -305,6 +360,57 @@ final class BrowserPreferences {
                 prefs.set(boundedValue, forSetting: "DownloadSettings", key: "backgroundTimeLimit")
             }
         }
+
+        static var listSortOrder: DownloadListSortOrder {
+            get {
+                let value = prefs.string(forSetting: "DownloadSettings", key: "listSortOrder") ?? DownloadListSortOrder.newestFirst.rawValue
+                return DownloadListSortOrder(rawValue: value) ?? .newestFirst
+            }
+            set { prefs.set(newValue.rawValue, forSetting: "DownloadSettings", key: "listSortOrder") }
+        }
+
+        static var imageSaveLocation: ImageSaveLocation {
+            get {
+                let value = prefs.string(forSetting: "DownloadSettings", key: "imageSaveLocation") ?? ImageSaveLocation.downloads.rawValue
+                return ImageSaveLocation(rawValue: value) ?? .downloads
+            }
+            set { prefs.set(newValue.rawValue, forSetting: "DownloadSettings", key: "imageSaveLocation") }
+        }
+
+        static var maxConcurrentDownloads: Int {
+            get { max(1, min(prefs.integer(forSetting: "DownloadSettings", key: "maxConcurrentDownloads"), 8)) }
+            set { prefs.set(max(1, min(newValue, 8)), forSetting: "DownloadSettings", key: "maxConcurrentDownloads") }
+        }
+
+        static var automaticallyMergeM3U8ToMP4: Bool {
+            get { prefs.bool(forSetting: "DownloadSettings", key: "automaticallyMergeM3U8ToMP4") }
+            set { prefs.set(newValue, forSetting: "DownloadSettings", key: "automaticallyMergeM3U8ToMP4") }
+        }
+
+        static var allowsCellularDownloads: Bool {
+            get { prefs.bool(forSetting: "DownloadSettings", key: "allowsCellularDownloads") }
+            set { prefs.set(newValue, forSetting: "DownloadSettings", key: "allowsCellularDownloads") }
+        }
+
+        static var automaticRetryCount: Int {
+            get { max(0, min(prefs.integer(forSetting: "DownloadSettings", key: "automaticRetryCount"), 100)) }
+            set { prefs.set(max(0, min(newValue, 100)), forSetting: "DownloadSettings", key: "automaticRetryCount") }
+        }
+
+        static var retryIndefinitely: Bool {
+            get { prefs.bool(forSetting: "DownloadSettings", key: "retryIndefinitely") }
+            set { prefs.set(newValue, forSetting: "DownloadSettings", key: "retryIndefinitely") }
+        }
+
+        static var autoBookmarkDownloadedVideos: Bool {
+            get { prefs.bool(forSetting: "DownloadSettings", key: "autoBookmarkDownloadedVideos") }
+            set { prefs.set(newValue, forSetting: "DownloadSettings", key: "autoBookmarkDownloadedVideos") }
+        }
+
+        static var playsCompletionSound: Bool {
+            get { prefs.bool(forSetting: "DownloadSettings", key: "playsCompletionSound") }
+            set { prefs.set(newValue, forSetting: "DownloadSettings", key: "playsCompletionSound") }
+        }
     }
 
     // MARK: - Security
@@ -380,12 +486,85 @@ final class BrowserPreferences {
     // MARK: - Playback
     struct PlaybackSettings {
         static var openVideosInNewTab: Bool {
+            get { prefs.bool(forSetting: "PlaybackSettings", key: "openVideosInNewTab") }
+            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "openVideosInNewTab") }
+        }
+
+        static var videoDecoder: VideoDecoderPreference {
             get {
-                prefs.bool(forSetting: "PlaybackSettings", key: "openVideosInNewTab")
+                let value = prefs.string(forSetting: "PlaybackSettings", key: "videoDecoder") ?? VideoDecoderPreference.automatic.rawValue
+                return VideoDecoderPreference(rawValue: value) ?? .automatic
             }
-            set {
-                prefs.set(newValue, forSetting: "PlaybackSettings", key: "openVideosInNewTab")
+            set { prefs.set(newValue.rawValue, forSetting: "PlaybackSettings", key: "videoDecoder") }
+        }
+
+        static var longPressPlaybackSpeed: PlaybackSpeedPreference {
+            get {
+                let value = prefs.double(forSetting: "PlaybackSettings", key: "longPressPlaybackSpeed")
+                return PlaybackSpeedPreference(rawValue: value) ?? .two
             }
+            set { prefs.set(newValue.rawValue, forSetting: "PlaybackSettings", key: "longPressPlaybackSpeed") }
+        }
+
+        static var allowsMultiplePlayers: Bool {
+            get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsMultiplePlayers") }
+            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsMultiplePlayers") }
+        }
+
+        static var allowsWebMediaAutoplay: Bool {
+            get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsWebMediaAutoplay") }
+            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsWebMediaAutoplay") }
+        }
+
+        static var seekGesture: PlaybackSeekGesturePreference {
+            get {
+                let value = prefs.string(forSetting: "PlaybackSettings", key: "seekGesture") ?? PlaybackSeekGesturePreference.adaptive.rawValue
+                return PlaybackSeekGesturePreference(rawValue: value) ?? .adaptive
+            }
+            set { prefs.set(newValue.rawValue, forSetting: "PlaybackSettings", key: "seekGesture") }
+        }
+
+        static var allowsPictureInPicture: Bool {
+            get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsPictureInPicture") }
+            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsPictureInPicture") }
+        }
+
+        static var entersPictureInPictureInBackground: Bool {
+            get { prefs.bool(forSetting: "PlaybackSettings", key: "entersPictureInPictureInBackground") }
+            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "entersPictureInPictureInBackground") }
+        }
+
+        static var allowsBackgroundPlayback: Bool {
+            get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsBackgroundPlayback") }
+            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsBackgroundPlayback") }
+        }
+
+        static var mutesByDefault: Bool {
+            get { prefs.bool(forSetting: "PlaybackSettings", key: "mutesByDefault") }
+            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "mutesByDefault") }
+        }
+
+        static var remembersPlaybackPosition: Bool {
+            get { prefs.bool(forSetting: "PlaybackSettings", key: "remembersPlaybackPosition") }
+            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "remembersPlaybackPosition") }
+        }
+
+        static var swipeDownEntersMiniPlayer: Bool {
+            get { prefs.bool(forSetting: "PlaybackSettings", key: "swipeDownEntersMiniPlayer") }
+            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "swipeDownEntersMiniPlayer") }
+        }
+
+        static var triggerCorner: PlaybackTriggerCorner {
+            get {
+                let value = prefs.string(forSetting: "PlaybackSettings", key: "triggerCorner") ?? PlaybackTriggerCorner.bottomRight.rawValue
+                return PlaybackTriggerCorner(rawValue: value) ?? .bottomRight
+            }
+            set { prefs.set(newValue.rawValue, forSetting: "PlaybackSettings", key: "triggerCorner") }
+        }
+
+        static var showsControls: Bool {
+            get { prefs.bool(forSetting: "PlaybackSettings", key: "showsControls") }
+            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "showsControls") }
         }
     }
 

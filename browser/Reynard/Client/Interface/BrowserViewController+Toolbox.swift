@@ -141,8 +141,12 @@ extension BrowserViewController {
             showToolboxNotice(title: "广告拦截", message: "广告拦截和黑名单管理入口已加入工具箱；可在站点设置中进一步配置该站点权限与保护策略。")
         case .translate, .siteSearch, .bigbang:
             showToolboxNotice(title: "通用工具", message: "翻译、站内搜索词和 Bigbang 入口已加入工具箱；功能会依据当前页面内容执行。")
-        case .eruda, .vConsole, .scriptStatus:
+        case .eruda, .vConsole:
             showToolboxNotice(title: "开发者工具", message: "开发者工具入口已加入工具箱。网页源码、UA 与 Cookie 可通过站点设置和新标签页面查看。")
+        case .scriptStatus:
+            let controller = UINavigationController(rootViewController: UserScriptsPreferencesViewController())
+            controller.modalPresentationStyle = .pageSheet
+            present(controller, animated: true)
         case .toolbox:
             break
         }

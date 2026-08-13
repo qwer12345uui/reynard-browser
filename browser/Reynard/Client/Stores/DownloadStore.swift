@@ -29,6 +29,7 @@ struct DownloadStoreSnapshot {
 
 struct DownloadItemSnapshot {
     enum State: Equatable {
+        case queued
         case downloading
         case paused
         case completed
@@ -91,6 +92,8 @@ final class DownloadStore: NSObject {
         var downloadedBytes: Int64
         var bytesPerSecond: Int64
         var isPaused: Bool
+        var isQueued: Bool
+        var retryAttempt: Int
         var lastProgressSample: ProgressSample?
         
         init(
@@ -115,6 +118,9 @@ final class DownloadStore: NSObject {
             self.downloadedBytes = 0
             self.bytesPerSecond = 0
             self.isPaused = false
+            self.isQueued = true
+            self.retryAttempt = 0
+            self.lastProgressSample = nil
         }
     }
     
@@ -255,7 +261,9 @@ final class DownloadStore: NSObject {
         stateQueue.async {
             var didChange = false
             for active in self.activeDownloads.values where !active.isPaused {
-                active.task.suspend()
+                if !active.isQueued {
+                    active.task.suspend()
+                }
                 active.isPaused = true
                 active.bytesPerSecond = 0
                 didChange = true
@@ -271,11 +279,11 @@ final class DownloadStore: NSObject {
         stateQueue.async {
             var didChange = false
             for active in self.activeDownloads.values where active.isPaused {
-                active.task.resume()
                 active.isPaused = false
                 active.lastProgressSample = nil
                 didChange = true
             }
+            self.startEligibleDownloadsLocked()
 
             if didChange {
                 self.postDidChange()
@@ -289,16 +297,20 @@ final class DownloadStore: NSObject {
             var didChange = false
             for active in self.activeDownloads.values {
                 if shouldResume, active.isPaused {
-                    active.task.resume()
                     active.isPaused = false
                     active.lastProgressSample = nil
                     didChange = true
                 } else if !shouldResume, !active.isPaused {
-                    active.task.suspend()
+                    if !active.isQueued {
+                        active.task.suspend()
+                    }
                     active.isPaused = true
                     active.bytesPerSecond = 0
                     didChange = true
                 }
+            }
+            if shouldResume {
+                self.startEligibleDownloadsLocked()
             }
             if didChange {
                 self.postDidChange()
@@ -580,7 +592,7 @@ final class DownloadStore: NSObject {
             )
             let destinationURL = self.makeUniqueDestinationURLLocked(for: fileName)
             
-            let task = self.session.downloadTask(with: sourceURL)
+            let task = self.makeDownloadTask(for: sourceURL)
             let active = ActiveDownload(
                 id: UUID(),
                 sourceURL: sourceURL,
@@ -593,7 +605,7 @@ final class DownloadStore: NSObject {
             )
             
             self.activeDownloads[task.taskIdentifier] = active
-            task.resume()
+            self.startEligibleDownloadsLocked()
             self.postDidStartDownload()
             self.postDidChange()
         }
@@ -611,7 +623,7 @@ final class DownloadStore: NSObject {
                     sourceURL: active.sourceURL,
                     originalURL: active.originalURL,
                     mimeType: active.mimeType,
-                    state: active.isPaused ? .paused : .downloading,
+                    state: active.isPaused ? .paused : (active.isQueued ? .queued : .downloading),
                     fileExists: true,
                     totalBytes: active.expectedBytes,
                     downloadedBytes: active.downloadedBytes,
@@ -661,7 +673,18 @@ final class DownloadStore: NSObject {
                 )
             }
         
-        return DownloadStoreSnapshot(summary: makeSummaryLocked(), items: activeItems + completedItems)
+        return DownloadStoreSnapshot(summary: makeSummaryLocked(), items: sortedItemsLocked(activeItems + completedItems))
+    }
+
+    private func sortedItemsLocked(_ items: [DownloadItemSnapshot]) -> [DownloadItemSnapshot] {
+        switch Prefs.DownloadSettings.listSortOrder {
+        case .newestFirst:
+            return items.sorted { $0.addedAt > $1.addedAt }
+        case .oldestFirst:
+            return items.sorted { $0.addedAt < $1.addedAt }
+        case .fileName:
+            return items.sorted { $0.fileName.localizedCaseInsensitiveCompare($1.fileName) == .orderedAscending }
+        }
     }
     
     private func makeSummaryLocked() -> DownloadStoreSummary {
@@ -874,6 +897,8 @@ final class DownloadStore: NSObject {
         )
         savePersistedDownloadsLocked()
         hasUnviewedCompletedDownloads = true
+        autoBookmarkVideoIfNeeded(sourceURL: active.sourceURL, originalURL: nil, fileName: active.fileName, mimeType: active.mimeType)
+        notifyDownloadCompleted()
         postDidChange()
     }
     
@@ -937,10 +962,12 @@ final class DownloadStore: NSObject {
             )
             savePersistedDownloadsLocked()
             hasUnviewedCompletedDownloads = true
+            autoBookmarkVideoIfNeeded(sourceURL: active.sourceURL, originalURL: active.originalURL, fileName: active.fileName, mimeType: active.mimeType)
+            notifyDownloadCompleted()
         } catch {
             try? fileManager.removeItem(at: temporaryLocation)
         }
-        
+        self.startEligibleDownloadsLocked()
         postDidChange()
     }
     
@@ -981,11 +1008,72 @@ final class DownloadStore: NSObject {
     }
     
     private func failDownload(taskIdentifier: Int) {
-        guard activeDownloads.removeValue(forKey: taskIdentifier) != nil else {
+        guard let active = activeDownloads.removeValue(forKey: taskIdentifier) else {
             return
         }
-        
+        retryIfNeededLocked(active)
+        startEligibleDownloadsLocked()
         postDidChange()
+    }
+
+    private func makeDownloadTask(for sourceURL: URL) -> URLSessionDownloadTask {
+        var request = URLRequest(url: sourceURL)
+        request.allowsCellularAccess = Prefs.DownloadSettings.allowsCellularDownloads
+        return session.downloadTask(with: request)
+    }
+
+    private func startEligibleDownloadsLocked() {
+        let maxConcurrentDownloads = Prefs.DownloadSettings.maxConcurrentDownloads
+        var runningCount = activeDownloads.values.filter { !$0.isPaused && !$0.isQueued }.count
+        guard runningCount < maxConcurrentDownloads else { return }
+
+        let queuedDownloads = activeDownloads.values
+            .filter { !$0.isPaused && $0.isQueued }
+            .sorted { $0.addedAt < $1.addedAt }
+        for active in queuedDownloads where runningCount < maxConcurrentDownloads {
+            active.isQueued = false
+            active.lastProgressSample = nil
+            active.task.resume()
+            runningCount += 1
+        }
+    }
+
+    private func retryIfNeededLocked(_ active: ActiveDownload) {
+        let retryLimit = Prefs.DownloadSettings.automaticRetryCount
+        guard Prefs.DownloadSettings.retryIndefinitely || active.retryAttempt < retryLimit else { return }
+
+        let task = makeDownloadTask(for: active.sourceURL)
+        let replacement = ActiveDownload(
+            id: active.id,
+            sourceURL: active.sourceURL,
+            originalURL: active.originalURL,
+            fileName: active.fileName,
+            destinationURL: active.destinationURL,
+            mimeType: active.mimeType,
+            addedAt: active.addedAt,
+            task: task
+        )
+        replacement.retryAttempt = active.retryAttempt + 1
+        activeDownloads[task.taskIdentifier] = replacement
+    }
+
+    private func autoBookmarkVideoIfNeeded(sourceURL: URL, originalURL: URL?, fileName: String, mimeType: String?) {
+        guard Prefs.DownloadSettings.autoBookmarkDownloadedVideos, isVideoDownload(fileName: fileName, mimeType: mimeType) else { return }
+        let pageURL = originalURL ?? sourceURL
+        guard BookmarkStore.shared.bookmark(savedFor: pageURL) == nil else { return }
+        _ = BookmarkStore.shared.addBookmark(title: fileName, url: pageURL)
+    }
+
+    private func isVideoDownload(fileName: String, mimeType: String?) -> Bool {
+        if mimeType?.lowercased().hasPrefix("video/") == true { return true }
+        return ["mp4", "m4v", "mov", "webm", "mkv", "avi", "m3u8"].contains(URL(fileURLWithPath: fileName).pathExtension.lowercased())
+    }
+
+    private func notifyDownloadCompleted() {
+        guard Prefs.DownloadSettings.playsCompletionSound else { return }
+        DispatchQueue.main.async {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
     }
     
     // MARK: - Notifications

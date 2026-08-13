@@ -601,7 +601,7 @@ final class DownloadsViewController: UIViewController, UITableViewDataSource, UI
         }
         
         switch item.state {
-        case .downloading, .paused:
+        case .queued, .downloading, .paused:
             let cancelAction = UIContextualAction(style: .destructive, title: NSLocalizedString("Cancel", comment: "")) { [weak self] _, _, completion in
                 self?.confirmCancelDownload(for: item, completion: completion)
             }
