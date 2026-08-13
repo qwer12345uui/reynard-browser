@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GeckoView
 import UIKit
 
 typealias Prefs = BrowserPreferences
@@ -99,6 +100,10 @@ final class BrowserPreferences {
             key("DownloadSettings", "retryIndefinitely"): false,
             key("DownloadSettings", "autoBookmarkDownloadedVideos"): false,
             key("DownloadSettings", "playsCompletionSound"): true,
+
+            // Privacy
+            key("PrivateBrowsingSettings", "allowsCookies"): true,
+            key("PrivateBrowsingSettings", "remembersLoginState"): true,
 
             // Security
             key("SecuritySettings", "gesturePasswordEnabled"): false,
@@ -410,6 +415,28 @@ final class BrowserPreferences {
         static var playsCompletionSound: Bool {
             get { prefs.bool(forSetting: "DownloadSettings", key: "playsCompletionSound") }
             set { prefs.set(newValue, forSetting: "DownloadSettings", key: "playsCompletionSound") }
+        }
+    }
+
+    // MARK: - Private Browsing
+    struct PrivateBrowsingSettings {
+        static var allowsCookies: Bool {
+            get { prefs.bool(forSetting: "PrivateBrowsingSettings", key: "allowsCookies") }
+            set { prefs.set(newValue, forSetting: "PrivateBrowsingSettings", key: "allowsCookies") }
+        }
+
+        static var remembersLoginState: Bool {
+            get { prefs.bool(forSetting: "PrivateBrowsingSettings", key: "remembersLoginState") }
+            set { prefs.set(newValue, forSetting: "PrivateBrowsingSettings", key: "remembersLoginState") }
+        }
+
+        /// Gecko applies these preferences only to private contexts. Existing regular tabs are never changed.
+        static func applyRuntimePolicy() {
+            GeckoRuntime.setDefaultPrefs([
+                "network.cookie.cookieBehavior.pbmode": allowsCookies ? 0 : 2,
+                "signon.privateBrowsingCaptureEnabled": remembersLoginState,
+                "signon.rememberSignons": remembersLoginState,
+            ])
         }
     }
 

@@ -168,11 +168,14 @@ final class UserScriptsPreferencesViewController: SettingsTableViewController, U
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         guard let url = urls.first else { return }
-        do {
-            _ = try store.install(fromFile: url)
-            showResult(title: "脚本已添加", message: "已从文件导入用户脚本。")
-        } catch {
-            showResult(title: "无法导入脚本", message: error.localizedDescription)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                _ = try await self.store.install(fromFile: url)
+                self.showResult(title: "脚本已安装", message: "已从文件导入并启用。匹配网页会自动执行该脚本。")
+            } catch {
+                self.showResult(title: "无法导入脚本", message: error.localizedDescription)
+            }
         }
     }
 
@@ -199,25 +202,30 @@ final class UserScriptsPreferencesViewController: SettingsTableViewController, U
     private func importScript(from url: URL) {
         isImportingFromLink = true
         tableView.reloadData()
-        store.install(fromRemoteURL: url) { [weak self] result in
+        Task { @MainActor [weak self] in
             guard let self else { return }
-            self.isImportingFromLink = false
-            self.tableView.reloadData()
-            switch result {
-            case .success:
-                self.showResult(title: "脚本已添加", message: "已通过链接导入用户脚本。")
-            case .failure(let error):
+            defer {
+                self.isImportingFromLink = false
+                self.tableView.reloadData()
+            }
+            do {
+                _ = try await self.store.install(fromRemoteURL: url)
+                self.showResult(title: "脚本已安装", message: "已通过链接导入并启用。匹配网页会自动执行该脚本。")
+            } catch {
                 self.showResult(title: "无法导入脚本", message: error.localizedDescription)
             }
         }
     }
 
     private func install(source: String, sourceURL: URL?, preferredName: String?) {
-        do {
-            _ = try store.install(source: source, sourceURL: sourceURL, preferredName: preferredName)
-            showResult(title: "脚本已添加", message: "已保存并启用该用户脚本。")
-        } catch {
-            showResult(title: "无法保存脚本", message: error.localizedDescription)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                _ = try await self.store.install(source: source, sourceURL: sourceURL, preferredName: preferredName)
+                self.showResult(title: "脚本已安装", message: "已保存、启用并转换为可执行的用户脚本。")
+            } catch {
+                self.showResult(title: "无法安装脚本", message: error.localizedDescription)
+            }
         }
     }
 

@@ -63,6 +63,9 @@ final class SessionManager {
         opening: SessionOpening,
         delegates: SessionDelegates
     ) -> GeckoSession {
+        if isPrivate {
+            Prefs.PrivateBrowsingSettings.applyRuntimePolicy()
+        }
         let session = GeckoSession(
             settings: sessionSettings.settings(for: url, tabID: tabID),
             isPrivateMode: isPrivate,
