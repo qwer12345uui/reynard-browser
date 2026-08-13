@@ -389,6 +389,14 @@ final class UserScriptStore {
         )
     }
 
+    private func matches(_ url: URL, patterns: [String]) -> Bool {
+        let target = url.absoluteString
+        return patterns.contains { pattern in
+            let escaped = NSRegularExpression.escapedPattern(for: pattern).replacingOccurrences(of: "\\*", with: ".*")
+            return target.range(of: "^\(escaped)$", options: .regularExpression) != nil
+        }
+    }
+
     private func parseMetadata(from source: String) -> (name: String?, version: String?, matchPatterns: [String]) {
         var name: String?
         var version: String?

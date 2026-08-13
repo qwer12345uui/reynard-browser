@@ -364,10 +364,6 @@ private final class UserScriptDebugLogViewController: SettingsTableViewControlle
         reloadEntries()
     }
 
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-
     override func numberOfSections(in tableView: UITableView) -> Int { 2 }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
