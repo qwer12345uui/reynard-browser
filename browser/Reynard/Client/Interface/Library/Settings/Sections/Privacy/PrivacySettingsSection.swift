@@ -13,6 +13,7 @@ struct PrivacySettingsSection {
         case clearBrowsingData
         case httpsOnlyMode
         case trackingProtection
+        case browserRules
     }
     
     var rowCount: Int {
@@ -33,6 +34,8 @@ struct PrivacySettingsSection {
             return SettingsViewUtils.disclosureCell(title: NSLocalizedString("HTTPS-Only Mode", tableName: "SettingsLocalizable", comment: ""))
         case .trackingProtection:
             return SettingsViewUtils.disclosureCell(title: NSLocalizedString("Tracking Protection", comment: ""))
+        case .browserRules:
+            return SettingsViewUtils.disclosureCell(title: "广告与隐私规则")
         }
     }
     
@@ -53,6 +56,9 @@ struct PrivacySettingsSection {
             viewController.navigationController?.pushViewController(destination, animated: true)
         case .trackingProtection:
             let destination = TrackingProtectionPreferencesViewController()
+            viewController.navigationController?.pushViewController(destination, animated: true)
+        case .browserRules:
+            let destination = BrowserRulesPreferencesViewController()
             viewController.navigationController?.pushViewController(destination, animated: true)
         }
     }

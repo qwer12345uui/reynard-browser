@@ -71,6 +71,7 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
     func start() async {
         AddonRuntime.shared.delegate = self
         _ = try? await AddonRuntime.shared.list()
+        await BrowserRuleStore.shared.synchronizeWithRuntime()
         await UserScriptStore.shared.synchronizeWithRuntime()
         updateCoordinator.start()
         delegate?.refreshAddonChrome(self)

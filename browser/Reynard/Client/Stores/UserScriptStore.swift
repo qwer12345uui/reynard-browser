@@ -18,6 +18,20 @@ struct UserScriptSnapshot: Identifiable, Equatable {
     let matchPatterns: [String]
 }
 
+struct UserScriptLogEntry: Identifiable, Codable, Equatable {
+    enum Level: String, Codable {
+        case info
+        case success
+        case warning
+        case error
+    }
+
+    let id: UUID
+    let timestamp: Date
+    let level: Level
+    let message: String
+}
+
 enum UserScriptStoreError: LocalizedError {
     case emptySource
     case sourceTooLarge
@@ -51,6 +65,7 @@ final class UserScriptStore {
         var updatedAt: Date
         var matchPatterns: [String]
         var addonID: String?
+        var logs: [UserScriptLogEntry]?
     }
 
     private let fileManager: FileManager
@@ -100,7 +115,8 @@ final class UserScriptStore {
             isEnabled: true,
             updatedAt: Date(),
             matchPatterns: metadata.matchPatterns,
-            addonID: nil
+            addonID: nil,
+            logs: []
         )
 
         let activated = try await activate(script)
@@ -109,7 +125,7 @@ final class UserScriptStore {
             saveLocked()
             return snapshot(from: activated)
         }
-        postDidChange()
+        appendLog("已生成本地脚本扩展并请求安装。", level: .success, for: installedSnapshot.id)
         return installedSnapshot
     }
 
@@ -141,14 +157,46 @@ final class UserScriptStore {
         guard !pending.isEmpty else { return }
 
         for script in pending {
-            guard let activated = try? await activate(script) else { continue }
-            let changed = stateQueue.sync { () -> Bool in
-                guard let index = scripts.firstIndex(where: { $0.id == activated.id }) else { return false }
-                scripts[index] = activated
-                saveLocked()
-                return true
+            do {
+                let activated = try await activate(script)
+                let changed = stateQueue.sync { () -> Bool in
+                    guard let index = scripts.firstIndex(where: { $0.id == activated.id }) else { return false }
+                    scripts[index] = activated
+                    saveLocked()
+                    return true
+                }
+                if changed {
+                    appendLog("浏览器启动时已同步脚本扩展。", level: .success, for: script.id)
+                }
+            } catch {
+                appendLog("脚本扩展同步失败：\(error.localizedDescription)", level: .error, for: script.id)
             }
-            if changed { postDidChange() }
+        }
+    }
+
+    func logs(for id: UUID) -> [UserScriptLogEntry] {
+        stateQueue.sync {
+            (scripts.first(where: { $0.id == id })?.logs ?? []).sorted { $0.timestamp > $1.timestamp }
+        }
+    }
+
+    func clearLogs(for id: UUID) {
+        let changed = stateQueue.sync { () -> Bool in
+            guard let index = scripts.firstIndex(where: { $0.id == id }) else { return false }
+            scripts[index].logs = []
+            saveLocked()
+            return true
+        }
+        if changed { postDidChange() }
+    }
+
+    /// Records that a script is eligible to execute for a completed page load.
+    func recordPageLoad(_ pageURL: URL) {
+        let matchedIDs = stateQueue.sync {
+            scripts.filter { $0.isEnabled && matches(pageURL, patterns: $0.matchPatterns) }.map(\.id)
+        }
+        for id in matchedIDs {
+            appendLog("页面匹配：\(pageURL.host ?? pageURL.absoluteString)。已交由脚本扩展执行。", level: .info, for: id)
         }
     }
 
@@ -160,14 +208,26 @@ final class UserScriptStore {
             saveLocked()
             return scripts[index].addonID
         }
-        guard let addonID else { return }
-        postDidChange()
-        Task {
-            guard let addon = try? await AddonRuntime.shared.addon(byID: addonID) else { return }
-            if enabled {
-                _ = try? await AddonRuntime.shared.enable(addon)
-            } else {
-                _ = try? await AddonRuntime.shared.disable(addon)
+        guard let addonID else {
+            appendLog("扩展标识缺失，等待浏览器启动时重新同步。", level: .warning, for: id)
+            return
+        }
+        appendLog(enabled ? "已请求启用脚本扩展。" : "已请求停用脚本扩展。", level: .info, for: id)
+        Task { [weak self] in
+            guard let self else { return }
+            guard let addon = try? await AddonRuntime.shared.addon(byID: addonID) else {
+                self.appendLog("未找到脚本扩展，无法切换状态。", level: .error, for: id)
+                return
+            }
+            do {
+                if enabled {
+                    _ = try await AddonRuntime.shared.enable(addon)
+                } else {
+                    _ = try await AddonRuntime.shared.disable(addon)
+                }
+                self.appendLog(enabled ? "脚本扩展已启用。" : "脚本扩展已停用。", level: .success, for: id)
+            } catch {
+                self.appendLog("切换扩展状态失败：\(error.localizedDescription)", level: .error, for: id)
             }
         }
     }
@@ -201,7 +261,8 @@ final class UserScriptStore {
             isEnabled: script.isEnabled,
             updatedAt: Date(),
             matchPatterns: script.matchPatterns,
-            addonID: addon.id
+            addonID: addon.id,
+            logs: script.logs ?? []
         )
     }
 
@@ -284,6 +345,18 @@ final class UserScriptStore {
                 continuation.resume(returning: source)
             }.resume()
         }
+    }
+
+    private func appendLog(_ message: String, level: UserScriptLogEntry.Level, for id: UUID) {
+        let changed = stateQueue.sync { () -> Bool in
+            guard let index = scripts.firstIndex(where: { $0.id == id }) else { return false }
+            let entry = UserScriptLogEntry(id: UUID(), timestamp: Date(), level: level, message: message)
+            scripts[index].logs = ([entry] + (scripts[index].logs ?? [])).prefix(120).map { $0 }
+            scripts[index].updatedAt = Date()
+            saveLocked()
+            return true
+        }
+        if changed { postDidChange() }
     }
 
     private func loadLocked() {

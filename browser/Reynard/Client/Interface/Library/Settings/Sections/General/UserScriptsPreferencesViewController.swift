@@ -248,6 +248,7 @@ private final class UserScriptDetailsPreferencesViewController: SettingsTableVie
         case enabled
         case matchRules
         case sourceURL
+        case logs
         case delete
     }
 
@@ -307,6 +308,11 @@ private final class UserScriptDetailsPreferencesViewController: SettingsTableVie
             cell.textLabel?.text = "脚本来源"
             cell.detailTextLabel?.text = script.sourceURL?.absoluteString ?? "直接输入"
             cell.detailTextLabel?.numberOfLines = 0
+        case .logs:
+            let logCount = store.logs(for: script.id).count
+            cell.textLabel?.text = "运行日志与调试信息"
+            cell.detailTextLabel?.text = logCount == 0 ? "尚无匹配、同步或启停记录" : "已记录 \(logCount) 条事件"
+            cell.accessoryType = .disclosureIndicator
         case .delete:
             break
         }
@@ -315,6 +321,10 @@ private final class UserScriptDetailsPreferencesViewController: SettingsTableVie
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         defer { tableView.deselectRow(at: indexPath, animated: true) }
+        if indexPath.section == 0, Row.allCases.indices.contains(indexPath.row), Row.allCases[indexPath.row] == .logs {
+            navigationController?.pushViewController(UserScriptDebugLogViewController(script: script, store: store), animated: true)
+            return
+        }
         guard indexPath.section == 1 else { return }
         let alert = UIAlertController(title: "删除脚本", message: "确定要删除“\(script.name)”吗？", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
@@ -328,6 +338,98 @@ private final class UserScriptDetailsPreferencesViewController: SettingsTableVie
 
     @objc private func enabledDidChange(_ sender: UISwitch) {
         store.setEnabled(sender.isOn, for: script.id)
+    }
+}
+
+private final class UserScriptDebugLogViewController: SettingsTableViewController {
+    private let script: UserScriptSnapshot
+    private let store: UserScriptStore
+    private var entries: [UserScriptLogEntry] = []
+
+    init(script: UserScriptSnapshot, store: UserScriptStore) {
+        self.script = script
+        self.store = store
+        super.init(style: .insetGrouped)
+        title = "运行日志"
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:)")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "清空", style: .plain, target: self, action: #selector(clearLogs))
+        NotificationCenter.default.addObserver(self, selector: #selector(reloadEntries), name: .userScriptStoreDidChange, object: store)
+        reloadEntries()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    override func numberOfSections(in tableView: UITableView) -> Int { 2 }
+
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        section == 0 ? 3 : max(entries.count, 1)
+    }
+
+    override func sectionText(for section: Int) -> SettingsSectionText {
+        section == 0
+            ? SettingsSectionText(headerTitle: "调试状态", footerTitle: "日志记录脚本导入、扩展同步、启停和页面匹配。它不能替代网页 JavaScript 的 console 输出。")
+            : SettingsSectionText(headerTitle: "事件")
+    }
+
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+        cell.detailTextLabel?.textColor = .secondaryLabel
+        if indexPath.section == 0 {
+            switch indexPath.row {
+            case 0:
+                cell.textLabel?.text = "脚本"
+                cell.detailTextLabel?.text = script.name
+            case 1:
+                cell.textLabel?.text = "状态"
+                cell.detailTextLabel?.text = script.isEnabled ? "已启用；请重新加载匹配网页后查看事件。" : "已停用；不会运行。"
+            default:
+                cell.textLabel?.text = "匹配规则"
+                cell.detailTextLabel?.text = script.matchPatterns.joined(separator: "\n")
+                cell.detailTextLabel?.numberOfLines = 0
+            }
+            cell.selectionStyle = .none
+            return cell
+        }
+        guard entries.indices.contains(indexPath.row) else {
+            cell.textLabel?.text = "尚无调试事件"
+            cell.detailTextLabel?.text = "打开一个符合匹配规则的网页后，事件将显示在这里。"
+            cell.selectionStyle = .none
+            return cell
+        }
+        let entry = entries[indexPath.row]
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .medium
+        cell.textLabel?.text = entry.message
+        cell.textLabel?.numberOfLines = 0
+        cell.detailTextLabel?.text = "\(entry.level.rawValue.uppercased()) · \(formatter.string(from: entry.timestamp))"
+        switch entry.level {
+        case .success: cell.textLabel?.textColor = .systemGreen
+        case .warning: cell.textLabel?.textColor = .systemOrange
+        case .error: cell.textLabel?.textColor = .systemRed
+        case .info: break
+        }
+        cell.selectionStyle = .none
+        return cell
+    }
+
+    @objc private func reloadEntries() {
+        entries = store.logs(for: script.id)
+        if isViewLoaded { tableView.reloadData() }
+    }
+
+    @objc private func clearLogs() {
+        store.clearLogs(for: script.id)
+        reloadEntries()
     }
 }
 

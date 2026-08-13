@@ -271,6 +271,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         // Tracking Protection
         TrackingProtectionPolicyController.applyEnhancedTrackingProtection()
         TrackingProtectionPolicyController.applyGlobalPrivacyControl()
+        Prefs.PrivateBrowsingSettings.applyRuntimePolicy()
     }
     
     // MARK: - Browser Layout

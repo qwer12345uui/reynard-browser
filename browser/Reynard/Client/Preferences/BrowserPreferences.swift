@@ -435,7 +435,6 @@ final class BrowserPreferences {
             GeckoRuntime.setDefaultPrefs([
                 "network.cookie.cookieBehavior.pbmode": allowsCookies ? 0 : 2,
                 "signon.privateBrowsingCaptureEnabled": remembersLoginState,
-                "signon.rememberSignons": remembersLoginState,
             ])
         }
     }

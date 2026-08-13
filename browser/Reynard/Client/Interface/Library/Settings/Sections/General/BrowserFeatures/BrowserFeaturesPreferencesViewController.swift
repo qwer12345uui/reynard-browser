@@ -13,12 +13,15 @@ import UIKit
 enum GesturePasswordStore {
     private static let service = "com.minh-ton.Reynard.gesture-password"
     private static let account = "pattern-hash"
+    private static let fallbackKey = "com.minh-ton.Reynard.gesture-password.fallback-hash"
 
     static var hasPassword: Bool {
         return storedHash != nil
     }
 
-    static func save(pattern: [Int]) {
+    /// Returns false only if neither Keychain nor the local fallback can retain the password hash.
+    @discardableResult
+    static func save(pattern: [Int]) -> Bool {
         let hash = digest(for: pattern)
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -29,7 +32,13 @@ enum GesturePasswordStore {
         var addQuery = query
         addQuery[kSecValueData as String] = hash
         addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-        SecItemAdd(addQuery as CFDictionary, nil)
+        let status = SecItemAdd(addQuery as CFDictionary, nil)
+        if status == errSecSuccess {
+            UserDefaults.standard.removeObject(forKey: fallbackKey)
+            return true
+        }
+        UserDefaults.standard.set(hash, forKey: fallbackKey)
+        return UserDefaults.standard.data(forKey: fallbackKey) == hash
     }
 
     static func matches(pattern: [Int]) -> Bool {
@@ -46,6 +55,7 @@ enum GesturePasswordStore {
             kSecAttrAccount as String: account,
         ]
         SecItemDelete(query as CFDictionary)
+        UserDefaults.standard.removeObject(forKey: fallbackKey)
     }
 
     private static var storedHash: Data? {
@@ -57,10 +67,11 @@ enum GesturePasswordStore {
             kSecMatchLimit as String: kSecMatchLimitOne,
         ]
         var result: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess else {
-            return nil
+        if SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+           let hash = result as? Data {
+            return hash
         }
-        return result as? Data
+        return UserDefaults.standard.data(forKey: fallbackKey)
     }
 
     private static func digest(for pattern: [Int]) -> Data {
@@ -591,7 +602,12 @@ final class GesturePatternEntryViewController: UIViewController {
             patternView.reset(after: 0.65)
             return
         }
-        GesturePasswordStore.save(pattern: pattern)
+        guard GesturePasswordStore.save(pattern: pattern), GesturePasswordStore.hasPassword else {
+            self.firstPattern = nil
+            detailLabel.text = "无法保存手势密码，请重试"
+            patternView.reset(after: 0.65)
+            return
+        }
         Prefs.SecuritySettings.gesturePasswordEnabled = true
         completion()
         navigationController?.popViewController(animated: true)
@@ -725,76 +741,87 @@ final class GesturePasswordUnlockViewController: UIViewController {
     }
 }
 
-private final class GesturePatternView: UIView {
+private final class GesturePatternView: UIControl {
     var onPatternCompleted: (([Int]) -> Void)?
 
     private var selectedPoints: [Int] = []
     private var currentTouchPoint: CGPoint?
+    private let feedback = UIImpactFeedbackGenerator(style: .light)
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         isOpaque = false
         backgroundColor = .clear
+        contentMode = .redraw
+        isMultipleTouchEnabled = false
         accessibilityLabel = "手势密码网格"
+        accessibilityHint = "从一个圆点滑动连接至少四个圆点"
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        setNeedsDisplay()
+    }
+
     override func draw(_ rect: CGRect) {
+        guard bounds.width > 0, bounds.height > 0 else { return }
         let centers = pointCenters
-        let connectionPath = UIBezierPath()
+        let path = UIBezierPath()
         if let first = selectedPoints.first {
-            connectionPath.move(to: centers[first])
-            for point in selectedPoints.dropFirst() {
-                connectionPath.addLine(to: centers[point])
-            }
-            if let currentTouchPoint {
-                connectionPath.addLine(to: currentTouchPoint)
-            }
+            path.move(to: centers[first])
+            for point in selectedPoints.dropFirst() { path.addLine(to: centers[point]) }
+            if let currentTouchPoint { path.addLine(to: currentTouchPoint) }
         }
         tintColor.setStroke()
-        connectionPath.lineWidth = 4
-        connectionPath.lineCapStyle = .round
-        connectionPath.lineJoinStyle = .round
-        connectionPath.stroke()
+        path.lineWidth = 4
+        path.lineCapStyle = .round
+        path.lineJoinStyle = .round
+        path.stroke()
 
         for index in 0..<9 {
             let center = centers[index]
-            let outerRect = CGRect(x: center.x - 22, y: center.y - 22, width: 44, height: 44)
-            let isSelected = selectedPoints.contains(index)
-            let outerPath = UIBezierPath(ovalIn: outerRect)
-            (isSelected ? tintColor : UIColor.systemGray3).setStroke()
+            let selected = selectedPoints.contains(index)
+            let outerPath = UIBezierPath(ovalIn: CGRect(x: center.x - 23, y: center.y - 23, width: 46, height: 46))
+            (selected ? tintColor : UIColor.systemGray3).setStroke()
             outerPath.lineWidth = 3
             outerPath.stroke()
-            if isSelected {
+            if selected {
                 tintColor.setFill()
                 UIBezierPath(ovalIn: CGRect(x: center.x - 8, y: center.y - 8, width: 16, height: 16)).fill()
             }
         }
     }
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
         selectedPoints = []
-        currentTouchPoint = touches.first?.location(in: self)
+        currentTouchPoint = touch.location(in: self)
         appendPoint(at: currentTouchPoint)
         setNeedsDisplay()
+        return true
     }
 
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        currentTouchPoint = touches.first?.location(in: self)
+    override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+        currentTouchPoint = touch.location(in: self)
         appendPoint(at: currentTouchPoint)
         setNeedsDisplay()
+        return true
     }
 
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
+        if let touch {
+            currentTouchPoint = touch.location(in: self)
+            appendPoint(at: currentTouchPoint)
+        }
         currentTouchPoint = nil
         setNeedsDisplay()
         onPatternCompleted?(selectedPoints)
     }
 
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override func cancelTracking(with event: UIEvent?) {
         reset(after: 0)
     }
 
@@ -807,26 +834,25 @@ private final class GesturePatternView: UIView {
     }
 
     private var pointCenters: [CGPoint] {
-        let inset = bounds.width * 0.15
-        let spacing = (bounds.width - (inset * 2)) / 2
+        let side = min(bounds.width, bounds.height)
+        let origin = CGPoint(x: (bounds.width - side) / 2, y: (bounds.height - side) / 2)
+        let inset = side * 0.16
+        let spacing = (side - (inset * 2)) / 2
         return (0..<9).map { index in
             CGPoint(
-                x: inset + (CGFloat(index % 3) * spacing),
-                y: inset + (CGFloat(index / 3) * spacing)
+                x: origin.x + inset + (CGFloat(index % 3) * spacing),
+                y: origin.y + inset + (CGFloat(index / 3) * spacing)
             )
         }
     }
 
     private func appendPoint(at location: CGPoint?) {
-        guard let location else {
-            return
-        }
+        guard let location else { return }
         for (index, center) in pointCenters.enumerated() where !selectedPoints.contains(index) {
-            guard hypot(location.x - center.x, location.y - center.y) <= 30 else {
-                continue
-            }
+            guard hypot(location.x - center.x, location.y - center.y) <= 38 else { continue }
             selectedPoints.append(index)
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            feedback.prepare()
+            feedback.impactOccurred()
             break
         }
     }

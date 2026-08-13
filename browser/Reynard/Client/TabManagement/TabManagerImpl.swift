@@ -1360,6 +1360,9 @@ extension TabManagerImplementation: ProgressDelegate {
         tab.state.loadingState = .idle
         notifyUpdate(at: location.index, mode: location.mode, reason: .loading)
         notifyUpdate(at: location.index, mode: location.mode, reason: .thumbnail)
+        if success, let pageURL = URL(string: tab.url) {
+            UserScriptStore.shared.recordPageLoad(pageURL)
+        }
         delegate?.tabManager(self, didFinishLoading: session)
     }
     
