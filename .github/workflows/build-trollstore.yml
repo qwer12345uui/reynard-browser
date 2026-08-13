@@ -3,7 +3,8 @@ name: Build TrollStore package
 # Build trigger: manual dispatch, or pushes that touch build inputs
 # (workflow, build tools, browser sources, engine patches, engine release).
 # The gecko job stores the compiled engine as an artifact keyed by its
-# inputs; app-only changes reuse it and finish in minutes instead of hours.
+# inputs. App-only changes reuse the exact engine and finish in minutes;
+# a full rebuild only runs when the Gecko source, patches, or build scripts change.
 on:
   workflow_dispatch:
     inputs:
@@ -162,7 +163,9 @@ jobs:
             engine/firefox/obj-aarch64-apple-ios/dist
             engine/firefox/toolkit/mozapps/extensions/default-theme
           if-no-files-found: error
-          retention-days: 30
+          # Keep the exact compiled Gecko product for the longest Actions
+          # artifact lifetime so routine upstream/app merges package directly.
+          retention-days: 90
 
   package:
     runs-on: macos-26
