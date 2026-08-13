@@ -50,7 +50,6 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
     private let iconLoadingQueue = DispatchQueue(label: "com.minh-ton.Reynard.AddonCoordinator.IconLoadingQueue", qos: .utility)
     private var loadingIconIDs = Set<String>()
     private var pendingAddonDownloadPaths = Set<String>()
-    private var pendingUserScriptDownloads: [String: ExternalResponseInfo] = [:]
     let updateCoordinator: AddonUpdateCoordinator
     
     init(
@@ -71,41 +70,24 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
     func start() async {
         AddonRuntime.shared.delegate = self
         _ = try? await AddonRuntime.shared.list()
-        await BrowserRuleStore.shared.synchronizeWithRuntime()
-        await UserScriptStore.shared.synchronizeWithRuntime()
         updateCoordinator.start()
         delegate?.refreshAddonChrome(self)
     }
     
     func handleExternalResponse(_ response: ExternalResponseInfo) -> Bool {
-        if shouldInterceptUserScriptInstall(response) {
-            pendingUserScriptDownloads[response.localFilePath] = response
-            return true
-        }
         guard shouldInterceptAMOInstall(response) else {
             return false
         }
+
         pendingAddonDownloadPaths.insert(response.localFilePath)
         return true
     }
     
     func shouldContinueExternalResponse(localFilePath: String) -> Bool {
-        return pendingAddonDownloadPaths.contains(localFilePath) || pendingUserScriptDownloads[localFilePath] != nil
+        return pendingAddonDownloadPaths.contains(localFilePath)
     }
     
     func completeExternalResponse(localFilePath: String, succeeded: Bool) -> Bool {
-        if let response = pendingUserScriptDownloads.removeValue(forKey: localFilePath) {
-            let scriptFileURL = URL(fileURLWithPath: localFilePath)
-            guard succeeded else {
-                try? FileManager.default.removeItem(at: scriptFileURL)
-                return true
-            }
-            Task { @MainActor [weak self] in
-                self?.presentUserScriptInstallPrompt(fileURL: scriptFileURL, response: response)
-            }
-            return true
-        }
-
         guard pendingAddonDownloadPaths.remove(localFilePath) != nil else {
             return false
         }
@@ -396,42 +378,6 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         return pageActionsBySession[key]?[addon.id] ?? addon.pageAction
     }
     
-    private func shouldInterceptUserScriptInstall(_ response: ExternalResponseInfo) -> Bool {
-        let fileName = (response.filename ?? URL(string: response.url)?.lastPathComponent ?? "").lowercased()
-        return fileName.hasSuffix(".user.js")
-    }
-
-    @MainActor
-    private func presentUserScriptInstallPrompt(fileURL: URL, response: ExternalResponseInfo) {
-        let source = (try? String(contentsOf: fileURL, encoding: .utf8)) ?? ""
-        let suggestedName = response.filename?.replacingOccurrences(of: ".user.js", with: "", options: [.caseInsensitive])
-            ?? fileURL.deletingPathExtension().deletingPathExtension().lastPathComponent
-        let alert = UIAlertController(
-            title: "发现用户脚本",
-            message: "是否安装并启用 \(suggestedName)？脚本只会在匹配的网页中运行。",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel) { _ in
-            try? FileManager.default.removeItem(at: fileURL)
-        })
-        alert.addAction(UIAlertAction(title: "安装", style: .default) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                defer { try? FileManager.default.removeItem(at: fileURL) }
-                do {
-                    _ = try await UserScriptStore.shared.install(
-                        source: source,
-                        sourceURL: URL(string: response.url),
-                        preferredName: suggestedName
-                    )
-                } catch {
-                    guard let self else { return }
-                    self.delegate?.presentAddonAlert(self, title: "无法安装用户脚本", message: error.localizedDescription)
-                }
-            }
-        })
-        delegate?.presentAddonViewController(self, alert)
-    }
-
     private func shouldInterceptAMOInstall(_ response: ExternalResponseInfo) -> Bool {
         guard let url = URL(string: response.url),
               url.host?.lowercased() == "addons.mozilla.org" else {

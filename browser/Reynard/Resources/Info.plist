@@ -17,9 +17,7 @@
 			</array>
 		</dict>
 	</array>
-	<key>NSFaceIDUsageDescription</key>
-	<string>Reynard 使用 Face ID 解锁受保护的浏览器内容。</string>
-	<key>UIApplicationSceneManifest</key>
+		<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>

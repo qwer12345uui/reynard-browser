@@ -54,7 +54,6 @@ enum ToolboxAction {
     case uaAndCookie
     case eruda
     case vConsole
-    case scriptStatus
     case clearPageCache
 }
 
@@ -262,7 +261,6 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
             ToolboxItem(title: "UA&Cookie", icon: "person.crop.circle", action: .uaAndCookie),
             ToolboxItem(title: "eruda", icon: "ladybug", action: .eruda),
             ToolboxItem(title: "vConsole", icon: "terminal", action: .vConsole),
-            ToolboxItem(title: "用户脚本", icon: "chevron.left.forwardslash.chevron.right", action: .scriptStatus),
             ToolboxItem(title: "清理网页\n缓存", icon: "trash", action: .clearPageCache),
         ]),
     ]
@@ -288,7 +286,6 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
             ToolboxItem(title: "UA&Cookie", icon: "person.crop.circle", action: .uaAndCookie),
             ToolboxItem(title: "eruda", icon: "ladybug", action: .eruda),
             ToolboxItem(title: "vConsole", icon: "terminal", action: .vConsole),
-            ToolboxItem(title: "用户脚本", icon: "chevron.left.forwardslash.chevron.right", action: .scriptStatus),
             ToolboxItem(title: "清理网页\n缓存", icon: "trash", action: .clearPageCache),
         ]),
     ]

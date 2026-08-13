@@ -202,15 +202,32 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             handleClipboardURLIfNeeded()
             return
         }
-        guard presentedViewController == nil else {
-            return
+        guard presentedViewController == nil else { return }
+        presentNumericPasswordPrompt()
+    }
+
+    private func presentNumericPasswordPrompt(showInvalidMessage: Bool = false) {
+        let message = showInvalidMessage ? "数字密码不正确，请重试。" : "请输入数字密码以继续使用浏览器。"
+        let alert = UIAlertController(title: "应用已锁定", message: message, preferredStyle: .alert)
+        alert.addTextField { field in
+            field.placeholder = "数字密码"
+            field.keyboardType = .numberPad
+            field.isSecureTextEntry = true
         }
-        requiresGesturePasswordOnActivation = false
-        let unlockController = GesturePasswordUnlockViewController { [weak self] in
-            self?.requestContentKeyboardFocus()
-            self?.handleClipboardURLIfNeeded()
-        }
-        present(unlockController, animated: true)
+        alert.addAction(UIAlertAction(title: "解锁", style: .default) { [weak self, weak alert] _ in
+            guard let self else { return }
+            let passcode = alert?.textFields?.first?.text ?? ""
+            guard GesturePasswordStore.matches(passcode: passcode) else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+                    self?.presentNumericPasswordPrompt(showInvalidMessage: true)
+                }
+                return
+            }
+            self.requiresGesturePasswordOnActivation = false
+            self.requestContentKeyboardFocus()
+            self.handleClipboardURLIfNeeded()
+        })
+        present(alert, animated: true)
     }
 
     override func viewDidLayoutSubviews() {
@@ -271,7 +288,6 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         // Tracking Protection
         TrackingProtectionPolicyController.applyEnhancedTrackingProtection()
         TrackingProtectionPolicyController.applyGlobalPrivacyControl()
-        Prefs.PrivateBrowsingSettings.applyRuntimePolicy()
     }
     
     // MARK: - Browser Layout

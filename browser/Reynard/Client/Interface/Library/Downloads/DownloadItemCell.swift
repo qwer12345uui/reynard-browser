@@ -132,17 +132,6 @@ final class DownloadItemCell: UITableViewCell {
         statusLabel.textColor = .secondaryLabel
         
         switch item.state {
-        case .queued:
-            representedFileURL = nil
-            representedDownloadID = item.id
-            statusLabel.text = "等待下载"
-            progressView.isHidden = false
-            progressView.progress = 0
-            let placeholderIcon = Self.iconProvider.genericPlaceholderIcon()
-            fileIconView.image = placeholderIcon
-            fileIconView.transform = .identity
-            fileIconView.tintColor = placeholderIcon == nil ? .label : nil
-
         case .downloading:
             representedFileURL = nil
             representedDownloadID = item.id
