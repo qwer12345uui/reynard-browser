@@ -340,6 +340,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         }
         browserChrome.onOverlayDismiss = { [weak self] in
             self?.toolbarController.reset()
+            self?.overlayCoordinator.dismiss(.toolbox, on: .detached, animated: true)
             self?.dismissAddressBarEditingAndChromeOverlay()
         }
         browserChrome.onPageZoomOut = { [weak self] in

@@ -7,13 +7,22 @@ import UIKit
 
 extension BrowserViewController {
     func showToolbox(_ mode: ToolboxMode) {
-        if overlayCoordinator.isPresented(.toolbox, on: .detached) {
-            overlayCoordinator.dismiss(.toolbox, on: .detached, animated: true) { [weak self] in
-                self?.presentToolbox(mode)
-            }
+        // A second tap on either basket button is always a close action.
+        guard !overlayCoordinator.isPresented(.toolbox, on: .detached) else {
+            dismissToolbox()
             return
         }
         presentToolbox(mode)
+    }
+
+    private func replaceToolbox(with mode: ToolboxMode) {
+        overlayCoordinator.dismiss(.toolbox, on: .detached, animated: true) { [weak self] in
+            self?.presentToolbox(mode)
+        }
+    }
+
+    private func dismissToolbox() {
+        overlayCoordinator.dismiss(.toolbox, on: .detached, animated: true)
     }
 
     private func presentToolbox(_ mode: ToolboxMode) {
@@ -24,6 +33,9 @@ extension BrowserViewController {
         let controller = ToolboxPopupViewController(mode: mode)
         controller.onAction = { [weak self] action in
             self?.handleToolboxAction(action)
+        }
+        controller.onDismissRequest = { [weak self] in
+            self?.dismissToolbox()
         }
         browserChrome.setOverlayHeightMode(.content)
         browserChrome.setOverlayAvailableContentHeight(view.bounds.height)
@@ -37,8 +49,13 @@ extension BrowserViewController {
     }
 
     private func toolboxOverlayDirection(for mode: ToolboxMode) -> BrowserChrome.OverlayDirection {
-        // Only the bottom quick-actions basket expands upward. Top controls remain below the address bar.
-        return mode == .bottom ? .aboveAddressBar : .belowAddressBar
+        // Every panel entered from the bottom basket stays above the bottom address bar.
+        switch mode {
+        case .bottom, .bottomToolbox:
+            return .aboveAddressBar
+        case .top, .developer:
+            return .belowAddressBar
+        }
     }
 
     private func toolboxHeight(for mode: ToolboxMode) -> CGFloat {
@@ -47,7 +64,9 @@ extension BrowserViewController {
         case .top:
             return min(maximum, 680)
         case .bottom:
-            return min(maximum, 260)
+            return min(maximum, 320)
+        case .bottomToolbox:
+            return min(maximum, 680)
         case .developer:
             return min(maximum, 380)
         }
@@ -55,7 +74,8 @@ extension BrowserViewController {
 
     private func handleToolboxAction(_ action: ToolboxAction) {
         if action == .toolbox {
-            showToolbox(.top)
+            // The toolbox item belongs to the bottom basket, so it must remain anchored upward.
+            replaceToolbox(with: .bottomToolbox)
             return
         }
 
@@ -78,6 +98,8 @@ extension BrowserViewController {
             openCurrentURLExternally()
         case .library:
             presentLibrary()
+        case .bookmarks:
+            presentLibrary(initialSection: .bookmarks)
         case .history:
             presentLibrary(initialSection: .history)
         case .downloads:

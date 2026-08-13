@@ -10,11 +10,13 @@ import UIKit
 enum ToolboxMode {
     case top
     case bottom
+    case bottomToolbox
     case developer
 }
 
 enum ToolboxAction {
     case bookmark
+    case bookmarks
     case favorite
     case share
     case copyURL
@@ -67,7 +69,7 @@ private struct ToolboxSection {
     let items: [ToolboxItem]
 }
 
-final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UIGestureRecognizerDelegate {
     private enum UX {
         static let horizontalInset: CGFloat = 14
         static let verticalInset: CGFloat = 14
@@ -80,6 +82,7 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
     }
 
     var onAction: ((ToolboxAction) -> Void)?
+    var onDismissRequest: (() -> Void)?
 
     private let mode: ToolboxMode
     private let sections: [ToolboxSection]
@@ -120,12 +123,40 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
         super.viewDidLoad()
         view.backgroundColor = .clear
         view.addSubview(collectionView)
+        if mode == .bottom || mode == .bottomToolbox {
+            let dismissPan = UIPanGestureRecognizer(target: self, action: #selector(handleDismissPan(_:)))
+            dismissPan.delegate = self
+            dismissPan.cancelsTouchesInView = false
+            collectionView.addGestureRecognizer(dismissPan)
+        }
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: view.topAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+    }
+
+    @objc private func handleDismissPan(_ gesture: UIPanGestureRecognizer) {
+        guard gesture.state == .ended else {
+            return
+        }
+        let translation = gesture.translation(in: view)
+        let velocity = gesture.velocity(in: view)
+        // A deliberate downward pull from the top of the upward panel closes it.
+        guard translation.y >= 72,
+              velocity.y > 320,
+              collectionView.contentOffset.y <= 1 else {
+            return
+        }
+        onDismissRequest?()
+    }
+
+    func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool {
+        return otherGestureRecognizer === collectionView.panGestureRecognizer
     }
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -181,6 +212,8 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
             return topSections
         case .bottom:
             return bottomSections
+        case .bottomToolbox:
+            return topSections
         case .developer:
             return developerSections
         }
@@ -236,7 +269,8 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
 
     private static let bottomSections: [ToolboxSection] = [
         ToolboxSection(title: nil, items: [
-            ToolboxItem(title: "收藏/历史", icon: "books.vertical", action: .history),
+            ToolboxItem(title: "收藏", icon: "star.fill", action: .bookmarks),
+            ToolboxItem(title: "历史", icon: "clock.arrow.circlepath", action: .history),
             ToolboxItem(title: "收藏网址", icon: "star.badge.plus", action: .bookmark),
             ToolboxItem(title: "下载管理", icon: "folder", action: .downloads),
             ToolboxItem(title: "设置", icon: "gearshape", action: .settings),
