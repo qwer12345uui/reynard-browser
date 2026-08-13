@@ -53,7 +53,8 @@ final class BrowserChrome: UIView {
     var onBack: (() -> Void)?
     var onForward: (() -> Void)?
     var onShare: (() -> Void)?
-    var onLibrary: (() -> Void)?
+    var onBasket: (() -> Void)?
+    var onToolbox: (() -> Void)?
     var onDownloads: (() -> Void)?
     var onNewTab: (() -> Void)?
     var onTabOverview: (() -> Void)?
@@ -473,7 +474,8 @@ final class BrowserChrome: UIView {
         topToolbar.onBack = { [weak self] in self?.onBack?() }
         topToolbar.onForward = { [weak self] in self?.onForward?() }
         topToolbar.onShare = { [weak self] in self?.onShare?() }
-        topToolbar.onLibrary = { [weak self] in self?.onLibrary?() }
+        topToolbar.onBasket = { [weak self] in self?.onBasket?() }
+        topToolbar.onToolbox = { [weak self] in self?.onToolbox?() }
         topToolbar.onDownloads = { [weak self] in self?.onDownloads?() }
         topToolbar.onNewTab = { [weak self] in self?.onNewTab?() }
         topToolbar.onTabOverview = { [weak self] in self?.onTabOverview?() }
@@ -481,7 +483,7 @@ final class BrowserChrome: UIView {
         bottomToolbar.onBack = { [weak self] in self?.onBack?() }
         bottomToolbar.onForward = { [weak self] in self?.onForward?() }
         bottomToolbar.onShare = { [weak self] in self?.onShare?() }
-        bottomToolbar.onLibrary = { [weak self] in self?.onLibrary?() }
+        bottomToolbar.onBasket = { [weak self] in self?.onBasket?() }
         bottomToolbar.onDownloads = { [weak self] in self?.onDownloads?() }
         bottomToolbar.onTabOverview = { [weak self] in self?.onTabOverview?() }
         

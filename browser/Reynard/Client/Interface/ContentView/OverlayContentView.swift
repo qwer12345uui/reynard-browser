@@ -15,6 +15,7 @@ final class OverlayContentView: UIView {
     enum Page: Hashable {
         case homepage
         case search
+        case toolbox
     }
     
     enum PresentationState: Equatable {
@@ -27,6 +28,7 @@ final class OverlayContentView: UIView {
     
     private let homepageView = UIView()
     private let searchSuggestionView = UIView()
+    private let toolboxView = UIView()
     
     // MARK: - Lifecycle
     
@@ -48,7 +50,7 @@ final class OverlayContentView: UIView {
     }
     
     private func configureHierarchy() {
-        [homepageView, searchSuggestionView].forEach { contentView in
+        [homepageView, searchSuggestionView, toolboxView].forEach { contentView in
             contentView.translatesAutoresizingMaskIntoConstraints = false
             contentView.backgroundColor = .clear
             addSubview(contentView)
@@ -59,7 +61,7 @@ final class OverlayContentView: UIView {
         topAnchor: NSLayoutYAxisAnchor,
         bottomAnchor: NSLayoutYAxisAnchor
     ) {
-        [homepageView, searchSuggestionView].forEach { contentView in
+        [homepageView, searchSuggestionView, toolboxView].forEach { contentView in
             NSLayoutConstraint.activate([
                 contentView.topAnchor.constraint(equalTo: topAnchor),
                 contentView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -102,6 +104,7 @@ final class OverlayContentView: UIView {
         layer.removeAllAnimations()
         homepageView.isHidden = presentation != .visible(.homepage)
         searchSuggestionView.isHidden = presentation != .visible(.search)
+        toolboxView.isHidden = presentation != .visible(.toolbox)
         
         if isChangingVisiblePage(from: previousPresentation) {
             isHidden = false
@@ -229,6 +232,8 @@ final class OverlayContentView: UIView {
             return homepageView
         case .search:
             return searchSuggestionView
+        case .toolbox:
+            return toolboxView
         }
     }
     

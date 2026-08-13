@@ -25,6 +25,7 @@ final class ChromeOverlayContentView: UIView {
     enum Page: Hashable {
         case homepage
         case search
+        case toolbox
     }
     
     enum PresentationState: Equatable {
@@ -91,6 +92,7 @@ final class ChromeOverlayContentView: UIView {
     
     private let homepageView = UIView()
     private let searchSuggestionView = UIView()
+    private let toolboxView = UIView()
     
     // MARK: - Lifecycle
     
@@ -146,7 +148,7 @@ final class ChromeOverlayContentView: UIView {
     private func configureHierarchy() {
         addSubview(backgroundView)
         addSubview(contentClipView)
-        [homepageView, searchSuggestionView].forEach { contentView in
+        [homepageView, searchSuggestionView, toolboxView].forEach { contentView in
             contentView.translatesAutoresizingMaskIntoConstraints = false
             contentView.backgroundColor = .clear
             contentClipView.addSubview(contentView)
@@ -166,7 +168,7 @@ final class ChromeOverlayContentView: UIView {
             contentClipView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
         
-        [homepageView, searchSuggestionView].forEach { contentView in
+        [homepageView, searchSuggestionView, toolboxView].forEach { contentView in
             NSLayoutConstraint.activate([
                 contentView.topAnchor.constraint(equalTo: contentClipView.topAnchor),
                 contentView.leadingAnchor.constraint(equalTo: contentClipView.leadingAnchor),
@@ -247,6 +249,7 @@ final class ChromeOverlayContentView: UIView {
         layer.removeAllAnimations()
         homepageView.isHidden = presentation != .visible(.homepage)
         searchSuggestionView.isHidden = presentation != .visible(.search)
+        toolboxView.isHidden = presentation != .visible(.toolbox)
         
         switch presentation {
         case .hidden:
@@ -350,6 +353,8 @@ final class ChromeOverlayContentView: UIView {
             return homepageView
         case .search:
             return searchSuggestionView
+        case .toolbox:
+            return toolboxView
         }
     }
     

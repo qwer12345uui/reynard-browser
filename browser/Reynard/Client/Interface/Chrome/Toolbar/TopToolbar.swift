@@ -11,7 +11,7 @@ final class TopToolbar: UIView {
     private enum UX {
         static let topToolbarContentHeight: CGFloat = 60
         static let topToolbarButtonStackHeight: CGFloat = 30
-        static let topToolbarStandardButtonStackWidth: CGFloat = 126
+        static let topToolbarStandardButtonStackWidth: CGFloat = 166
         static let topToolbarHorizontalInset: CGFloat = 12
         static let topToolbarButtonSpacing: CGFloat = 10
         static let topToolbarAddressBarSpacing: CGFloat = 12
@@ -28,7 +28,8 @@ final class TopToolbar: UIView {
     var onSidebar: (() -> Void)?
     var onBack: (() -> Void)?
     var onForward: (() -> Void)?
-    var onLibrary: (() -> Void)?
+    var onBasket: (() -> Void)?
+    var onToolbox: (() -> Void)?
     var onDownloads: (() -> Void)?
     var onShare: (() -> Void)?
     var onNewTab: (() -> Void)?
@@ -68,11 +69,18 @@ final class TopToolbar: UIView {
         target: self,
         action: #selector(forwardTapped)
     )
-    private lazy var libraryButton = ToolbarButton(
-        buttonType: .library,
-        target: self,
-        action: #selector(libraryTapped)
-    )
+    private lazy var basketButton: ToolbarButton = {
+        let button = ToolbarButton(buttonType: .library, target: self, action: #selector(basketTapped))
+        button.setImage(UIImage(systemName: "tray.full"), for: .normal)
+        button.accessibilityLabel = NSLocalizedString("Quick actions", comment: "")
+        return button
+    }()
+    private lazy var toolboxButton: ToolbarButton = {
+        let button = ToolbarButton(buttonType: .library, target: self, action: #selector(toolboxTapped))
+        button.setImage(UIImage(systemName: "wrench.and.screwdriver"), for: .normal)
+        button.accessibilityLabel = NSLocalizedString("Toolbox", comment: "")
+        return button
+    }()
     private lazy var downloadButton = ToolbarButton(
         buttonType: .download,
         target: self,
@@ -96,7 +104,7 @@ final class TopToolbar: UIView {
     
     private lazy var leadingButtons: UIStackView = {
         downloadButton.isHidden = true
-        let stack = UIStackView(arrangedSubviews: [sidebarButton, downloadButton, backButton, forwardButton, libraryButton])
+        let stack = UIStackView(arrangedSubviews: [sidebarButton, downloadButton, backButton, forwardButton, basketButton])
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .horizontal
         stack.spacing = UX.topToolbarButtonSpacing
@@ -105,7 +113,7 @@ final class TopToolbar: UIView {
     }()
     
     private lazy var trailingButtons: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [shareButton, newTabButton, tabOverviewButton])
+        let stack = UIStackView(arrangedSubviews: [shareButton, newTabButton, tabOverviewButton, toolboxButton])
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .horizontal
         stack.spacing = UX.topToolbarButtonSpacing
@@ -215,7 +223,7 @@ final class TopToolbar: UIView {
             trailingWidthConstraint.constant = isCompact ? 0 : UX.topToolbarStandardButtonStackWidth
             
             sidebarButton.isHidden = interfaceIdiom != .pad || !sidebarButtonVisible
-            libraryButton.isHidden = interfaceIdiom == .pad
+            basketButton.isHidden = false
             downloadButton.isHidden = isCompact || !downloadButton.isShowingDownloads
             
             NSLayoutConstraint.deactivate(standardAddressBarConstraints + widthLimitedStandardAddressBarConstraints + compactAddressBarConstraints)
@@ -247,10 +255,7 @@ final class TopToolbar: UIView {
     }
     
     func setMenuButtonIndicatesUpdate(_ hasUpdate: Bool) {
-        libraryButton.setImage(
-            hasUpdate ? UIImage(named: "reynard.ellipsis.circle.badge") : UIImage(named: "reynard.ellipsis.circle"),
-            for: .normal
-        )
+        basketButton.setImage(UIImage(systemName: hasUpdate ? "tray.full.fill" : "tray.full"), for: .normal)
     }
     
     func syncSidebarButton(splitViewController: UISplitViewController?) {
@@ -272,7 +277,8 @@ final class TopToolbar: UIView {
     @objc private func sidebarTapped() { onSidebar?() }
     @objc private func backTapped() { onBack?() }
     @objc private func forwardTapped() { onForward?() }
-    @objc private func libraryTapped() { onLibrary?() }
+    @objc private func basketTapped() { onBasket?() }
+    @objc private func toolboxTapped() { onToolbox?() }
     @objc private func downloadsTapped() { onDownloads?() }
     @objc private func shareTapped() { onShare?() }
     @objc private func newTabTapped() { onNewTab?() }
@@ -328,7 +334,7 @@ final class TopToolbar: UIView {
         showsDownloads: Bool
     ) -> CGFloat {
         guard interfaceIdiom == .pad else { return UX.topToolbarStandardButtonStackWidth }
-        let visibleButtonCount = (sidebarButtonVisible ? 3 : 2) + (showsDownloads ? 1 : 0)
+        let visibleButtonCount = (sidebarButtonVisible ? 4 : 3) + (showsDownloads ? 1 : 0)
         return (CGFloat(visibleButtonCount) * UX.topToolbarButtonStackHeight)
         + (CGFloat(max(visibleButtonCount - 1, 0)) * UX.topToolbarButtonSpacing)
     }

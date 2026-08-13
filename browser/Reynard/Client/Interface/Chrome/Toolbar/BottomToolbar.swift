@@ -32,7 +32,7 @@ final class BottomToolbar: UIView {
     var onBack: (() -> Void)?
     var onForward: (() -> Void)?
     var onShare: (() -> Void)?
-    var onLibrary: (() -> Void)?
+    var onBasket: (() -> Void)?
     var onDownloads: (() -> Void)?
     var onTabOverview: (() -> Void)?
     
@@ -58,12 +58,17 @@ final class BottomToolbar: UIView {
     private lazy var backButton = ToolbarButton(buttonType: .back, target: self, action: #selector(backTapped))
     private lazy var forwardButton = ToolbarButton(buttonType: .forward, target: self, action: #selector(forwardTapped))
     private lazy var shareButton = ToolbarButton(buttonType: .share, target: self, action: #selector(shareTapped))
-    private lazy var libraryButton = ToolbarButton(buttonType: .library, target: self, action: #selector(libraryTapped))
+    private lazy var basketButton: ToolbarButton = {
+        let button = ToolbarButton(buttonType: .library, target: self, action: #selector(basketTapped))
+        button.setImage(UIImage(systemName: "tray.full"), for: .normal)
+        button.accessibilityLabel = NSLocalizedString("Quick actions", comment: "")
+        return button
+    }()
     private lazy var downloadButton = ToolbarButton(buttonType: .download, target: self, action: #selector(downloadsTapped))
     private lazy var tabOverviewButton = ToolbarButton(buttonType: .tabOverview, target: self, action: #selector(tabOverviewTapped))
     
     private lazy var buttons: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [backButton, forwardButton, shareButton, libraryButton, downloadButton, tabOverviewButton])
+        let stack = UIStackView(arrangedSubviews: [backButton, forwardButton, shareButton, basketButton, downloadButton, tabOverviewButton])
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .horizontal
         stack.distribution = .fillEqually
@@ -181,10 +186,7 @@ final class BottomToolbar: UIView {
     }
     
     func setMenuButtonIndicatesUpdate(_ hasUpdate: Bool) {
-        libraryButton.setImage(
-            hasUpdate ? UIImage(named: "reynard.ellipsis.circle.badge") : UIImage(named: "reynard.ellipsis.circle"),
-            for: .normal
-        )
+        basketButton.setImage(UIImage(systemName: hasUpdate ? "tray.full.fill" : "tray.full"), for: .normal)
     }
     
     // MARK: - Action Wiring
@@ -192,7 +194,7 @@ final class BottomToolbar: UIView {
     @objc private func backTapped() { onBack?() }
     @objc private func forwardTapped() { onForward?() }
     @objc private func shareTapped() { onShare?() }
-    @objc private func libraryTapped() { onLibrary?() }
+    @objc private func basketTapped() { onBasket?() }
     @objc private func downloadsTapped() { onDownloads?() }
     @objc private func tabOverviewTapped() { onTabOverview?() }
     

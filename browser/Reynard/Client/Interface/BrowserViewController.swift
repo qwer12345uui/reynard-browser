@@ -319,8 +319,11 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         browserChrome.onShare = { [weak self] in
             self?.presentShareSheet()
         }
-        browserChrome.onLibrary = { [weak self] in
-            self?.presentLibrary()
+        browserChrome.onBasket = { [weak self] in
+            self?.showToolbox(.bottom)
+        }
+        browserChrome.onToolbox = { [weak self] in
+            self?.showToolbox(.top)
         }
         browserChrome.onDownloads = { [weak self] in
             self?.presentLibrary(initialSection: .downloads)
