@@ -6,6 +6,7 @@
 //
 
 import CryptoKit
+import LocalAuthentication
 import Security
 import UIKit
 
@@ -68,6 +69,38 @@ enum GesturePasswordStore {
             data.append(UInt8(point))
         }
         return Data(SHA256.hash(data: data))
+    }
+
+    static var biometricDisplayName: String? {
+        let context = LAContext()
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            return nil
+        }
+        switch context.biometryType {
+        case .faceID:
+            return "Face ID"
+        case .touchID:
+            return "Touch ID"
+        default:
+            return nil
+        }
+    }
+
+    static func authenticateWithBiometrics(completion: @escaping (Bool, String?) -> Void) {
+        let context = LAContext()
+        context.localizedCancelTitle = "使用手势密码"
+        var capabilityError: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &capabilityError) else {
+            completion(false, capabilityError?.localizedDescription ?? "此设备未配置可用的生物识别方式")
+            return
+        }
+        let name = context.biometryType == .faceID ? "Face ID" : "Touch ID"
+        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "使用\(name) 解锁 Reynard") { success, error in
+            DispatchQueue.main.async {
+                completion(success, success ? nil : error?.localizedDescription)
+            }
+        }
     }
 }
 
@@ -295,6 +328,7 @@ final class GesturePasswordPreferencesViewController: SettingsTableViewControlle
     private enum Row: CaseIterable {
         case configure
         case enabled
+        case biometrics
         case remove
     }
 
@@ -330,7 +364,7 @@ final class GesturePasswordPreferencesViewController: SettingsTableViewControlle
     override func sectionText(for section: Int) -> SettingsSectionText {
         return SettingsSectionText(
             headerTitle: "应用保护",
-            footerTitle: "手势密码仅保存在本机钥匙串中。启用后，应用从后台返回时需要绘制正确手势才能继续使用。"
+            footerTitle: "手势密码仅保存在本机钥匙串中。启用后，应用从后台返回时可使用 Face ID、Touch ID 或手势密码解锁。"
         )
     }
 
@@ -352,6 +386,16 @@ final class GesturePasswordPreferencesViewController: SettingsTableViewControlle
             cell.selectionStyle = .none
             enabledSwitch.isEnabled = GesturePasswordStore.hasPassword
             cell.accessoryView = enabledSwitch
+        case .biometrics:
+            if let biometricName = GesturePasswordStore.biometricDisplayName {
+                cell.textLabel?.text = "\(biometricName) 解锁"
+                cell.detailTextLabel?.text = "返回应用时优先使用 \(biometricName) 验证"
+            } else {
+                cell.textLabel?.text = "生物识别解锁"
+                cell.detailTextLabel?.text = "此设备未配置可用的 Face ID 或 Touch ID"
+                cell.textLabel?.textColor = .secondaryLabel
+            }
+            cell.selectionStyle = .none
         case .remove:
             cell.textLabel?.text = "移除手势密码"
             cell.textLabel?.textColor = GesturePasswordStore.hasPassword ? .systemRed : .tertiaryLabel
@@ -495,6 +539,7 @@ final class GesturePatternEntryViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         configureLabels()
+        patternView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(titleLabel)
         view.addSubview(detailLabel)
         view.addSubview(patternView)
@@ -557,13 +602,17 @@ final class GesturePasswordUnlockViewController: UIViewController {
     private let titleLabel = UILabel()
     private let detailLabel = UILabel()
     private let patternView = GesturePatternView()
+    private let biometricButton = UIButton(type: .system)
     private let onUnlocked: () -> Void
+    private var hasRequestedBiometrics = false
+    private var isAuthenticating = false
+    private var hasUnlocked = false
 
     init(onUnlocked: @escaping () -> Void) {
         self.onUnlocked = onUnlocked
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .formSheet
-        preferredContentSize = CGSize(width: 340, height: 460)
+        preferredContentSize = CGSize(width: 340, height: 520)
         isModalInPresentation = true
     }
 
@@ -574,32 +623,87 @@ final class GesturePasswordUnlockViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.font = .preferredFont(forTextStyle: .title2)
-        titleLabel.textAlignment = .center
-        titleLabel.text = "请输入手势密码"
-        detailLabel.translatesAutoresizingMaskIntoConstraints = false
-        detailLabel.font = .preferredFont(forTextStyle: .body)
-        detailLabel.textAlignment = .center
-        detailLabel.textColor = .secondaryLabel
-        detailLabel.text = "绘制已设置的解锁手势"
+        configureViews()
         view.addSubview(titleLabel)
         view.addSubview(detailLabel)
         view.addSubview(patternView)
+        view.addSubview(biometricButton)
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 44),
+            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 36),
             titleLabel.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
             titleLabel.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
             detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
             detailLabel.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
             detailLabel.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
             patternView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            patternView.topAnchor.constraint(equalTo: detailLabel.bottomAnchor, constant: 42),
-            patternView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.68),
+            patternView.topAnchor.constraint(equalTo: detailLabel.bottomAnchor, constant: 28),
+            patternView.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, multiplier: 0.68),
+            patternView.widthAnchor.constraint(equalToConstant: 210),
             patternView.heightAnchor.constraint(equalTo: patternView.widthAnchor),
+            biometricButton.topAnchor.constraint(equalTo: patternView.bottomAnchor, constant: 22),
+            biometricButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            biometricButton.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
         ])
         patternView.onPatternCompleted = { [weak self] pattern in
             self?.verify(pattern: pattern)
+        }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        guard !hasRequestedBiometrics, GesturePasswordStore.biometricDisplayName != nil else { return }
+        hasRequestedBiometrics = true
+        authenticateWithBiometrics()
+    }
+
+    private func configureViews() {
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.font = .preferredFont(forTextStyle: .title2)
+        titleLabel.textAlignment = .center
+        titleLabel.text = "请输入手势密码"
+
+        detailLabel.translatesAutoresizingMaskIntoConstraints = false
+        detailLabel.font = .preferredFont(forTextStyle: .body)
+        detailLabel.textAlignment = .center
+        detailLabel.textColor = .secondaryLabel
+        detailLabel.numberOfLines = 0
+        detailLabel.text = GesturePasswordStore.biometricDisplayName.map { "可使用 \($0) 或绘制手势解锁" } ?? "绘制已设置的解锁手势"
+
+        patternView.translatesAutoresizingMaskIntoConstraints = false
+
+        biometricButton.translatesAutoresizingMaskIntoConstraints = false
+        biometricButton.titleLabel?.font = .preferredFont(forTextStyle: .headline)
+        biometricButton.setTitleColor(view.tintColor, for: .normal)
+        biometricButton.addTarget(self, action: #selector(biometricButtonTapped), for: .touchUpInside)
+        if let biometricName = GesturePasswordStore.biometricDisplayName {
+            biometricButton.setTitle("使用 \(biometricName) 解锁", for: .normal)
+            let symbol = biometricName == "Face ID" ? "faceid" : "touchid"
+            biometricButton.setImage(UIImage(systemName: symbol), for: .normal)
+            biometricButton.imageView?.contentMode = .scaleAspectFit
+            biometricButton.contentEdgeInsets = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
+            biometricButton.semanticContentAttribute = .forceLeftToRight
+        } else {
+            biometricButton.isHidden = true
+        }
+    }
+
+    @objc private func biometricButtonTapped() {
+        authenticateWithBiometrics()
+    }
+
+    private func authenticateWithBiometrics() {
+        guard !isAuthenticating, !hasUnlocked else { return }
+        isAuthenticating = true
+        biometricButton.isEnabled = false
+        GesturePasswordStore.authenticateWithBiometrics { [weak self] success, message in
+            guard let self else { return }
+            self.isAuthenticating = false
+            self.biometricButton.isEnabled = true
+            guard success else {
+                self.detailLabel.text = message ?? "生物识别未完成，请绘制手势密码解锁"
+                return
+            }
+            self.unlock()
         }
     }
 
@@ -609,6 +713,12 @@ final class GesturePasswordUnlockViewController: UIViewController {
             patternView.reset(after: 0.65)
             return
         }
+        unlock()
+    }
+
+    private func unlock() {
+        guard !hasUnlocked else { return }
+        hasUnlocked = true
         dismiss(animated: true) { [onUnlocked] in
             onUnlocked()
         }
