@@ -11273,7 +11273,7 @@
         }
       }
     },
-    "Zoom Level" : {
+        "Zoom Level" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11300,7 +11300,39 @@
           }
         }
       }
-    }
+    },
+    "Download Settings" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "下载设置" } } } },
+    "Playback Settings" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "播放设置" } } } },
+    "Playback" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "播放" } } } },
+    "Storage" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "存储" } } } },
+    "Confirm New Downloads" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "确认新建下载任务" } } } },
+    "Ask before a manually added download starts" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "手动添加的下载开始前进行确认" } } } },
+    "Open Downloads Folder" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开下载文件夹" } } } },
+    "Open Videos in New Tab" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在新标签页打开视频" } } } },
+    "Keep the current page open while starting playback" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开始播放时保留当前页面" } } } },
+    "Picture in Picture" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "画中画" } } } },
+    "Allow supported videos to continue in a floating window" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "允许支持的视频在浮动窗口中继续播放" } } } },
+    "New Download Task" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新建下载任务" } } } },
+    "New Video Playback" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新建视频播放" } } } },
+    "Pause All Downloads" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "全部暂停下载" } } } },
+    "Resume All Downloads" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "全部开始下载" } } } },
+    "Start Download" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开始下载" } } } },
+    "Start Download?" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开始下载？" } } } },
+    "Folder Name" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "文件夹名称" } } } },
+    "Invalid Download URL" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无效的下载链接" } } } },
+    "Invalid Video URL" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无效的视频链接" } } } },
+    "Unable to Create Folder" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法创建文件夹" } } } },
+    "Unable to Start Playback" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法开始播放" } } } },
+    "Enter a direct HTTP or HTTPS download URL." : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请输入直接下载的 HTTP 或 HTTPS 链接。" } } } },
+    "Enter a valid HTTP or HTTPS URL." : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请输入有效的 HTTP 或 HTTPS 链接。" } } } },
+    "Enter a valid folder name and try again." : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请输入有效的文件夹名称后重试。" } } } },
+    "Enter the URL of the video page to play." : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请输入要播放的视频页面链接。" } } } },
+    "Return to the browser and try again." : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请返回浏览器后重试。" } } } },
+    "Paused · %@" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已暂停 · %@" } } } },
+    "Paused · %@ of %@" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已暂停 · %@ / %@" } } } },
+    "Create" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "创建" } } } },
+    "Create a folder in Downloads." : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在下载目录中创建文件夹。" } } } },
+    "Play" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "播放" } } } }
   },
   "version" : "1.0"
 }

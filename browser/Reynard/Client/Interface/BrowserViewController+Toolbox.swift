@@ -20,7 +20,7 @@ extension BrowserViewController {
         guard viewIfLoaded != nil else {
             return
         }
-        browserChrome.setOverlayDirection(toolboxOverlayDirection)
+        browserChrome.setOverlayDirection(toolboxOverlayDirection(for: mode))
         let controller = ToolboxPopupViewController(mode: mode)
         controller.onAction = { [weak self] action in
             self?.handleToolboxAction(action)
@@ -36,10 +36,9 @@ extension BrowserViewController {
         )
     }
 
-    private var toolboxOverlayDirection: BrowserChrome.OverlayDirection {
-        // A top address bar needs the panel on the content side to remain fully visible.
-        // A bottom address bar uses the conventional upward expanding popover.
-        return browserLayout.chromePosition == .top ? .belowAddressBar : .aboveAddressBar
+    private func toolboxOverlayDirection(for mode: ToolboxMode) -> BrowserChrome.OverlayDirection {
+        // Only the bottom quick-actions basket expands upward. Top controls remain below the address bar.
+        return mode == .bottom ? .aboveAddressBar : .belowAddressBar
     }
 
     private func toolboxHeight(for mode: ToolboxMode) -> CGFloat {
@@ -61,7 +60,6 @@ extension BrowserViewController {
         }
 
         overlayCoordinator.dismiss(.toolbox, on: .detached, animated: true) { [weak self] in
-            self?.browserChrome.setOverlayDirection(.belowAddressBar)
             self?.performToolboxAction(action)
         }
     }
