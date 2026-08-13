@@ -37,6 +37,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
     weak var fullscreenSession: GeckoSession?
     private let allowsSidebarHosting: Bool
     private var shouldRestoreContentFocus = false
+    private var requiresGesturePasswordOnActivation = false
     private(set) var browserLayout = BrowserLayout.initial(
         interfaceIdiom: UIDevice.current.userInterfaceIdiom
     )
@@ -192,6 +193,26 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         }
     }
     
+    func prepareForGesturePasswordOnBackground() {
+        requiresGesturePasswordOnActivation = Prefs.SecuritySettings.gesturePasswordEnabled
+    }
+
+    func presentGesturePasswordIfNeeded() {
+        guard requiresGesturePasswordOnActivation else {
+            handleClipboardURLIfNeeded()
+            return
+        }
+        guard presentedViewController == nil else {
+            return
+        }
+        requiresGesturePasswordOnActivation = false
+        let unlockController = GesturePasswordUnlockViewController { [weak self] in
+            self?.requestContentKeyboardFocus()
+            self?.handleClipboardURLIfNeeded()
+        }
+        present(unlockController, animated: true)
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         toolbarController.updateLayout(
@@ -337,6 +358,9 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         }
         browserChrome.onTabOverview = { [weak self] in
             self?.setTabOverviewVisible(true, animated: true)
+        }
+        browserChrome.onBottomToolbarQuickAction = { [weak self] action in
+            self?.handleBottomToolbarQuickAction(action)
         }
         browserChrome.onOverlayDismiss = { [weak self] in
             self?.toolbarController.reset()

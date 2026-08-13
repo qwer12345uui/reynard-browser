@@ -7,6 +7,7 @@
 
 import Foundation
 import GeckoView
+import UIKit
 import UniformTypeIdentifiers
 import MobileCoreServices
 
@@ -169,6 +170,8 @@ final class DownloadStore: NSObject {
     private var persistedDownloads: [PersistedDownloadEntry] = []
     private var lastSessionProgressNotificationTime: TimeInterval = 0
     private var hasUnviewedCompletedDownloads = false
+    private var backgroundTaskIdentifier: UIBackgroundTaskIdentifier = .invalid
+    private var backgroundTimeoutWorkItem: DispatchWorkItem?
     
     // MARK: - Lifecycle
     
@@ -280,8 +283,85 @@ final class DownloadStore: NSObject {
         }
     }
 
-    // MARK: - Pending Downloads
+    func toggleAll() {
+        stateQueue.async {
+            let shouldResume = self.activeDownloads.values.contains { $0.isPaused }
+            var didChange = false
+            for active in self.activeDownloads.values {
+                if shouldResume, active.isPaused {
+                    active.task.resume()
+                    active.isPaused = false
+                    active.lastProgressSample = nil
+                    didChange = true
+                } else if !shouldResume, !active.isPaused {
+                    active.task.suspend()
+                    active.isPaused = true
+                    active.bytesPerSecond = 0
+                    didChange = true
+                }
+            }
+            if didChange {
+                self.postDidChange()
+            }
+        }
+    }
+
+    func applicationDidEnterBackground() {
+        let hasActiveDownloads = stateQueue.sync {
+            activeDownloads.values.contains { !$0.isPaused }
+        }
+        guard hasActiveDownloads else {
+            return
+        }
+        guard Prefs.DownloadSettings.continuesInBackground,
+              Prefs.DownloadSettings.backgroundTimeLimit > 0 else {
+            pauseAll()
+            return
+        }
+
+        let timeLimit = Prefs.DownloadSettings.backgroundTimeLimit
+        DispatchQueue.main.async { [weak self] in
+            self?.beginBackgroundExecution(for: timeLimit)
+        }
+    }
+
+    func applicationDidBecomeActive() {
+        DispatchQueue.main.async { [weak self] in
+            self?.endBackgroundExecution()
+        }
+    }
+
+    private func beginBackgroundExecution(for timeLimit: TimeInterval) {
+        endBackgroundExecution()
+        let identifier = UIApplication.shared.beginBackgroundTask(withName: "Reynard.active-downloads") { [weak self] in
+            self?.pauseAll()
+            self?.endBackgroundExecution()
+        }
+        guard identifier != .invalid else {
+            pauseAll()
+            return
+        }
+        backgroundTaskIdentifier = identifier
+        let timeoutWorkItem = DispatchWorkItem { [weak self] in
+            self?.pauseAll()
+            self?.endBackgroundExecution()
+        }
+        backgroundTimeoutWorkItem = timeoutWorkItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeLimit, execute: timeoutWorkItem)
+    }
+
+    private func endBackgroundExecution() {
+        backgroundTimeoutWorkItem?.cancel()
+        backgroundTimeoutWorkItem = nil
+        guard backgroundTaskIdentifier != .invalid else {
+            return
+        }
+        UIApplication.shared.endBackgroundTask(backgroundTaskIdentifier)
+        backgroundTaskIdentifier = .invalid
+    }
     
+    // MARK: - Pending Downloads
+
     func pendingDownload(from response: ExternalResponseInfo) -> PendingDownload? {
         guard let sourceURL = URL(string: response.url) else {
             return nil

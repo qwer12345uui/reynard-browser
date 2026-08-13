@@ -64,6 +64,7 @@ final class BrowserChrome: UIView {
     var onDownloads: (() -> Void)?
     var onNewTab: (() -> Void)?
     var onTabOverview: (() -> Void)?
+    var onBottomToolbarQuickAction: ((BottomToolbar.QuickAction) -> Void)?
     var onOverlayDismiss: (() -> Void)?
     var onPageZoomOut: (() -> Void)?
     var onPageZoomIn: (() -> Void)?
@@ -519,6 +520,7 @@ final class BrowserChrome: UIView {
         bottomToolbar.onBasket = { [weak self] in self?.onBasket?() }
         bottomToolbar.onDownloads = { [weak self] in self?.onDownloads?() }
         bottomToolbar.onTabOverview = { [weak self] in self?.onTabOverview?() }
+        bottomToolbar.onQuickAction = { [weak self] action in self?.onBottomToolbarQuickAction?(action) }
         
         actionBar.onPageZoomOut = { [weak self] in self?.onPageZoomOut?() }
         actionBar.onPageZoomIn = { [weak self] in self?.onPageZoomIn?() }

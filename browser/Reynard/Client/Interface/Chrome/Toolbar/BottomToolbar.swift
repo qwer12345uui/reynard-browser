@@ -28,6 +28,15 @@ final class BottomToolbar: UIView {
         case focused
         case compact
     }
+
+    enum QuickAction {
+        case reload
+        case desktopSite
+        case copyURL
+        case bookmark
+        case toggleDownloads
+        case newTab
+    }
     
     var onBack: (() -> Void)?
     var onForward: (() -> Void)?
@@ -35,6 +44,7 @@ final class BottomToolbar: UIView {
     var onBasket: (() -> Void)?
     var onDownloads: (() -> Void)?
     var onTabOverview: (() -> Void)?
+    var onQuickAction: ((QuickAction) -> Void)?
     
     private let contentView: UIView = {
         let view = UIView()
@@ -68,7 +78,7 @@ final class BottomToolbar: UIView {
     private lazy var tabOverviewButton = ToolbarButton(buttonType: .tabOverview, target: self, action: #selector(tabOverviewTapped))
     
     private lazy var buttons: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [backButton, forwardButton, shareButton, basketButton, downloadButton, tabOverviewButton])
+        let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .horizontal
         stack.distribution = .fillEqually
@@ -76,6 +86,9 @@ final class BottomToolbar: UIView {
         stack.spacing = UX.bottomToolbarButtonSpacing
         return stack
     }()
+
+    private var preferencesObserver: NSObjectProtocol?
+    private var quickActionMenuDelegates: [BottomToolbarQuickActionMenuDelegate] = []
     
     private var topConstraint: NSLayoutConstraint!
     private var contentHeightConstraint: NSLayoutConstraint!
@@ -94,10 +107,17 @@ final class BottomToolbar: UIView {
         configureHierarchy()
         configureConstraints()
         configureInitialState()
+        configureBottomToolbarPreferences()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        if let preferencesObserver {
+            NotificationCenter.default.removeObserver(preferencesObserver)
+        }
     }
     
     // MARK: - Layout
@@ -197,7 +217,67 @@ final class BottomToolbar: UIView {
     @objc private func basketTapped() { onBasket?() }
     @objc private func downloadsTapped() { onDownloads?() }
     @objc private func tabOverviewTapped() { onTabOverview?() }
+
+    fileprivate func performQuickAction(_ action: QuickAction) {
+        onQuickAction?(action)
+    }
     
+    // MARK: - Preference Customization
+
+    private func configureBottomToolbarPreferences() {
+        applyButtonOrder()
+        configureQuickActionMenus()
+        preferencesObserver = NotificationCenter.default.addObserver(
+            forName: .bottomToolbarPreferencesDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.applyButtonOrder()
+            self?.configureQuickActionMenus()
+        }
+    }
+
+    private func applyButtonOrder() {
+        for view in buttons.arrangedSubviews {
+            buttons.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+        let buttonByIdentifier: [String: ToolbarButton] = [
+            "back": backButton,
+            "forward": forwardButton,
+            "share": shareButton,
+            "basket": basketButton,
+            "downloads": downloadButton,
+            "tabs": tabOverviewButton,
+        ]
+        for identifier in Prefs.ToolbarSettings.bottomButtonOrder {
+            guard let button = buttonByIdentifier[identifier] else {
+                continue
+            }
+            buttons.addArrangedSubview(button)
+        }
+    }
+
+    private func configureQuickActionMenus() {
+        let toolbarButtons = [backButton, forwardButton, shareButton, basketButton, downloadButton, tabOverviewButton]
+        for button in toolbarButtons {
+            for interaction in button.interactions where interaction is UIContextMenuInteraction {
+                button.removeInteraction(interaction)
+            }
+        }
+        quickActionMenuDelegates.removeAll()
+        guard Prefs.ToolbarSettings.longPressQuickActions else {
+            return
+        }
+
+        let identifiers = ["back", "forward", "share", "basket", "downloads", "tabs"]
+        for (identifier, button) in zip(identifiers, toolbarButtons) {
+            let delegate = BottomToolbarQuickActionMenuDelegate(toolbar: self, identifier: identifier)
+            button.addInteraction(UIContextMenuInteraction(delegate: delegate))
+            quickActionMenuDelegates.append(delegate)
+        }
+    }
+
     // MARK: - View Setup
     
     private func configureAppearance() {
@@ -236,5 +316,68 @@ final class BottomToolbar: UIView {
     private func configureInitialState() {
         shareButton.isEnabled = false
         downloadButton.isHidden = true
+    }
+}
+
+private final class BottomToolbarQuickActionMenuDelegate: NSObject, UIContextMenuInteractionDelegate {
+    private weak var toolbar: BottomToolbar?
+    private let identifier: String
+
+    init(toolbar: BottomToolbar, identifier: String) {
+        self.toolbar = toolbar
+        self.identifier = identifier
+    }
+
+    func contextMenuInteraction(
+        _ interaction: UIContextMenuInteraction,
+        configurationForMenuAtLocation location: CGPoint
+    ) -> UIContextMenuConfiguration? {
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            guard let self else {
+                return nil
+            }
+            return UIMenu(children: self.actions)
+        }
+    }
+
+    private var actions: [UIAction] {
+        switch identifier {
+        case "back":
+            return [
+                action(title: "刷新", image: "arrow.clockwise", value: .reload),
+                action(title: "请求桌面网站", image: "desktopcomputer", value: .desktopSite),
+            ]
+        case "forward":
+            return [
+                action(title: "刷新", image: "arrow.clockwise", value: .reload),
+                action(title: "复制 URL", image: "doc.on.doc", value: .copyURL),
+            ]
+        case "share":
+            return [
+                action(title: "复制 URL", image: "doc.on.doc", value: .copyURL),
+                action(title: "添加到收藏", image: "star", value: .bookmark),
+            ]
+        case "basket":
+            return [
+                action(title: "添加到收藏", image: "star", value: .bookmark),
+                action(title: "刷新", image: "arrow.clockwise", value: .reload),
+            ]
+        case "downloads":
+            return [
+                action(title: "暂停或继续下载", image: "arrow.down.circle", value: .toggleDownloads),
+            ]
+        case "tabs":
+            return [
+                action(title: "新建标签页", image: "plus", value: .newTab),
+            ]
+        default:
+            return []
+        }
+    }
+
+    private func action(title: String, image: String, value: BottomToolbar.QuickAction) -> UIAction {
+        return UIAction(title: title, image: UIImage(systemName: image)) { [weak self] _ in
+            self?.toolbar?.performQuickAction(value)
+        }
     }
 }

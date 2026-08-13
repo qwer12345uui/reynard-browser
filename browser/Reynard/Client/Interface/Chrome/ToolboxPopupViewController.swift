@@ -221,8 +221,8 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
 
     private static let topSections: [ToolboxSection] = [
         ToolboxSection(title: "常用功能", items: [
-            ToolboxItem(title: "添加到\n收藏", icon: "star.badge.plus", action: .bookmark),
-            ToolboxItem(title: "添加到\n首页", icon: "house.badge.plus", action: .favorite),
+            ToolboxItem(title: "添加到\n收藏", icon: "star", action: .bookmark),
+            ToolboxItem(title: "添加到\n首页", icon: "house", action: .favorite),
             ToolboxItem(title: "分享", icon: "square.and.arrow.up", action: .share),
             ToolboxItem(title: "复制 URL", icon: "link", action: .copyURL),
             ToolboxItem(title: "Safari", icon: "safari", action: .openInSafari),
@@ -263,7 +263,7 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
             ToolboxItem(title: "eruda", icon: "ladybug", action: .eruda),
             ToolboxItem(title: "vConsole", icon: "terminal", action: .vConsole),
             ToolboxItem(title: "脚本状态", icon: "chevron.left.slash.chevron.right", action: .scriptStatus),
-            ToolboxItem(title: "清理网页\n缓存", icon: "broom", action: .clearPageCache),
+            ToolboxItem(title: "清理网页\n缓存", icon: "trash", action: .clearPageCache),
         ]),
     ]
 
@@ -271,7 +271,7 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
         ToolboxSection(title: nil, items: [
             ToolboxItem(title: "收藏", icon: "star.fill", action: .bookmarks),
             ToolboxItem(title: "历史", icon: "clock.arrow.circlepath", action: .history),
-            ToolboxItem(title: "收藏网址", icon: "star.badge.plus", action: .bookmark),
+            ToolboxItem(title: "收藏网址", icon: "star", action: .bookmark),
             ToolboxItem(title: "下载管理", icon: "folder", action: .downloads),
             ToolboxItem(title: "设置", icon: "gearshape", action: .settings),
             ToolboxItem(title: "工具箱", icon: "briefcase", action: .toolbox),
@@ -289,7 +289,7 @@ final class ToolboxPopupViewController: UIViewController, UICollectionViewDataSo
             ToolboxItem(title: "eruda", icon: "ladybug", action: .eruda),
             ToolboxItem(title: "vConsole", icon: "terminal", action: .vConsole),
             ToolboxItem(title: "脚本状态", icon: "chevron.left.slash.chevron.right", action: .scriptStatus),
-            ToolboxItem(title: "清理网页\n缓存", icon: "broom", action: .clearPageCache),
+            ToolboxItem(title: "清理网页\n缓存", icon: "trash", action: .clearPageCache),
         ]),
     ]
 }

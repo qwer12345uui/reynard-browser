@@ -55,6 +55,18 @@ final class BrowserPreferences {
             
             // Downloads
             key("DownloadSettings", "confirmManualDownloads"): true,
+            key("DownloadSettings", "continuesInBackground"): true,
+            key("DownloadSettings", "backgroundTimeLimit"): 300,
+
+            // Security
+            key("SecuritySettings", "gesturePasswordEnabled"): false,
+
+            // Bottom toolbar
+            key("ToolbarSettings", "longPressQuickActions"): true,
+
+            // Clipboard
+            key("ClipboardSettings", "automaticallyParseURLs"): false,
+            key("ClipboardSettings", "lastHandledChangeCount"): 0,
 
             // Playback
             key("PlaybackSettings", "openVideosInNewTab"): true,
@@ -269,6 +281,98 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue, forSetting: "DownloadSettings", key: "confirmManualDownloads")
+            }
+        }
+
+        static var continuesInBackground: Bool {
+            get {
+                prefs.bool(forSetting: "DownloadSettings", key: "continuesInBackground")
+            }
+            set {
+                prefs.set(newValue, forSetting: "DownloadSettings", key: "continuesInBackground")
+            }
+        }
+
+        /// The maximum grace period granted to active downloads after the app enters the background.
+        /// Zero means to pause immediately; the operating system may end any non-zero period early.
+        static var backgroundTimeLimit: TimeInterval {
+            get {
+                let storedValue = prefs.integer(forSetting: "DownloadSettings", key: "backgroundTimeLimit")
+                return TimeInterval(max(0, min(storedValue, 1_800)))
+            }
+            set {
+                let boundedValue = max(0, min(Int(newValue.rounded()), 1_800))
+                prefs.set(boundedValue, forSetting: "DownloadSettings", key: "backgroundTimeLimit")
+            }
+        }
+    }
+
+    // MARK: - Security
+    struct SecuritySettings {
+        static var gesturePasswordEnabled: Bool {
+            get {
+                prefs.bool(forSetting: "SecuritySettings", key: "gesturePasswordEnabled") && GesturePasswordStore.hasPassword
+            }
+            set {
+                prefs.set(newValue && GesturePasswordStore.hasPassword, forSetting: "SecuritySettings", key: "gesturePasswordEnabled")
+            }
+        }
+    }
+
+    // MARK: - Bottom Toolbar
+    struct ToolbarSettings {
+        static let defaultBottomButtonOrder = ["back", "forward", "share", "basket", "downloads", "tabs"]
+
+        static var bottomButtonOrder: [String] {
+            get {
+                guard let data = prefs.data(forSetting: "ToolbarSettings", key: "bottomButtonOrder"),
+                      let order = try? JSONDecoder().decode([String].self, from: data) else {
+                    return defaultBottomButtonOrder
+                }
+                let uniqueOrder = order.filter { defaultBottomButtonOrder.contains($0) }
+                guard Set(uniqueOrder) == Set(defaultBottomButtonOrder), uniqueOrder.count == defaultBottomButtonOrder.count else {
+                    return defaultBottomButtonOrder
+                }
+                return uniqueOrder
+            }
+            set {
+                let uniqueOrder = newValue.filter { defaultBottomButtonOrder.contains($0) }
+                guard Set(uniqueOrder) == Set(defaultBottomButtonOrder), uniqueOrder.count == defaultBottomButtonOrder.count else {
+                    return
+                }
+                prefs.set(try? JSONEncoder().encode(uniqueOrder), forSetting: "ToolbarSettings", key: "bottomButtonOrder")
+                NotificationCenter.default.post(name: .bottomToolbarPreferencesDidChange, object: nil)
+            }
+        }
+
+        static var longPressQuickActions: Bool {
+            get {
+                prefs.bool(forSetting: "ToolbarSettings", key: "longPressQuickActions")
+            }
+            set {
+                prefs.set(newValue, forSetting: "ToolbarSettings", key: "longPressQuickActions")
+                NotificationCenter.default.post(name: .bottomToolbarPreferencesDidChange, object: nil)
+            }
+        }
+    }
+
+    // MARK: - Clipboard
+    struct ClipboardSettings {
+        static var automaticallyParseURLs: Bool {
+            get {
+                prefs.bool(forSetting: "ClipboardSettings", key: "automaticallyParseURLs")
+            }
+            set {
+                prefs.set(newValue, forSetting: "ClipboardSettings", key: "automaticallyParseURLs")
+            }
+        }
+
+        static var lastHandledChangeCount: Int {
+            get {
+                prefs.integer(forSetting: "ClipboardSettings", key: "lastHandledChangeCount")
+            }
+            set {
+                prefs.set(newValue, forSetting: "ClipboardSettings", key: "lastHandledChangeCount")
             }
         }
     }

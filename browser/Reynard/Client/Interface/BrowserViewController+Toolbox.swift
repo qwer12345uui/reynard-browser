@@ -148,6 +148,25 @@ extension BrowserViewController {
         }
     }
 
+    func handleBottomToolbarQuickAction(_ action: BottomToolbar.QuickAction) {
+        switch action {
+        case .reload:
+            tabManager.reloadOrStopSelectedTab()
+        case .desktopSite:
+            if tabManager.changeWebsiteModeForSelectedTab() {
+                refreshAddressBar()
+            }
+        case .copyURL:
+            copyCurrentURL()
+        case .bookmark:
+            presentBookmarkEditor(addToFavorites: false)
+        case .toggleDownloads:
+            DownloadStore.shared.toggleAll()
+        case .newTab:
+            createNewTab()
+        }
+    }
+
     private func copyCurrentURL() {
         guard let tab = tabManager.selectedTab,
               let url = tabManager.shareableURL(for: tab) else {

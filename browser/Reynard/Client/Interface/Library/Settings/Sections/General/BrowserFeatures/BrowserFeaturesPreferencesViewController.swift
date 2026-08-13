@@ -1,0 +1,723 @@
+//
+//  BrowserFeaturesPreferencesViewController.swift
+//  Reynard
+//
+//  Settings for app protection, background downloads, the bottom toolbar and clipboard URL detection.
+//
+
+import CryptoKit
+import Security
+import UIKit
+
+enum GesturePasswordStore {
+    private static let service = "com.minh-ton.Reynard.gesture-password"
+    private static let account = "pattern-hash"
+
+    static var hasPassword: Bool {
+        return storedHash != nil
+    }
+
+    static func save(pattern: [Int]) {
+        let hash = digest(for: pattern)
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+        ]
+        SecItemDelete(query as CFDictionary)
+        var addQuery = query
+        addQuery[kSecValueData as String] = hash
+        addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        SecItemAdd(addQuery as CFDictionary, nil)
+    }
+
+    static func matches(pattern: [Int]) -> Bool {
+        guard let storedHash else {
+            return false
+        }
+        return storedHash == digest(for: pattern)
+    }
+
+    static func remove() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+        ]
+        SecItemDelete(query as CFDictionary)
+    }
+
+    private static var storedHash: Data? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess else {
+            return nil
+        }
+        return result as? Data
+    }
+
+    private static func digest(for pattern: [Int]) -> Data {
+        var data = Data("ReynardGesturePassword-v1".utf8)
+        for point in pattern {
+            data.append(UInt8(point))
+        }
+        return Data(SHA256.hash(data: data))
+    }
+}
+
+final class BrowserFeaturesPreferencesViewController: SettingsTableViewController {
+    private enum Section: CaseIterable {
+        case security
+        case downloads
+        case toolbar
+        case clipboard
+
+        var text: SettingsSectionText {
+            switch self {
+            case .security:
+                return SettingsSectionText(headerTitle: "安全")
+            case .downloads:
+                return SettingsSectionText(
+                    headerTitle: "后台下载",
+                    footerTitle: "后台执行时间由系统控制；到达所选时间或系统提前回收资源时，未完成的下载会自动暂停。"
+                )
+            case .toolbar:
+                return SettingsSectionText(headerTitle: "底部按钮")
+            case .clipboard:
+                return SettingsSectionText(
+                    headerTitle: "剪切板",
+                    footerTitle: "开启后，浏览器回到前台时会识别新的 HTTP 或 HTTPS 网址，并让你选择是否打开。"
+                )
+            }
+        }
+    }
+
+    private enum SecurityRow: CaseIterable {
+        case gesturePassword
+    }
+
+    private enum DownloadRow: CaseIterable {
+        case continuesInBackground
+        case timeLimit
+    }
+
+    private enum ToolbarRow: CaseIterable {
+        case buttonOrder
+        case longPressQuickActions
+    }
+
+    private enum ClipboardRow: CaseIterable {
+        case automaticallyParseURLs
+    }
+
+    private let continuesInBackgroundSwitch = UISwitch()
+    private let longPressQuickActionsSwitch = UISwitch()
+    private let automaticallyParseURLsSwitch = UISwitch()
+
+    init() {
+        super.init(style: .insetGrouped)
+        title = "浏览器功能"
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        continuesInBackgroundSwitch.addTarget(self, action: #selector(continuesInBackgroundDidChange(_:)), for: .valueChanged)
+        longPressQuickActionsSwitch.addTarget(self, action: #selector(longPressQuickActionsDidChange(_:)), for: .valueChanged)
+        automaticallyParseURLsSwitch.addTarget(self, action: #selector(automaticallyParseURLsDidChange(_:)), for: .valueChanged)
+        refreshDisplayedState()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshDisplayedState()
+        tableView.reloadData()
+    }
+
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        return Section.allCases.count
+    }
+
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        guard Section.allCases.indices.contains(section) else {
+            return 0
+        }
+        switch Section.allCases[section] {
+        case .security:
+            return SecurityRow.allCases.count
+        case .downloads:
+            return DownloadRow.allCases.count
+        case .toolbar:
+            return ToolbarRow.allCases.count
+        case .clipboard:
+            return ClipboardRow.allCases.count
+        }
+    }
+
+    override func sectionText(for section: Int) -> SettingsSectionText {
+        guard Section.allCases.indices.contains(section) else {
+            return SettingsSectionText()
+        }
+        return Section.allCases[section].text
+    }
+
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard Section.allCases.indices.contains(indexPath.section) else {
+            return UITableViewCell()
+        }
+
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+        cell.detailTextLabel?.textColor = .secondaryLabel
+
+        switch Section.allCases[indexPath.section] {
+        case .security:
+            cell.textLabel?.text = "手势密码"
+            cell.detailTextLabel?.text = Prefs.SecuritySettings.gesturePasswordEnabled ? "已启用" : "未设置"
+            cell.accessoryType = .disclosureIndicator
+        case .downloads:
+            switch DownloadRow.allCases[indexPath.row] {
+            case .continuesInBackground:
+                cell.textLabel?.text = "允许后台下载"
+                cell.detailTextLabel?.text = "有下载任务时保持传输，直到时间用尽或系统回收资源"
+                cell.selectionStyle = .none
+                cell.accessoryView = continuesInBackgroundSwitch
+            case .timeLimit:
+                cell.textLabel?.text = "后台运行时间"
+                cell.detailTextLabel?.text = formattedBackgroundTimeLimit
+                cell.accessoryType = .disclosureIndicator
+            }
+        case .toolbar:
+            switch ToolbarRow.allCases[indexPath.row] {
+            case .buttonOrder:
+                cell.textLabel?.text = "按钮排序"
+                cell.detailTextLabel?.text = "拖动以调整底部按钮显示顺序"
+                cell.accessoryType = .disclosureIndicator
+            case .longPressQuickActions:
+                cell.textLabel?.text = "长按快捷操作"
+                cell.detailTextLabel?.text = "长按底部按钮显示相关快捷操作"
+                cell.selectionStyle = .none
+                cell.accessoryView = longPressQuickActionsSwitch
+            }
+        case .clipboard:
+            cell.textLabel?.text = "自动解析剪切板网址"
+            cell.detailTextLabel?.text = "仅识别 HTTP 与 HTTPS 链接，不会自动打开"
+            cell.selectionStyle = .none
+            cell.accessoryView = automaticallyParseURLsSwitch
+        }
+
+        return cell
+    }
+
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        defer { tableView.deselectRow(at: indexPath, animated: true) }
+        guard Section.allCases.indices.contains(indexPath.section) else {
+            return
+        }
+
+        switch Section.allCases[indexPath.section] {
+        case .security:
+            navigationController?.pushViewController(GesturePasswordPreferencesViewController(), animated: true)
+        case .downloads where DownloadRow.allCases[indexPath.row] == .timeLimit:
+            presentBackgroundTimeLimitPicker(from: tableView.cellForRow(at: indexPath))
+        case .toolbar where ToolbarRow.allCases[indexPath.row] == .buttonOrder:
+            navigationController?.pushViewController(BottomToolbarOrderPreferencesViewController(), animated: true)
+        default:
+            break
+        }
+    }
+
+    private var formattedBackgroundTimeLimit: String {
+        let seconds = Int(Prefs.DownloadSettings.backgroundTimeLimit)
+        switch seconds {
+        case 0:
+            return "立即暂停"
+        case 60:
+            return "1 分钟"
+        default:
+            return "\(seconds / 60) 分钟"
+        }
+    }
+
+    private func refreshDisplayedState() {
+        continuesInBackgroundSwitch.isOn = Prefs.DownloadSettings.continuesInBackground
+        longPressQuickActionsSwitch.isOn = Prefs.ToolbarSettings.longPressQuickActions
+        automaticallyParseURLsSwitch.isOn = Prefs.ClipboardSettings.automaticallyParseURLs
+    }
+
+    private func presentBackgroundTimeLimitPicker(from sourceView: UIView?) {
+        let controller = UIAlertController(title: "后台运行时间", message: "系统可在任意时刻提前结束后台执行。", preferredStyle: .actionSheet)
+        let options: [(String, TimeInterval)] = [
+            ("立即暂停", 0),
+            ("1 分钟", 60),
+            ("5 分钟", 300),
+            ("10 分钟", 600),
+            ("30 分钟", 1_800),
+        ]
+        for (title, value) in options {
+            controller.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                Prefs.DownloadSettings.backgroundTimeLimit = value
+                self?.tableView.reloadData()
+            })
+        }
+        controller.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
+        if let popover = controller.popoverPresentationController, let sourceView {
+            popover.sourceView = sourceView
+            popover.sourceRect = sourceView.bounds
+        }
+        present(controller, animated: true)
+    }
+
+    @objc private func continuesInBackgroundDidChange(_ sender: UISwitch) {
+        Prefs.DownloadSettings.continuesInBackground = sender.isOn
+        tableView.reloadData()
+    }
+
+    @objc private func longPressQuickActionsDidChange(_ sender: UISwitch) {
+        Prefs.ToolbarSettings.longPressQuickActions = sender.isOn
+    }
+
+    @objc private func automaticallyParseURLsDidChange(_ sender: UISwitch) {
+        Prefs.ClipboardSettings.automaticallyParseURLs = sender.isOn
+        Prefs.ClipboardSettings.lastHandledChangeCount = UIPasteboard.general.changeCount
+    }
+}
+
+final class GesturePasswordPreferencesViewController: SettingsTableViewController {
+    private enum Row: CaseIterable {
+        case configure
+        case enabled
+        case remove
+    }
+
+    private let enabledSwitch = UISwitch()
+
+    init() {
+        super.init(style: .insetGrouped)
+        title = "手势密码"
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        enabledSwitch.addTarget(self, action: #selector(enabledDidChange(_:)), for: .valueChanged)
+        refreshDisplayedState()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshDisplayedState()
+        tableView.reloadData()
+    }
+
+    override func numberOfSections(in tableView: UITableView) -> Int { 1 }
+
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return Row.allCases.count
+    }
+
+    override func sectionText(for section: Int) -> SettingsSectionText {
+        return SettingsSectionText(
+            headerTitle: "应用保护",
+            footerTitle: "手势密码仅保存在本机钥匙串中。启用后，应用从后台返回时需要绘制正确手势才能继续使用。"
+        )
+    }
+
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard Row.allCases.indices.contains(indexPath.row) else {
+            return UITableViewCell()
+        }
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+        cell.detailTextLabel?.textColor = .secondaryLabel
+
+        switch Row.allCases[indexPath.row] {
+        case .configure:
+            cell.textLabel?.text = GesturePasswordStore.hasPassword ? "更改手势密码" : "设置手势密码"
+            cell.detailTextLabel?.text = "连接至少四个圆点"
+            cell.accessoryType = .disclosureIndicator
+        case .enabled:
+            cell.textLabel?.text = "启用手势密码"
+            cell.detailTextLabel?.text = GesturePasswordStore.hasPassword ? "在应用回到前台时要求验证" : "请先设置手势密码"
+            cell.selectionStyle = .none
+            enabledSwitch.isEnabled = GesturePasswordStore.hasPassword
+            cell.accessoryView = enabledSwitch
+        case .remove:
+            cell.textLabel?.text = "移除手势密码"
+            cell.textLabel?.textColor = GesturePasswordStore.hasPassword ? .systemRed : .tertiaryLabel
+            cell.selectionStyle = GesturePasswordStore.hasPassword ? .default : .none
+        }
+        return cell
+    }
+
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        defer { tableView.deselectRow(at: indexPath, animated: true) }
+        guard Row.allCases.indices.contains(indexPath.row) else {
+            return
+        }
+        switch Row.allCases[indexPath.row] {
+        case .configure:
+            let controller = GesturePatternEntryViewController { [weak self] in
+                self?.refreshDisplayedState()
+                self?.tableView.reloadData()
+            }
+            navigationController?.pushViewController(controller, animated: true)
+        case .remove where GesturePasswordStore.hasPassword:
+            let alert = UIAlertController(title: "移除手势密码", message: "移除后，应用回到前台时将不再要求手势验证。", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
+            alert.addAction(UIAlertAction(title: "移除", style: .destructive) { [weak self] _ in
+                GesturePasswordStore.remove()
+                Prefs.SecuritySettings.gesturePasswordEnabled = false
+                self?.refreshDisplayedState()
+                self?.tableView.reloadData()
+            })
+            present(alert, animated: true)
+        default:
+            break
+        }
+    }
+
+    private func refreshDisplayedState() {
+        enabledSwitch.isOn = Prefs.SecuritySettings.gesturePasswordEnabled
+        enabledSwitch.isEnabled = GesturePasswordStore.hasPassword
+    }
+
+    @objc private func enabledDidChange(_ sender: UISwitch) {
+        if sender.isOn && !GesturePasswordStore.hasPassword {
+            sender.isOn = false
+            return
+        }
+        Prefs.SecuritySettings.gesturePasswordEnabled = sender.isOn
+    }
+}
+
+final class BottomToolbarOrderPreferencesViewController: SettingsTableViewController {
+    private var order = Prefs.ToolbarSettings.bottomButtonOrder
+
+    private let titles: [String: String] = [
+        "back": "后退",
+        "forward": "前进",
+        "share": "分享",
+        "basket": "收纳框",
+        "downloads": "下载管理",
+        "tabs": "多窗口",
+    ]
+
+    init() {
+        super.init(style: .insetGrouped)
+        title = "按钮排序"
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "还原", style: .plain, target: self, action: #selector(resetOrder))
+        setEditing(true, animated: false)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        Prefs.ToolbarSettings.bottomButtonOrder = order
+    }
+
+    override func numberOfSections(in tableView: UITableView) -> Int { 1 }
+
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return order.count
+    }
+
+    override func sectionText(for section: Int) -> SettingsSectionText {
+        return SettingsSectionText(headerTitle: "显示顺序", footerTitle: "按住右侧排序控制并拖动。更改会立即应用到底部地址栏按钮。")
+    }
+
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard order.indices.contains(indexPath.row) else {
+            return UITableViewCell()
+        }
+        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        cell.textLabel?.text = titles[order[indexPath.row]] ?? order[indexPath.row]
+        cell.showsReorderControl = true
+        return cell
+    }
+
+    override func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+
+    override func tableView(
+        _ tableView: UITableView,
+        moveRowAt sourceIndexPath: IndexPath,
+        to destinationIndexPath: IndexPath
+    ) {
+        let item = order.remove(at: sourceIndexPath.row)
+        order.insert(item, at: destinationIndexPath.row)
+        Prefs.ToolbarSettings.bottomButtonOrder = order
+    }
+
+    @objc private func resetOrder() {
+        order = Prefs.ToolbarSettings.defaultBottomButtonOrder
+        Prefs.ToolbarSettings.bottomButtonOrder = order
+        tableView.reloadData()
+    }
+}
+
+final class GesturePatternEntryViewController: UIViewController {
+    private let completion: () -> Void
+    private let titleLabel = UILabel()
+    private let detailLabel = UILabel()
+    private let patternView = GesturePatternView()
+    private var firstPattern: [Int]?
+
+    init(completion: @escaping () -> Void) {
+        self.completion = completion
+        super.init(nibName: nil, bundle: nil)
+        title = "设置手势密码"
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+        configureLabels()
+        view.addSubview(titleLabel)
+        view.addSubview(detailLabel)
+        view.addSubview(patternView)
+        NSLayoutConstraint.activate([
+            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 34),
+            titleLabel.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            titleLabel.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+            detailLabel.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            detailLabel.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            patternView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            patternView.topAnchor.constraint(equalTo: detailLabel.bottomAnchor, constant: 42),
+            patternView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.68),
+            patternView.heightAnchor.constraint(equalTo: patternView.widthAnchor),
+        ])
+        patternView.onPatternCompleted = { [weak self] pattern in
+            self?.handle(pattern: pattern)
+        }
+    }
+
+    private func configureLabels() {
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.font = .preferredFont(forTextStyle: .title2)
+        titleLabel.textAlignment = .center
+        titleLabel.text = "绘制手势密码"
+        detailLabel.translatesAutoresizingMaskIntoConstraints = false
+        detailLabel.font = .preferredFont(forTextStyle: .body)
+        detailLabel.textAlignment = .center
+        detailLabel.numberOfLines = 0
+        detailLabel.textColor = .secondaryLabel
+        detailLabel.text = "请连续连接至少四个圆点"
+    }
+
+    private func handle(pattern: [Int]) {
+        guard pattern.count >= 4 else {
+            detailLabel.text = "请至少连接四个圆点后再试"
+            patternView.reset(after: 0.65)
+            return
+        }
+        guard let firstPattern else {
+            self.firstPattern = pattern
+            detailLabel.text = "请再次绘制相同手势以确认"
+            patternView.reset(after: 0.45)
+            return
+        }
+        guard firstPattern == pattern else {
+            self.firstPattern = nil
+            detailLabel.text = "两次手势不一致，请重新设置"
+            patternView.reset(after: 0.65)
+            return
+        }
+        GesturePasswordStore.save(pattern: pattern)
+        Prefs.SecuritySettings.gesturePasswordEnabled = true
+        completion()
+        navigationController?.popViewController(animated: true)
+    }
+}
+
+final class GesturePasswordUnlockViewController: UIViewController {
+    private let titleLabel = UILabel()
+    private let detailLabel = UILabel()
+    private let patternView = GesturePatternView()
+    private let onUnlocked: () -> Void
+
+    init(onUnlocked: @escaping () -> Void) {
+        self.onUnlocked = onUnlocked
+        super.init(nibName: nil, bundle: nil)
+        modalPresentationStyle = .formSheet
+        preferredContentSize = CGSize(width: 340, height: 460)
+        isModalInPresentation = true
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.font = .preferredFont(forTextStyle: .title2)
+        titleLabel.textAlignment = .center
+        titleLabel.text = "请输入手势密码"
+        detailLabel.translatesAutoresizingMaskIntoConstraints = false
+        detailLabel.font = .preferredFont(forTextStyle: .body)
+        detailLabel.textAlignment = .center
+        detailLabel.textColor = .secondaryLabel
+        detailLabel.text = "绘制已设置的解锁手势"
+        view.addSubview(titleLabel)
+        view.addSubview(detailLabel)
+        view.addSubview(patternView)
+        NSLayoutConstraint.activate([
+            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 44),
+            titleLabel.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            titleLabel.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+            detailLabel.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            detailLabel.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            patternView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            patternView.topAnchor.constraint(equalTo: detailLabel.bottomAnchor, constant: 42),
+            patternView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.68),
+            patternView.heightAnchor.constraint(equalTo: patternView.widthAnchor),
+        ])
+        patternView.onPatternCompleted = { [weak self] pattern in
+            self?.verify(pattern: pattern)
+        }
+    }
+
+    private func verify(pattern: [Int]) {
+        guard GesturePasswordStore.matches(pattern: pattern) else {
+            detailLabel.text = "手势不正确，请重试"
+            patternView.reset(after: 0.65)
+            return
+        }
+        dismiss(animated: true) { [onUnlocked] in
+            onUnlocked()
+        }
+    }
+}
+
+private final class GesturePatternView: UIView {
+    var onPatternCompleted: (([Int]) -> Void)?
+
+    private var selectedPoints: [Int] = []
+    private var currentTouchPoint: CGPoint?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isOpaque = false
+        backgroundColor = .clear
+        accessibilityLabel = "手势密码网格"
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func draw(_ rect: CGRect) {
+        let centers = pointCenters
+        let connectionPath = UIBezierPath()
+        if let first = selectedPoints.first {
+            connectionPath.move(to: centers[first])
+            for point in selectedPoints.dropFirst() {
+                connectionPath.addLine(to: centers[point])
+            }
+            if let currentTouchPoint {
+                connectionPath.addLine(to: currentTouchPoint)
+            }
+        }
+        tintColor.setStroke()
+        connectionPath.lineWidth = 4
+        connectionPath.lineCapStyle = .round
+        connectionPath.lineJoinStyle = .round
+        connectionPath.stroke()
+
+        for index in 0..<9 {
+            let center = centers[index]
+            let outerRect = CGRect(x: center.x - 22, y: center.y - 22, width: 44, height: 44)
+            let isSelected = selectedPoints.contains(index)
+            let outerPath = UIBezierPath(ovalIn: outerRect)
+            (isSelected ? tintColor : UIColor.systemGray3).setStroke()
+            outerPath.lineWidth = 3
+            outerPath.stroke()
+            if isSelected {
+                tintColor.setFill()
+                UIBezierPath(ovalIn: CGRect(x: center.x - 8, y: center.y - 8, width: 16, height: 16)).fill()
+            }
+        }
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        selectedPoints = []
+        currentTouchPoint = touches.first?.location(in: self)
+        appendPoint(at: currentTouchPoint)
+        setNeedsDisplay()
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        currentTouchPoint = touches.first?.location(in: self)
+        appendPoint(at: currentTouchPoint)
+        setNeedsDisplay()
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        currentTouchPoint = nil
+        setNeedsDisplay()
+        onPatternCompleted?(selectedPoints)
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        reset(after: 0)
+    }
+
+    func reset(after delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            self?.selectedPoints = []
+            self?.currentTouchPoint = nil
+            self?.setNeedsDisplay()
+        }
+    }
+
+    private var pointCenters: [CGPoint] {
+        let inset = bounds.width * 0.15
+        let spacing = (bounds.width - (inset * 2)) / 2
+        return (0..<9).map { index in
+            CGPoint(
+                x: inset + (CGFloat(index % 3) * spacing),
+                y: inset + (CGFloat(index / 3) * spacing)
+            )
+        }
+    }
+
+    private func appendPoint(at location: CGPoint?) {
+        guard let location else {
+            return
+        }
+        for (index, center) in pointCenters.enumerated() where !selectedPoints.contains(index) {
+            guard hypot(location.x - center.x, location.y - center.y) <= 30 else {
+                continue
+            }
+            selectedPoints.append(index)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            break
+        }
+    }
+}

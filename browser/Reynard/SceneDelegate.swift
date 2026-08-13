@@ -38,8 +38,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
         
         browserViewController.startScreenOrientationHandling()
+        DownloadStore.shared.applicationDidBecomeActive()
         browserViewController.sessionManager.applicationDidBecomeActive()
         browserViewController.tabManager.applicationDidBecomeActive()
+        browserViewController.presentGesturePasswordIfNeeded()
     }
     
     func sceneWillResignActive(_ scene: UIScene) {
@@ -68,6 +70,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     func sceneDidEnterBackground(_ scene: UIScene) {
+        DownloadStore.shared.applicationDidEnterBackground()
+        (window?.rootViewController as? BrowserViewController)?.prepareForGesturePasswordOnBackground()
         (window?.rootViewController as? BrowserViewController)?
             .sessionManager.setApplicationForeground(false)
     }
