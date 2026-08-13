@@ -404,7 +404,7 @@ final class PlaybackPreferencesViewController: SettingsTableViewController {
             case .videoDecoder:
                 configureDisclosureCell(cell, title: "视频解码器", detail: title(for: Prefs.PlaybackSettings.videoDecoder))
             case .longPressPlaybackSpeed:
-                configureDisclosureCell(cell, title: "长按播放速度", detail: "\(Prefs.PlaybackSettings.longPressPlaybackSpeed.rawValue, specifier: "%.1f")X")
+                configureDisclosureCell(cell, title: "长按播放速度", detail: String(format: "%.1fX", Prefs.PlaybackSettings.longPressPlaybackSpeed.rawValue))
             case .seekGesture:
                 configureDisclosureCell(cell, title: "手势快进快退", detail: title(for: Prefs.PlaybackSettings.seekGesture))
             }
@@ -531,7 +531,7 @@ final class PlaybackPreferencesViewController: SettingsTableViewController {
     }
 
     private func title(for decoder: VideoDecoderPreference) -> String { "自动" }
-    private func title(for speed: PlaybackSpeedPreference) -> String { "\(speed.rawValue, specifier: "%.1f")X" }
+    private func title(for speed: PlaybackSpeedPreference) -> String { String(format: "%.1fX", speed.rawValue) }
 
     private func title(for gesture: PlaybackSeekGesturePreference) -> String {
         switch gesture {

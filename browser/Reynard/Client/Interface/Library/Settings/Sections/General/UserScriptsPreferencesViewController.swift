@@ -6,7 +6,7 @@
 //
 
 import UIKit
-import UniformTypeIdentifiers
+import MobileCoreServices
 
 final class UserScriptsPreferencesViewController: SettingsTableViewController, UIDocumentPickerDelegate {
     private enum Section {
@@ -51,10 +51,6 @@ final class UserScriptsPreferencesViewController: SettingsTableViewController, U
         super.viewDidLoad()
         reloadScripts()
         NotificationCenter.default.addObserver(self, selector: #selector(userScriptsDidChange), name: .userScriptStoreDidChange, object: store)
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self, name: .userScriptStoreDidChange, object: store)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -161,8 +157,10 @@ final class UserScriptsPreferencesViewController: SettingsTableViewController, U
     }
 
     private func chooseScriptFile() {
-        let jsType = UTType(filenameExtension: "js") ?? .plainText
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [jsType, .plainText, .data], asCopy: true)
+        let picker = UIDocumentPickerViewController(
+            documentTypes: [kUTTypeJavaScript as String, kUTTypeText as String, kUTTypeData as String],
+            in: .import
+        )
         picker.delegate = self
         picker.allowsMultipleSelection = false
         present(picker, animated: true)

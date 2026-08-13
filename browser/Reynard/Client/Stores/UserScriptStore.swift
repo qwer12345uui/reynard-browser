@@ -104,13 +104,13 @@ final class UserScriptStore {
             matchPatterns: metadata.matchPatterns
         )
 
-        let snapshot = stateQueue.sync { () -> UserScriptSnapshot in
+        let installedSnapshot = stateQueue.sync { () -> UserScriptSnapshot in
             scripts.insert(script, at: 0)
             saveLocked()
-            return snapshot(from: script)
+            return self.snapshot(from: script)
         }
         postDidChange()
-        return snapshot
+        return installedSnapshot
     }
 
     func install(fromFile fileURL: URL) throws -> UserScriptSnapshot {
