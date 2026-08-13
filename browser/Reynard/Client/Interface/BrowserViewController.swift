@@ -325,6 +325,9 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         browserChrome.onToolbox = { [weak self] in
             self?.showToolbox(.top)
         }
+        browserChrome.onReload = { [weak self] in
+            self?.tabManager.reloadOrStopSelectedTab()
+        }
         browserChrome.onDownloads = { [weak self] in
             self?.presentLibrary(initialSection: .downloads)
         }
@@ -337,6 +340,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         browserChrome.onOverlayDismiss = { [weak self] in
             self?.toolbarController.reset()
             self?.dismissAddressBarEditingAndChromeOverlay()
+            self?.browserChrome.setOverlayDirection(.belowAddressBar)
         }
         browserChrome.onPageZoomOut = { [weak self] in
             self?.setSelectedPageZoomToPreviousLevel()

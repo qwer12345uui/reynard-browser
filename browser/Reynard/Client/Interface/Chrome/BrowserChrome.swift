@@ -20,6 +20,11 @@ final class BrowserChrome: UIView {
         case fullscreenMedia
     }
     
+    enum OverlayDirection {
+        case aboveAddressBar
+        case belowAddressBar
+    }
+
     enum SearchState {
         case inactive
         case focused
@@ -55,6 +60,7 @@ final class BrowserChrome: UIView {
     var onShare: (() -> Void)?
     var onBasket: (() -> Void)?
     var onToolbox: (() -> Void)?
+    var onReload: (() -> Void)?
     var onDownloads: (() -> Void)?
     var onNewTab: (() -> Void)?
     var onTabOverview: (() -> Void)?
@@ -88,7 +94,9 @@ final class BrowserChrome: UIView {
     private var overlayWidthConstraint: NSLayoutConstraint!
     private var overlayHeightConstraint: NSLayoutConstraint!
     private var overlayTopConstraint: NSLayoutConstraint?
+    private var overlayBottomConstraint: NSLayoutConstraint?
     private var overlayCenterXConstraint: NSLayoutConstraint?
+    private var overlayDirection: OverlayDirection = .belowAddressBar
     private var actionBarTopConstraint: NSLayoutConstraint?
     private var actionBarBottomConstraint: NSLayoutConstraint?
     private var actionBarKeyboardBottomConstraint: NSLayoutConstraint?
@@ -287,6 +295,15 @@ final class BrowserChrome: UIView {
     
     // MARK: - Overlay Content
     
+    func setOverlayDirection(_ direction: OverlayDirection) {
+        guard overlayDirection != direction else {
+            return
+        }
+        overlayDirection = direction
+        configureOverlayPositioningIfNeeded(force: true)
+        setNeedsLayout()
+    }
+
     func setOverlayPresentation(
         _ presentation: ChromeOverlayContentView.PresentationState,
         animated: Bool,
@@ -347,20 +364,35 @@ final class BrowserChrome: UIView {
         }
     }
     
-    private func configureOverlayPositioningIfNeeded() {
-        guard overlayTopConstraint?.isActive != true,
-              overlayCenterXConstraint?.isActive != true else {
+    private func configureOverlayPositioningIfNeeded(force: Bool = false) {
+        guard force || overlayCenterXConstraint?.isActive != true else {
             return
         }
         
-        NSLayoutConstraint.deactivate([overlayTopConstraint, overlayCenterXConstraint].compactMap { $0 })
-        let topConstraint = overlayContentView.topAnchor.constraint(
-            equalTo: addressBar.bottomAnchor,
-            constant: UX.overlayTopSpacing
-        )
+        NSLayoutConstraint.deactivate([
+            overlayTopConstraint,
+            overlayBottomConstraint,
+            overlayCenterXConstraint,
+        ].compactMap { $0 })
+        let verticalConstraint: NSLayoutConstraint
+        switch overlayDirection {
+        case .aboveAddressBar:
+            verticalConstraint = overlayContentView.bottomAnchor.constraint(
+                equalTo: addressBar.topAnchor,
+                constant: -UX.overlayTopSpacing
+            )
+            overlayTopConstraint = nil
+            overlayBottomConstraint = verticalConstraint
+        case .belowAddressBar:
+            verticalConstraint = overlayContentView.topAnchor.constraint(
+                equalTo: addressBar.bottomAnchor,
+                constant: UX.overlayTopSpacing
+            )
+            overlayTopConstraint = verticalConstraint
+            overlayBottomConstraint = nil
+        }
         let centerXConstraint = overlayContentView.centerXAnchor.constraint(equalTo: addressBar.centerXAnchor)
-        NSLayoutConstraint.activate([topConstraint, centerXConstraint])
-        overlayTopConstraint = topConstraint
+        NSLayoutConstraint.activate([verticalConstraint, centerXConstraint])
         overlayCenterXConstraint = centerXConstraint
     }
     
@@ -476,6 +508,7 @@ final class BrowserChrome: UIView {
         topToolbar.onShare = { [weak self] in self?.onShare?() }
         topToolbar.onBasket = { [weak self] in self?.onBasket?() }
         topToolbar.onToolbox = { [weak self] in self?.onToolbox?() }
+        topToolbar.onReload = { [weak self] in self?.onReload?() }
         topToolbar.onDownloads = { [weak self] in self?.onDownloads?() }
         topToolbar.onNewTab = { [weak self] in self?.onNewTab?() }
         topToolbar.onTabOverview = { [weak self] in self?.onTabOverview?() }
@@ -579,10 +612,10 @@ final class BrowserChrome: UIView {
             bottomToolbar.trailingAnchor.constraint(equalTo: trailingAnchor),
             bottomConstraint,
             
-            overlayDismissView.topAnchor.constraint(equalTo: topToolbar.bottomAnchor),
+            overlayDismissView.topAnchor.constraint(equalTo: topAnchor),
             overlayDismissView.leadingAnchor.constraint(equalTo: leadingAnchor),
             overlayDismissView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            overlayDismissView.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor),
+            overlayDismissView.bottomAnchor.constraint(equalTo: bottomAnchor),
             
             overlayWidthConstraint,
             overlayHeightConstraint,
