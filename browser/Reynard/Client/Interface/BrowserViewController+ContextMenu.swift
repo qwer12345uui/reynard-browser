@@ -18,7 +18,7 @@ extension BrowserViewController: ContextMenuCoordinatorHost {
     }
     
     var contextMenuTabActions: ContextMenuTabActions {
-        return ContextMenuTabActions(tabManager: tabManager)
+        return ContextMenuTabActions(tabManager: tabManager, sessionManager: sessionManager)
     }
     
     var contextMenuSelectedTabIsPrivate: Bool {
@@ -63,7 +63,7 @@ extension BrowserViewController: ContextMenuCoordinatorHost {
         guard disposition != .backgroundTab else {
             return
         }
-
+        
         captureThumbnail(forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode) { [weak self] _ in
             guard let self else {
                 return

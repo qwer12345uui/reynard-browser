@@ -40,8 +40,13 @@ final class NavigationHistory {
         )
     }
     
+    func snapshot(for tabID: UUID) -> NavigationHistoryStore.Snapshot {
+        store.currentSnapshot(for: tabID)
+    }
+    
     func record(
         to url: String,
+        title: String,
         for tabID: UUID,
         sessionState: SessionNavigationAvailability
     ) -> NavigationAvailability {
@@ -50,7 +55,7 @@ final class NavigationHistory {
               trimmedURL.lowercased() != "about:blank" else {
             return availability(for: tabID, sessionState: sessionState)
         }
-        _ = store.recordNavigation(to: trimmedURL, for: tabID)
+        _ = store.recordNavigation(to: trimmedURL, title: title, for: tabID)
         return availability(for: tabID, sessionState: sessionState)
     }
     
@@ -60,14 +65,29 @@ final class NavigationHistory {
     ) -> NavigationTransition? {
         let snapshot = store.currentSnapshot(for: tabID)
         if !snapshot.usesStoredHistory && sessionState.canGoBack {
-            _ = store.goBack(for: tabID)
+            _ = store.goBack(to: 0, for: tabID)
             return NavigationTransition(
                 action: .session,
                 availability: availability(for: tabID, sessionState: sessionState)
             )
         }
         
-        guard let url = store.goBack(for: tabID) else {
+        guard let url = store.goBack(to: 0, for: tabID) else {
+            return nil
+        }
+        _ = store.setUsesPersistedHistory(true, for: tabID)
+        return NavigationTransition(
+            action: .load(url),
+            availability: availability(for: tabID, sessionState: sessionState)
+        )
+    }
+    
+    func goBack(
+        to index: Int,
+        for tabID: UUID,
+        sessionState: SessionNavigationAvailability
+    ) -> NavigationTransition? {
+        guard let url = store.goBack(to: index, for: tabID) else {
             return nil
         }
         _ = store.setUsesPersistedHistory(true, for: tabID)
@@ -83,14 +103,29 @@ final class NavigationHistory {
     ) -> NavigationTransition? {
         let snapshot = store.currentSnapshot(for: tabID)
         if !snapshot.usesStoredHistory && sessionState.canGoForward {
-            _ = store.goForward(for: tabID)
+            _ = store.goForward(to: 0, for: tabID)
             return NavigationTransition(
                 action: .session,
                 availability: availability(for: tabID, sessionState: sessionState)
             )
         }
         
-        guard let url = store.goForward(for: tabID) else {
+        guard let url = store.goForward(to: 0, for: tabID) else {
+            return nil
+        }
+        _ = store.setUsesPersistedHistory(true, for: tabID)
+        return NavigationTransition(
+            action: .load(url),
+            availability: availability(for: tabID, sessionState: sessionState)
+        )
+    }
+    
+    func goForward(
+        to index: Int,
+        for tabID: UUID,
+        sessionState: SessionNavigationAvailability
+    ) -> NavigationTransition? {
+        guard let url = store.goForward(to: index, for: tabID) else {
             return nil
         }
         _ = store.setUsesPersistedHistory(true, for: tabID)
@@ -103,6 +138,10 @@ final class NavigationHistory {
     func useStoredHistory(for tabID: UUID) -> NavigationAvailability {
         _ = store.setUsesPersistedHistory(true, for: tabID)
         return availability(for: tabID, sessionState: .unavailable)
+    }
+    
+    func updateCurrentHistoryTitle(_ title: String, for tabID: UUID, matching url: String) {
+        store.updateCurrentHistoryTitle(title, for: tabID, matching: url)
     }
     
     func updateCurrentHistoryThumbnail(_ image: UIImage?, for tabID: UUID, matching url: String) {

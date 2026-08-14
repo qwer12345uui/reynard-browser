@@ -322,26 +322,30 @@ final class FaviconStore {
         """
         
         _ = executeLocked(sql)
-        addTransparencyAnalysisColumnIfNeededLocked()
+        ensureColumnLocked(name: "transparency_analysis_result", table: "favicon_images", definition: "INTEGER")
     }
     
-    private func addTransparencyAnalysisColumnIfNeededLocked() {
-        guard let statement = prepareStatementLocked("PRAGMA table_info(favicon_images);") else {
+    // MARK: - Schema Migration
+    
+    private func ensureColumnLocked(name: String, table: String, definition: String) {
+        guard let statement = prepareStatementLocked("PRAGMA table_info(\(table));") else {
             return
         }
         
-        var hasTransparencyAnalysisColumn = false
+        var hasColumn = false
         while sqlite3_step(statement) == SQLITE_ROW {
-            if string(from: statement, at: 1) == "transparency_analysis_result" {
-                hasTransparencyAnalysisColumn = true
+            if string(from: statement, at: 1) == name {
+                hasColumn = true
                 break
             }
         }
         sqlite3_finalize(statement)
         
-        if !hasTransparencyAnalysisColumn {
-            _ = executeLocked("ALTER TABLE favicon_images ADD COLUMN transparency_analysis_result INTEGER;")
+        guard !hasColumn else {
+            return
         }
+        
+        _ = executeLocked("ALTER TABLE \(table) ADD COLUMN \(name) \(definition);")
     }
     
     // MARK: - Cache Lookup

@@ -32,7 +32,6 @@ final class HomepageThumbnailRenderer {
         visibleRect: CGRect,
         contentMode: HomepageContentMode,
         isPrivateBrowsing: Bool,
-        capturesWindow: Bool,
         completion: @escaping (UIImage?) -> Void
     ) {
         guard size.width > 1,
@@ -48,18 +47,18 @@ final class HomepageThumbnailRenderer {
                 size: size,
                 visibleRect: visibleRect,
                 contentMode: contentMode,
-                isPrivateBrowsing: isPrivateBrowsing,
-                capturesWindow: capturesWindow
+                isPrivateBrowsing: isPrivateBrowsing
             ))
         }
     }
     
+    // TODO: This is slow and cause lags before tab overview presentation
+    // animation or before address bar swipe animation.
     func snapshot(
         size: CGSize,
         visibleRect: CGRect,
         contentMode: HomepageContentMode,
-        isPrivateBrowsing: Bool,
-        capturesWindow: Bool
+        isPrivateBrowsing: Bool
     ) -> UIImage? {
         guard size.width > 1,
               size.height > 1,
@@ -84,42 +83,26 @@ final class HomepageThumbnailRenderer {
             captureContainer = UIView(frame: CGRect(origin: .zero, size: size))
             captureContainer?.addSubview(view)
             view.frame = captureContainer?.bounds ?? .zero
+        } else {
+            view.bounds.size = size
         }
         
         captureContainer?.layoutIfNeeded()
         view.layoutIfNeeded()
         
-        let captureRoot = capturesWindow ? (view.window ?? view) : view
-        captureRoot.layoutIfNeeded()
-        let captureFrame = view.convert(view.bounds, to: captureRoot)
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { context in
             UIColor.systemBackground.setFill()
             context.fill(CGRect(origin: .zero, size: size))
-            context.cgContext.saveGState()
-            guard captureFrame.width > 1, captureFrame.height > 1 else {
-                context.cgContext.restoreGState()
-                return
-            }
-            let scaleX = size.width / captureFrame.width
-            let scaleY = size.height / captureFrame.height
-            context.cgContext.concatenate(CGAffineTransform(
-                a: scaleX,
-                b: 0,
-                c: 0,
-                d: scaleY,
-                tx: -captureFrame.minX * scaleX,
-                ty: -captureFrame.minY * scaleY
-            ))
-            captureRoot.drawHierarchy(in: captureRoot.bounds, afterScreenUpdates: false)
-            context.cgContext.restoreGState()
+            view.drawHierarchy(in: CGRect(origin: .zero, size: size), afterScreenUpdates: false)
         }
         
         if temporarilyAttachedView {
             view.removeFromSuperview()
         }
-        view.frame = originalFrame
         view.bounds = originalBounds
+        view.frame = originalFrame
+        view.layoutIfNeeded()
         return image
     }
     

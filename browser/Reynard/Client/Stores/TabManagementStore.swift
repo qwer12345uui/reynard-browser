@@ -30,6 +30,7 @@ final class TabManagementStore {
         let id: UUID
         let title: String
         let url: String?
+        let createdAt: Date?
         let thumbnail: UIImage?
         let isPrivate: Bool
     }
@@ -50,6 +51,7 @@ final class TabManagementStore {
         let id: UUID
         let title: String
         let url: String?
+        let createdAt: Date?
     }
     
     private struct PersistedState {
@@ -138,6 +140,12 @@ final class TabManagementStore {
         return .regular
     }
     
+    func tabIDs(olderThan date: Date, isPrivate: Bool) -> Set<UUID> {
+        stateQueue.sync {
+            fetchTabIDsLocked(olderThan: date, isPrivate: isPrivate)
+        }
+    }
+    
     func persistTabs(
         regularTabs: [Tab],
         privateTabs: [Tab],
@@ -146,10 +154,10 @@ final class TabManagementStore {
         selectedTabMode: TabMode
     ) {
         let persistedRegularTabs = regularTabs.map {
-            PersistedTab(id: $0.id, title: $0.title, url: $0.url)
+            PersistedTab(id: $0.id, title: $0.title, url: $0.url, createdAt: $0.createdAt)
         }
         let persistedPrivateTabs = privateTabs.map {
-            PersistedTab(id: $0.id, title: $0.title, url: $0.url)
+            PersistedTab(id: $0.id, title: $0.title, url: $0.url, createdAt: $0.createdAt)
         }
         
         stateQueue.async {
@@ -383,6 +391,7 @@ final class TabManagementStore {
             id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
             url TEXT,
+            created_at REAL,
             is_private INTEGER NOT NULL,
             position INTEGER NOT NULL
         );
@@ -397,6 +406,30 @@ final class TabManagementStore {
         """
         
         _ = executeLocked(sql)
+        ensureColumnLocked(name: "created_at", table: "tabs", definition: "REAL")
+    }
+    
+    // MARK: - Schema Migration
+    
+    private func ensureColumnLocked(name: String, table: String, definition: String) {
+        guard let statement = prepareStatementLocked("PRAGMA table_info(\(table));") else {
+            return
+        }
+        
+        var hasColumn = false
+        while sqlite3_step(statement) == SQLITE_ROW {
+            if string(from: statement, at: 1) == name {
+                hasColumn = true
+                break
+            }
+        }
+        sqlite3_finalize(statement)
+        
+        guard !hasColumn else {
+            return
+        }
+        
+        _ = executeLocked("ALTER TABLE \(table) ADD COLUMN \(name) \(definition);")
     }
     
     private func ensureStateRowLocked() {
@@ -482,7 +515,7 @@ final class TabManagementStore {
     private func fetchTabsLocked(isPrivate: Bool) -> [TabSnapshot] {
         guard let statement = prepareStatementLocked(
             """
-            SELECT id, title, url
+            SELECT id, title, url, created_at
             FROM tabs
             WHERE is_private = ?
             ORDER BY position ASC;
@@ -508,6 +541,7 @@ final class TabManagementStore {
                     id: id,
                     title: string(from: statement, at: 1),
                     url: optionalString(from: statement, at: 2),
+                    createdAt: optionalDate(from: statement, at: 3),
                     thumbnail: loadThumbnailLocked(for: id),
                     isPrivate: isPrivate
                 )
@@ -515,6 +549,38 @@ final class TabManagementStore {
         }
         
         return tabs
+    }
+    
+    private func fetchTabIDsLocked(olderThan date: Date, isPrivate: Bool) -> Set<UUID> {
+        guard let statement = prepareStatementLocked(
+            """
+            SELECT id
+            FROM tabs
+            WHERE is_private = ?
+              AND created_at IS NOT NULL
+              AND created_at < ?;
+            """
+        ) else {
+            return []
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        sqlite3_bind_int64(statement, 1, isPrivate ? 1 : 0)
+        sqlite3_bind_double(statement, 2, date.timeIntervalSince1970)
+        
+        var tabIDs = Set<UUID>()
+        while sqlite3_step(statement) == SQLITE_ROW {
+            guard let id = UUID(uuidString: string(from: statement, at: 0)) else {
+                continue
+            }
+            
+            tabIDs.insert(id)
+        }
+        
+        return tabIDs
     }
     
     private func searchTabsLocked(matching query: String, limit: Int, isPrivate: Bool) -> [TabSnapshot] {
@@ -645,8 +711,8 @@ final class TabManagementStore {
     private func insertTabsLocked(_ tabs: [PersistedTab], isPrivate: Bool) -> Bool {
         guard let statement = prepareStatementLocked(
             """
-            INSERT INTO tabs (id, title, url, is_private, position)
-            VALUES (?, ?, ?, ?, ?);
+            INSERT INTO tabs (id, title, url, created_at, is_private, position)
+            VALUES (?, ?, ?, ?, ?, ?);
             """
         ) else {
             return false
@@ -662,8 +728,9 @@ final class TabManagementStore {
             bind(tab.id.uuidString, to: statement, at: 1)
             bind(tab.title, to: statement, at: 2)
             bindOptional(tab.url, to: statement, at: 3)
-            sqlite3_bind_int64(statement, 4, isPrivate ? 1 : 0)
-            sqlite3_bind_int64(statement, 5, Int64(index))
+            bindOptional(tab.createdAt, to: statement, at: 4)
+            sqlite3_bind_int64(statement, 5, isPrivate ? 1 : 0)
+            sqlite3_bind_int64(statement, 6, Int64(index))
             
             guard sqlite3_step(statement) == SQLITE_DONE else {
                 return false
@@ -832,6 +899,15 @@ final class TabManagementStore {
         bind(value, to: statement, at: index)
     }
     
+    private func bindOptional(_ value: Date?, to statement: OpaquePointer?, at index: Int32) {
+        guard let value else {
+            sqlite3_bind_null(statement, index)
+            return
+        }
+        
+        sqlite3_bind_double(statement, index, value.timeIntervalSince1970)
+    }
+    
     private func string(from statement: OpaquePointer?, at index: Int32) -> String {
         guard let rawValue = sqlite3_column_text(statement, index) else {
             return ""
@@ -846,5 +922,13 @@ final class TabManagementStore {
         }
         
         return string(from: statement, at: index)
+    }
+    
+    private func optionalDate(from statement: OpaquePointer?, at index: Int32) -> Date? {
+        guard sqlite3_column_type(statement, index) != SQLITE_NULL else {
+            return nil
+        }
+        
+        return Date(timeIntervalSince1970: sqlite3_column_double(statement, index))
     }
 }

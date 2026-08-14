@@ -112,6 +112,7 @@ final class TopToolbar: UIView {
         target: self,
         action: #selector(tabOverviewTapped)
     )
+    private let buttonMenus = ToolbarButtonMenus()
     
     private lazy var leadingButtons: UIStackView = {
         downloadButton.isHidden = true
@@ -142,6 +143,7 @@ final class TopToolbar: UIView {
     
     private var heightConstraint: NSLayoutConstraint!
     private var contentTopConstraint: NSLayoutConstraint!
+    private var backgroundBottomConstraint: NSLayoutConstraint!
     private var leadingWidthConstraint: NSLayoutConstraint!
     private var trailingWidthConstraint: NSLayoutConstraint!
     private var standardAddressBarConstraints: [NSLayoutConstraint] = []
@@ -205,6 +207,12 @@ final class TopToolbar: UIView {
     func detachAddressBar() {
         NSLayoutConstraint.deactivate(standardAddressBarConstraints + widthLimitedStandardAddressBarConstraints + compactAddressBarConstraints)
         isUsingStandardAddressBarWidthLimit = false
+    }
+    
+    func extendBackground(to bottomAnchor: NSLayoutYAxisAnchor) {
+        backgroundBottomConstraint.isActive = false
+        backgroundBottomConstraint = backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        backgroundBottomConstraint.isActive = true
     }
     
     func apply(
@@ -274,6 +282,55 @@ final class TopToolbar: UIView {
         shareButton.isEnabled = canShare
     }
     
+    func configureNavigationMenus(
+        itemsProvider: @escaping (ToolbarButtonMenus.NavigationDirection) -> [NavigationHistoryStore.HistoryItem],
+        onSelect: @escaping (ToolbarButtonMenus.NavigationDirection, Int) -> Void
+    ) {
+        buttonMenus.installNavigationMenus(
+            on: backButton,
+            forwardButton: forwardButton,
+            itemsProvider: itemsProvider,
+            onSelect: onSelect
+        )
+    }
+    
+    func configureRecentlyClosedTabsMenu(
+        isAvailable: @escaping () -> Bool,
+        itemsProvider: @escaping () -> [TabManagementStore.RecentlyClosedTabSnapshot],
+        onSelect: @escaping (UUID) -> Void
+    ) {
+        buttonMenus.installRecentlyClosedTabsMenu(
+            on: newTabButton,
+            isAvailable: isAvailable,
+            itemsProvider: itemsProvider,
+            onSelect: onSelect
+        )
+    }
+    
+    func configureLibraryMenus(onSelect: @escaping (LibrarySection) -> Void) {
+        buttonMenus.installLibraryMenus(
+            on: [sidebarButton, libraryButton],
+            onSelect: onSelect
+        )
+    }
+    
+    func configureTabOverviewMenus(
+        tabCountProvider: @escaping () -> Int,
+        onCloseAllTabs: @escaping () -> Void,
+        onCloseTab: @escaping () -> Void,
+        onNewPrivateTab: @escaping () -> Void,
+        onNewTab: @escaping () -> Void
+    ) {
+        buttonMenus.installTabOverviewMenus(
+            on: [tabOverviewButton],
+            tabCountProvider: tabCountProvider,
+            onCloseAllTabs: onCloseAllTabs,
+            onCloseTab: onCloseTab,
+            onNewPrivateTab: onNewPrivateTab,
+            onNewTab: onNewTab
+        )
+    }
+    
     func updateDownload(_ summary: DownloadStoreSummary) {
         downloadButton.applyDownloadSummary(summary)
         updateDownloadButtonVisibility()
@@ -327,6 +384,7 @@ final class TopToolbar: UIView {
     private func configureConstraints() {
         heightConstraint = heightAnchor.constraint(equalToConstant: UX.topToolbarContentHeight)
         contentTopConstraint = contentView.topAnchor.constraint(equalTo: topAnchor)
+        backgroundBottomConstraint = backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor)
         leadingWidthConstraint = leadingButtons.widthAnchor.constraint(equalToConstant: UX.topToolbarStandardButtonStackWidth)
         trailingWidthConstraint = trailingButtons.widthAnchor.constraint(equalToConstant: UX.topToolbarTrailingButtonStackWidth)
         
@@ -334,7 +392,7 @@ final class TopToolbar: UIView {
             backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: -UX.backgroundViewHorizontalExtension),
             backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: UX.backgroundViewHorizontalExtension),
             backgroundView.topAnchor.constraint(equalTo: topAnchor),
-            backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            backgroundBottomConstraint,
             
             heightConstraint,
             contentTopConstraint,

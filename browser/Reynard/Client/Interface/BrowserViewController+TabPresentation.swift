@@ -80,6 +80,10 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
         clearTabsForCurrentOverviewMode()
     }
     
+    func tabOverviewDidRequestClearTabsOlderThan(_ tabOverview: TabOverview, age: TabOverviewClearTabsMenu.Age) {
+        clearTabsOlderThan(age)
+    }
+    
     func tabOverviewDidRequestNewTab(_ tabOverview: TabOverview) {
         createNewTab()
     }
@@ -114,6 +118,11 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
         updateBrowserLayout(animated: animated, duration: duration)
     }
     
+    func prepareTabOverviewPresentation() {
+        homepageOverlayCoordinator.updatePresentation(animated: false)
+        view.layoutIfNeeded()
+    }
+    
     func tabOverviewDidFinishDismissal() {
         toolbarController.unlock(for: .tabOverview)
         requestContentKeyboardFocus()
@@ -128,6 +137,7 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
                 return
             }
             
+            browserChrome.dismissActionBar(animated: false)
             dismissAddressBarEditingAndOverlays()
             contentView.resetFocusedInputRelocation()
             homepageOverlayCoordinator.tabOverviewWillPresent()
@@ -194,6 +204,30 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
         tabManager.removeAllTabs(mode: .regular)
         tabOverview.prepareNextTabChangesWithoutAnimation()
         createTabFromOverview(mode: .regular)
+    }
+    
+    private func clearTabsOlderThan(_ age: TabOverviewClearTabsMenu.Age) {
+        guard let cutoffDate = age.cutoffDate() else {
+            return
+        }
+        
+        tabBar.setPendingExpansion(at: nil)
+        let mode = tabOverview.mode.tabMode
+        let tabs = mode == .private ? tabManager.privateTabs : tabManager.regularTabs
+        let oldTabIDs = TabManagementStore.shared.tabIDs(olderThan: cutoffDate, isPrivate: mode == .private)
+        let oldTabIndices = tabs.indices.filter { oldTabIDs.contains(tabs[$0].id) }
+        guard !oldTabIndices.isEmpty else {
+            return
+        }
+        
+        if oldTabIndices.count == tabs.count {
+            clearTabsForCurrentOverviewMode()
+            return
+        }
+        
+        oldTabIndices.reversed().forEach { index in
+            tabManager.removeTab(at: index, mode: mode)
+        }
     }
     
     func createTabFromOverview(mode: TabMode) {

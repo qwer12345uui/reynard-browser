@@ -35,9 +35,9 @@ final class AddressBarGestures: NSObject {
         static let addressBarTabSwitchCancellationDuration: TimeInterval = 0.22
         static let addressBarAutomaticNewTabTranslationRatio: CGFloat = 0.34
         static let addressBarPreviewOutsidePadding: CGFloat = 24
-        static let addressBarPreviewCornerRadius: CGFloat = 16
-        static let addressBarPreviewShadowOpacity: Float = 0.12
-        static let addressBarPreviewShadowRadius: CGFloat = 10
+        static let addressBarPreviewCornerRadius: CGFloat = 22
+        static let addressBarPreviewShadowOpacity: Float = 0.18
+        static let addressBarPreviewShadowRadius: CGFloat = 14
         static let addressBarPreviewShadowOffset = CGSize(width: 0, height: 2)
         static let addressBarPreviewHorizontalInset: CGFloat = 12
         static let addressBarPreviewButtonSpacing: CGFloat = 8
@@ -908,7 +908,7 @@ final class AddressBarGestures: NSObject {
             return
         }
         
-        delegate.addressBarTransitionWillBegin(prepareForGesture: true)
+        delegate.addressBarTransitionWillBegin(prepareForGesture: false)
         delegate.presentTabOverviewFromGesture(animated: true)
         delegate.addressBarTransitionDidEnd()
     }

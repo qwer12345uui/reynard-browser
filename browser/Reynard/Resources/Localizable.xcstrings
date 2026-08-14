@@ -3228,6 +3228,27 @@
         }
       }
     },
+    "Close Old Tabs..." : {
+      "comment" : "Tab age menu",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Old Tabs..."
+          }
+        }
+      }
+    },
+    "Close This Tab" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close This Tab"
+          }
+        }
+      }
+    },
     "Compatibility" : {
       "localizations" : {
         "en" : {
@@ -3413,34 +3434,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "拷贝链接"
-          }
-        }
-      }
-    },
-    "Copy URL" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy URL"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copier l'URL"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " Скопировать URL-адрес\n"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拷贝 URL"
           }
         }
       }
@@ -6307,6 +6300,16 @@
         }
       }
     },
+    "New Private Tab" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Private Tab"
+          }
+        }
+      }
+    },
     "New required data collection: The developer says this add-on will collect %@." : {
       "comment" : "Data collection list",
       "localizations" : {
@@ -6984,6 +6987,39 @@
         }
       }
     },
+    "Older Than 1 Day" : {
+      "comment" : "Tab age",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Older Than 1 Day"
+          }
+        }
+      }
+    },
+    "Older Than 1 Month" : {
+      "comment" : "Tab age",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Older Than 1 Month"
+          }
+        }
+      }
+    },
+    "Older Than 1 Week" : {
+      "comment" : "Tab age",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Older Than 1 Week"
+          }
+        }
+      }
+    },
     "On" : {
       "comment" : "Enabled state",
       "localizations" : {
@@ -7452,6 +7488,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "密码"
+          }
+        }
+      }
+    },
+    "Paste and Go" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste and Go"
           }
         }
       }

@@ -19,6 +19,7 @@ final class TabOverviewTopToolbar: UIView {
     }
     
     var onClearTabs: (() -> Void)?
+    var onClearTabsOlderThan: ((TabOverviewClearTabsMenu.Age) -> Void)?
     var onAddTab: (() -> Void)?
     var onDone: (() -> Void)?
     var onTabModeChange: ((TabOverview.Mode) -> Void)?
@@ -51,10 +52,15 @@ final class TabOverviewTopToolbar: UIView {
             String.localizedStringWithFormat(NSLocalizedString("%d Tabs", comment: "Tab count"), tabCount),
             forSegmentAt: TabOverview.Mode.regularTabs.rawValue
         )
-        clearTabsButton.installMenu(makeClearTabsMenu(tabCount: visibleTabCount))
+        let clearTabsMenu = TabOverviewClearTabsMenu.make(
+            tabCount: visibleTabCount,
+            onClearTabs: { [weak self] in self?.onClearTabs?() },
+            onClearTabsOlderThan: { [weak self] age in self?.onClearTabsOlderThan?(age) }
+        )
+        clearTabsButton.installMenu(clearTabsMenu)
         doneButton.setActionEnabled(hasVisibleTab)
         if #available(iOS 26.0, *) {
-            liquidGlassActionToolbar.items?.first?.menu = makeClearTabsMenu(tabCount: visibleTabCount)
+            liquidGlassActionToolbar.items?.first?.menu = clearTabsMenu
             liquidGlassActionToolbar.items?.last?.isEnabled = hasVisibleTab
         }
     }
@@ -105,17 +111,6 @@ final class TabOverviewTopToolbar: UIView {
         addTabButton.addTarget(self, action: #selector(addTabButtonTapped), for: .touchUpInside)
         doneButton.addTarget(self, action: #selector(doneTapped), for: .touchUpInside)
         tabModeControl.addTarget(self, action: #selector(tabModeControlChanged), for: .valueChanged)
-    }
-    
-    private func makeClearTabsMenu(tabCount: Int) -> UIMenu {
-        UIMenu(title: "", children: [
-            UIAction(
-                title: String.localizedStringWithFormat(NSLocalizedString("Close %d Tabs", comment: "Tab count"), tabCount),
-                attributes: .destructive
-            ) { [weak self] _ in
-                self?.onClearTabs?()
-            }
-        ])
     }
     
     private func makeLiquidGlassActionToolbar() -> UIToolbar {

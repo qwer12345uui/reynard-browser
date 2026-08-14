@@ -26,8 +26,9 @@ extension BrowserViewController: TabManagerDelegate {
             tabOverview.setMode(TabOverview.Mode(tabMode: tabManager.selectedTabMode), animated: false)
         }
         tabOverview.applyPendingTabChanges()
+        let animateTabBarVisibility = tabBar.visibility != targetTabBarVisibility
         tabBar.reloadTabs()
-        updateBrowserLayout(animated: false)
+        updateBrowserLayout(animated: animateTabBarVisibility)
         homepageOverlayCoordinator.updatePresentation(animated: false)
         tabBar.updateLayout()
     }
@@ -74,9 +75,10 @@ extension BrowserViewController: TabManagerDelegate {
             tabOverview.setMode(TabOverview.Mode(tabMode: tabManager.selectedTabMode), animated: false)
             tabOverview.reloadTabs()
         }
+        let animateTabBarVisibility = tabBar.visibility != targetTabBarVisibility
         tabBar.reloadTabs()
         homepageOverlayCoordinator.updatePresentation(animated: false)
-        updateBrowserLayout(animated: false)
+        updateBrowserLayout(animated: animateTabBarVisibility)
         
         if isShowingFullscreenMedia,
            fullscreenSession !== selectedTab.session {

@@ -314,12 +314,17 @@ final class SessionManager {
         return history.availability(for: tabID, sessionState: sessionState)
     }
     
+    func navigationHistory(for tabID: UUID) -> NavigationHistoryStore.Snapshot {
+        return history.snapshot(for: tabID)
+    }
+    
     func recordNavigation(
         to url: String,
+        title: String,
         for tabID: UUID,
         sessionState: SessionNavigationAvailability
     ) -> NavigationAvailability {
-        return history.record(to: url, for: tabID, sessionState: sessionState)
+        return history.record(to: url, title: title, for: tabID, sessionState: sessionState)
     }
     
     func goBack(
@@ -329,6 +334,14 @@ final class SessionManager {
         return history.goBack(for: tabID, sessionState: sessionState)
     }
     
+    func goBack(
+        to index: Int,
+        for tabID: UUID,
+        sessionState: SessionNavigationAvailability
+    ) -> NavigationTransition? {
+        return history.goBack(to: index, for: tabID, sessionState: sessionState)
+    }
+    
     func goForward(
         for tabID: UUID,
         sessionState: SessionNavigationAvailability
@@ -336,8 +349,20 @@ final class SessionManager {
         return history.goForward(for: tabID, sessionState: sessionState)
     }
     
+    func goForward(
+        to index: Int,
+        for tabID: UUID,
+        sessionState: SessionNavigationAvailability
+    ) -> NavigationTransition? {
+        return history.goForward(to: index, for: tabID, sessionState: sessionState)
+    }
+    
     func useStoredNavigationHistory(for tabID: UUID) -> NavigationAvailability {
         return history.useStoredHistory(for: tabID)
+    }
+    
+    func updateCurrentHistoryTitle(_ title: String, for tabID: UUID, matching url: String) {
+        history.updateCurrentHistoryTitle(title, for: tabID, matching: url)
     }
     
     func updateCurrentHistoryThumbnail(_ image: UIImage?, for tabID: UUID, matching url: String) {

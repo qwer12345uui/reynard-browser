@@ -108,6 +108,22 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
         return tabManager.shareableURL(for: selectedTab)
     }
     
+    func addressBarTabCount(_ addressBar: AddressBar) -> Int {
+        return tabManager.activeTabs.count
+    }
+    
+    func addressBarDidRequestCloseThisTab(_ addressBar: AddressBar) {
+        closeTab()
+    }
+    
+    func addressBarDidRequestCloseAllTabs(_ addressBar: AddressBar) {
+        closeAllTabs()
+    }
+    
+    func addressBar(_ addressBar: AddressBar, didRequestShareLink url: URL) {
+        presentShareSheet(url: url.absoluteString)
+    }
+    
     // MARK: - AddressBarGestureDelegate
     
     var transitionContainerView: UIView {

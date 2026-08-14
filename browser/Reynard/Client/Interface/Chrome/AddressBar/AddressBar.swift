@@ -17,6 +17,10 @@ protocol AddressBarDelegate: AnyObject {
     func addressBarDidRequestWebsiteSettings(_ addressBar: AddressBar)
     func addressBar(_ addressBar: AddressBar, didRequestBookmarkInFavorites favorites: Bool)
     func addressBarShareableURL(_ addressBar: AddressBar) -> URL?
+    func addressBarTabCount(_ addressBar: AddressBar) -> Int
+    func addressBarDidRequestCloseThisTab(_ addressBar: AddressBar)
+    func addressBarDidRequestCloseAllTabs(_ addressBar: AddressBar)
+    func addressBar(_ addressBar: AddressBar, didRequestShareLink url: URL)
 }
 
 final class AddressBar: UIView {
@@ -77,6 +81,11 @@ final class AddressBar: UIView {
         let content: ContentState
         let leadingButton: LeadingButtonState
         let trailingButton: TrailingButtonState
+    }
+    
+    private final class PasteAndGoMenuState {
+        var isAvailable = false
+        var menuWasReturned = false
     }
     
     static let placeholderText = NSLocalizedString("Search or enter address", comment: "")
@@ -985,17 +994,118 @@ extension AddressBar: UIContextMenuInteractionDelegate {
         _ interaction: UIContextMenuInteraction,
         configurationForMenuAtLocation location: CGPoint
     ) -> UIContextMenuConfiguration? {
-        guard editingState == .inactive,
-              let url = delegate?.addressBarShareableURL(self) else {
+        guard editingState == .inactive else {
             return nil
         }
         
-        return UIContextMenuConfiguration(identifier: url as NSURL, previewProvider: nil) { _ in
-            UIMenu(title: "", children: [
-                UIAction(title: NSLocalizedString("Copy URL", comment: ""), image: UIImage(named: "reynard.document.on.document")) { _ in
-                    UIPasteboard.general.string = url.absoluteString
-                },
-            ])
+        let url = delegate?.addressBarShareableURL(self)
+        let menuState = PasteAndGoMenuState()
+        if #available(iOS 14.0, *) {
+            detectPasteAndGoAvailability { [weak self, weak interaction] isAvailable in
+                menuState.isAvailable = isAvailable
+                guard isAvailable, menuState.menuWasReturned else {
+                    return
+                }
+                
+                interaction?.updateVisibleMenu { [weak self] visibleMenu in
+                    self?.makeContextMenu(for: url, includesPasteAndGo: true) ?? visibleMenu
+                }
+            }
+        }
+        
+        return UIContextMenuConfiguration(identifier: url.map { $0 as NSURL }, previewProvider: nil) { [weak self] _ in
+            menuState.menuWasReturned = true
+            guard let self else {
+                return nil
+            }
+            return self.makeContextMenu(
+                for: url,
+                includesPasteAndGo: menuState.isAvailable
+            )
+        }
+    }
+    
+    private func makeContextMenu(for url: URL?, includesPasteAndGo: Bool) -> UIMenu {
+        var children: [UIMenuElement] = []
+        if includesPasteAndGo {
+            children.append(UIAction(
+                title: NSLocalizedString("Paste and Go", comment: ""),
+                image: UIImage(named: "reynard.document.on.clipboard")
+            ) { [weak self] _ in
+                guard let text = UIPasteboard.general.string else {
+                    return
+                }
+                self?.searchDelegate?.addressBarDidSubmit(text)
+            })
+        }
+        
+        if let url {
+            children.append(UIAction(
+                title: NSLocalizedString("Copy Link", comment: ""),
+                image: UIImage(named: "reynard.document.on.document")
+            ) { _ in
+                UIPasteboard.general.string = url.absoluteString
+            })
+            children.append(UIAction(
+                title: NSLocalizedString("Share Link", comment: ""),
+                image: UIImage(named: "reynard.square.and.arrow.up")
+            ) { [weak self] _ in
+                guard let self else {
+                    return
+                }
+                self.delegate?.addressBar(self, didRequestShareLink: url)
+            })
+        }
+        
+        let tabCount = delegate?.addressBarTabCount(self) ?? 0
+        let closeTabAction = UIAction(
+            title: NSLocalizedString("Close This Tab", comment: ""),
+            image: UIImage(named: "reynard.xmark"),
+            attributes: .destructive
+        ) { [weak self] _ in
+            guard let self else {
+                return
+            }
+            self.delegate?.addressBarDidRequestCloseThisTab(self)
+        }
+        var closeTabActions: [UIMenuElement] = [closeTabAction]
+        if tabCount > 1 {
+            closeTabActions.insert(UIAction(
+                title: String.localizedStringWithFormat(
+                    NSLocalizedString("Close %d Tabs", comment: "Tab count"),
+                    tabCount
+                ),
+                image: UIImage(named: "reynard.xmark"),
+                attributes: .destructive
+            ) { [weak self] _ in
+                guard let self else {
+                    return
+                }
+                self.delegate?.addressBarDidRequestCloseAllTabs(self)
+            }, at: 0)
+        }
+        
+        if children.isEmpty {
+            children.append(contentsOf: closeTabActions)
+        } else {
+            children.append(UIMenu(title: "", options: .displayInline, children: closeTabActions))
+        }
+        return UIMenu(title: "", children: children)
+    }
+    
+    @available(iOS 14.0, *)
+    private func detectPasteAndGoAvailability(completion: @escaping (Bool) -> Void) {
+        UIPasteboard.general.detectPatterns(for: [.probableWebURL, .probableWebSearch]) { result in
+            let isAvailable: Bool
+            switch result {
+            case let .success(patterns):
+                isAvailable = !patterns.isEmpty
+            case .failure:
+                isAvailable = false
+            }
+            DispatchQueue.main.async {
+                completion(isAvailable)
+            }
         }
     }
 }

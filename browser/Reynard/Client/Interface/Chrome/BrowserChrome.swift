@@ -79,6 +79,7 @@ final class BrowserChrome: UIView {
         return view
     }()
     
+    let tabBar = TabBar()
     private let topToolbar: TopToolbar
     private let bottomToolbar: BottomToolbar
     private let overlayDismissView: UIView = {
@@ -91,7 +92,6 @@ final class BrowserChrome: UIView {
     private let overlayContentView = ChromeOverlayContentView()
     private let actionBar = ActionBar()
     
-    private var bottomConstraint: NSLayoutConstraint!
     private var overlayWidthConstraint: NSLayoutConstraint!
     private var overlayHeightConstraint: NSLayoutConstraint!
     private var overlayTopConstraint: NSLayoutConstraint?
@@ -123,6 +123,12 @@ final class BrowserChrome: UIView {
     }
     
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if let hitView = bottomToolbar.hitTestAddressBar(
+            at: bottomToolbar.convert(point, from: self),
+            with: event
+        ) {
+            return hitView
+        }
         let hitView = super.hitTest(point, with: event)
         return hitView === self ? nil : hitView
     }
@@ -136,6 +142,10 @@ final class BrowserChrome: UIView {
     
     var topToolbarBottomAnchor: NSLayoutYAxisAnchor {
         return topToolbar.bottomAnchor
+    }
+    
+    var tabBarBottomAnchor: NSLayoutYAxisAnchor {
+        return tabBar.bottomAnchor
     }
     
     var bottomToolbarTopAnchor: NSLayoutYAxisAnchor {
@@ -199,8 +209,7 @@ final class BrowserChrome: UIView {
     }
     
     func dockAddressBar(offset: CGFloat) {
-        bottomConstraint.constant = offset
-        bottomToolbar.setVerticalOffset(offset)
+        bottomToolbar.setAddressBarDockOffset(offset)
     }
     
     func dockActionBar(offset: CGFloat) {
@@ -486,6 +495,54 @@ final class BrowserChrome: UIView {
         bottomToolbar.updateNavigation(canGoBack: canGoBack, canGoForward: canGoForward, canShare: canShare)
     }
     
+    func configureNavigationMenus(
+        itemsProvider: @escaping (ToolbarButtonMenus.NavigationDirection) -> [NavigationHistoryStore.HistoryItem],
+        onSelect: @escaping (ToolbarButtonMenus.NavigationDirection, Int) -> Void
+    ) {
+        topToolbar.configureNavigationMenus(itemsProvider: itemsProvider, onSelect: onSelect)
+        bottomToolbar.configureNavigationMenus(itemsProvider: itemsProvider, onSelect: onSelect)
+    }
+    
+    func configureRecentlyClosedTabsMenu(
+        isAvailable: @escaping () -> Bool,
+        itemsProvider: @escaping () -> [TabManagementStore.RecentlyClosedTabSnapshot],
+        onSelect: @escaping (UUID) -> Void
+    ) {
+        topToolbar.configureRecentlyClosedTabsMenu(
+            isAvailable: isAvailable,
+            itemsProvider: itemsProvider,
+            onSelect: onSelect
+        )
+    }
+    
+    func configureLibraryMenus(onSelect: @escaping (LibrarySection) -> Void) {
+        topToolbar.configureLibraryMenus(onSelect: onSelect)
+        bottomToolbar.configureLibraryMenus(onSelect: onSelect)
+    }
+    
+    func configureTabOverviewMenus(
+        tabCountProvider: @escaping () -> Int,
+        onCloseAllTabs: @escaping () -> Void,
+        onCloseTab: @escaping () -> Void,
+        onNewPrivateTab: @escaping () -> Void,
+        onNewTab: @escaping () -> Void
+    ) {
+        topToolbar.configureTabOverviewMenus(
+            tabCountProvider: tabCountProvider,
+            onCloseAllTabs: onCloseAllTabs,
+            onCloseTab: onCloseTab,
+            onNewPrivateTab: onNewPrivateTab,
+            onNewTab: onNewTab
+        )
+        bottomToolbar.configureTabOverviewMenus(
+            tabCountProvider: tabCountProvider,
+            onCloseAllTabs: onCloseAllTabs,
+            onCloseTab: onCloseTab,
+            onNewPrivateTab: onNewPrivateTab,
+            onNewTab: onNewTab
+        )
+    }
+    
     func updateDownload(_ summary: DownloadStoreSummary) {
         bottomToolbar.updateDownload(summary)
         topToolbar.updateDownload(summary)
@@ -595,6 +652,7 @@ final class BrowserChrome: UIView {
     
     private func configureHierarchy() {
         addSubview(topToolbar)
+        addSubview(tabBar)
         addSubview(bottomToolbar)
         addSubview(overlayDismissView)
         addSubview(overlayContentView)
@@ -602,7 +660,6 @@ final class BrowserChrome: UIView {
     }
     
     private func configureConstraints() {
-        bottomConstraint = bottomToolbar.bottomAnchor.constraint(equalTo: bottomAnchor)
         overlayWidthConstraint = overlayContentView.widthAnchor.constraint(equalToConstant: 0)
         overlayHeightConstraint = overlayContentView.heightAnchor.constraint(equalToConstant: 0)
         NSLayoutConstraint.activate([
@@ -610,9 +667,13 @@ final class BrowserChrome: UIView {
             topToolbar.trailingAnchor.constraint(equalTo: trailingAnchor),
             topToolbar.topAnchor.constraint(equalTo: topAnchor),
             
+            tabBar.leadingAnchor.constraint(equalTo: leadingAnchor),
+            tabBar.trailingAnchor.constraint(equalTo: trailingAnchor),
+            tabBar.topAnchor.constraint(equalTo: topToolbar.bottomAnchor),
+            
             bottomToolbar.leadingAnchor.constraint(equalTo: leadingAnchor),
             bottomToolbar.trailingAnchor.constraint(equalTo: trailingAnchor),
-            bottomConstraint,
+            bottomToolbar.bottomAnchor.constraint(equalTo: bottomAnchor),
             
             overlayDismissView.topAnchor.constraint(equalTo: topAnchor),
             overlayDismissView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -625,6 +686,7 @@ final class BrowserChrome: UIView {
             actionBar.leadingAnchor.constraint(equalTo: leadingAnchor),
             actionBar.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
+        topToolbar.extendBackground(to: tabBar.bottomAnchor)
         bottomToolbar.configureTopAnchor(to: safeAreaLayoutGuide.bottomAnchor)
     }
     
@@ -720,9 +782,7 @@ final class BrowserChrome: UIView {
             return .compact
         case .phone:
             switch state.search {
-            case .inactive: return .standard
-            case .focused: return .focused
-            case .scrollingEmbeddedSuggestions: return .standard
+            case .inactive, .focused, .scrollingEmbeddedSuggestions: return .standard
             case .scrollingDetachedSuggestions: return .hidden
             }
         }

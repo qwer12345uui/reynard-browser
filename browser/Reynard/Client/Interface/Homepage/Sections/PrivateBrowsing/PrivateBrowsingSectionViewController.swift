@@ -74,7 +74,7 @@ final class PrivateBrowsingSectionViewController: UIViewController {
         )
         label.text = NSLocalizedString("Private Browsing", comment: "")
         label.textAlignment = .center
-        label.textColor = .white
+        label.textColor = .label
         label.numberOfLines = 0
         label.adjustsFontForContentSizeCategory = true
         return label
@@ -88,7 +88,7 @@ final class PrivateBrowsingSectionViewController: UIViewController {
         )
         label.text = NSLocalizedString("After you close a tab, Reynard won’t remember any of your browsing history or cookies. However, downloads and new bookmarks will be saved.", comment: "")
         label.textAlignment = .center
-        label.textColor = UIColor.white.withAlphaComponent(0.72)
+        label.textColor = .secondaryLabel
         label.numberOfLines = 0
         label.adjustsFontForContentSizeCategory = true
         return label

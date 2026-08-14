@@ -16,9 +16,11 @@ enum TabOpenDisposition: Equatable {
 
 struct ContextMenuTabActions {
     private let tabManager: TabManager
+    private let sessionManager: SessionManager
     
-    init(tabManager: TabManager) {
+    init(tabManager: TabManager, sessionManager: SessionManager) {
         self.tabManager = tabManager
+        self.sessionManager = sessionManager
     }
     
     func openPreviewSession(
@@ -42,14 +44,16 @@ struct ContextMenuTabActions {
             )
             
         case .newPrivateTab:
-            tabManager.addTransferredSession(
-                session,
-                url: url,
-                title: title,
+            sessionManager.close(session)
+            let tabIndex = tabManager.createTab(
                 selecting: true,
-                at: tabManager.index(for: tabManager.selectedTabMode == .private ? .afterSelected : .end, mode: .private),
-                isPrivate: true
+                target: tabManager.selectedTabMode == .private ? .afterSelected : .end,
+                mode: .private
             )
+            guard let tab = tabManager.privateTabs[safe: tabIndex] else {
+                return
+            }
+            tabManager.browse(to: url, in: tab)
         }
     }
 }

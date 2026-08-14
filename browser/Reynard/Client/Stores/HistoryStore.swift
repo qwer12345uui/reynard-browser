@@ -252,11 +252,11 @@ final class HistoryStore {
         """
         
         _ = executeLocked(sql)
-        ensureHistoryColumnLocked(name: "host", definition: "TEXT NOT NULL DEFAULT ''")
-        ensureHistoryColumnLocked(name: "stripped_url", definition: "TEXT NOT NULL DEFAULT ''")
-        ensureHistoryColumnLocked(name: "visit_count", definition: "INTEGER NOT NULL DEFAULT 0")
-        ensureHistoryColumnLocked(name: "frecency", definition: "INTEGER NOT NULL DEFAULT 0")
-        ensureVisitsColumnLocked(name: "is_redirect_source", definition: "INTEGER NOT NULL DEFAULT 0")
+        ensureColumnLocked(name: "host", table: "history", definition: "TEXT NOT NULL DEFAULT ''")
+        ensureColumnLocked(name: "stripped_url", table: "history", definition: "TEXT NOT NULL DEFAULT ''")
+        ensureColumnLocked(name: "visit_count", table: "history", definition: "INTEGER NOT NULL DEFAULT 0")
+        ensureColumnLocked(name: "frecency", table: "history", definition: "INTEGER NOT NULL DEFAULT 0")
+        ensureColumnLocked(name: "is_redirect_source", table: "visits", definition: "INTEGER NOT NULL DEFAULT 0")
         backfillHistorySearchMetadataLocked()
     }
     
@@ -805,56 +805,25 @@ final class HistoryStore {
     
     // MARK: - Schema Migration
     
-    private func ensureHistoryColumnLocked(name: String, definition: String) {
-        guard !historyColumnExistsLocked(name) else {
+    private func ensureColumnLocked(name: String, table: String, definition: String) {
+        guard let statement = prepareStatementLocked("PRAGMA table_info(\(table));") else {
             return
         }
         
-        _ = executeLocked("ALTER TABLE history ADD COLUMN \(name) \(definition);")
-    }
-    
-    private func ensureVisitsColumnLocked(name: String, definition: String) {
-        guard !visitsColumnExistsLocked(name) else {
+        var hasColumn = false
+        while sqlite3_step(statement) == SQLITE_ROW {
+            if string(from: statement, at: 1) == name {
+                hasColumn = true
+                break
+            }
+        }
+        sqlite3_finalize(statement)
+        
+        guard !hasColumn else {
             return
         }
         
-        _ = executeLocked("ALTER TABLE visits ADD COLUMN \(name) \(definition);")
-    }
-    
-    private func historyColumnExistsLocked(_ name: String) -> Bool {
-        guard let statement = prepareStatementLocked("PRAGMA table_info(history);") else {
-            return false
-        }
-        
-        defer {
-            sqlite3_finalize(statement)
-        }
-        
-        while sqlite3_step(statement) == SQLITE_ROW {
-            if string(from: statement, at: 1) == name {
-                return true
-            }
-        }
-        
-        return false
-    }
-    
-    private func visitsColumnExistsLocked(_ name: String) -> Bool {
-        guard let statement = prepareStatementLocked("PRAGMA table_info(visits);") else {
-            return false
-        }
-        
-        defer {
-            sqlite3_finalize(statement)
-        }
-        
-        while sqlite3_step(statement) == SQLITE_ROW {
-            if string(from: statement, at: 1) == name {
-                return true
-            }
-        }
-        
-        return false
+        _ = executeLocked("ALTER TABLE \(table) ADD COLUMN \(name) \(definition);")
     }
     
     private func backfillHistorySearchMetadataLocked() {
