@@ -107,7 +107,6 @@ final class BrowserPreferences {
             key("DownloadSettings", "imageSaveLocation"): ImageSaveLocation.appDownloads.rawValue,
             key("DownloadSettings", "maximumConcurrentDownloads"): 3,
             key("DownloadSettings", "allowsCellularDownloads"): true,
-            key("DownloadSettings", "automaticallyMergeM3U8"): true,
             key("DownloadSettings", "automaticRetryEnabled"): true,
             key("DownloadSettings", "retryIndefinitely"): false,
             key("DownloadSettings", "maximumRetryCount"): 30,
@@ -129,33 +128,10 @@ final class BrowserPreferences {
 
             // Playback
             key("PlaybackSettings", "openVideosInNewTab"): true,
-            key("PlaybackSettings", "videoDecoder"): "automatic",
-            key("PlaybackSettings", "longPressPlaybackRate"): 2.0,
             key("PlaybackSettings", "allowsMultiplePlayers"): true,
             key("PlaybackSettings", "allowsAutoplay"): false,
-            key("PlaybackSettings", "allowsGestureSeeking"): true,
             key("PlaybackSettings", "startsPictureInPictureOnBackground"): true,
             key("PlaybackSettings", "allowsBackgroundPlayback"): true,
-            key("PlaybackSettings", "mutesByDefault"): false,
-            key("PlaybackSettings", "remembersPlaybackPosition"): true,
-            key("PlaybackSettings", "allowsSwipeToMiniPlayer"): true,
-            key("PlaybackSettings", "topLeftCornerAction"): PlayerCornerAction.close.rawValue,
-            key("PlaybackSettings", "topRightCornerAction"): PlayerCornerAction.miniPlayer.rawValue,
-            key("PlaybackSettings", "bottomLeftCornerAction"): PlayerCornerAction.fullscreen.rawValue,
-            key("PlaybackSettings", "bottomRightCornerAction"): PlayerCornerAction.fullscreen.rawValue,
-            key("PlaybackSettings", "showsPlayerControls"): true,
-            key("PlaybackSettings", "showsAudioModeControl"): true,
-            key("PlaybackSettings", "showsShareControl"): true,
-            key("PlaybackSettings", "showsBookmarkControl"): true,
-            key("PlaybackSettings", "showsCastControl"): true,
-            key("PlaybackSettings", "showsTimerControl"): true,
-            key("PlaybackSettings", "showsPreviousControl"): true,
-            key("PlaybackSettings", "showsNextControl"): true,
-            key("PlaybackSettings", "showsSeekBackwardControl"): true,
-            key("PlaybackSettings", "showsSeekForwardControl"): true,
-            key("PlaybackSettings", "showsSleepTimerControl"): true,
-            key("PlaybackSettings", "showsMirrorControl"): true,
-            key("PlaybackSettings", "showsFillModeControl"): true,
 
             // Compatibility
             key("CompatibilitySettings", "androidUserAgentDomains"): [],
@@ -427,11 +403,6 @@ final class BrowserPreferences {
             set { prefs.set(newValue, forSetting: "DownloadSettings", key: "allowsCellularDownloads") }
         }
 
-        static var automaticallyMergeM3U8: Bool {
-            get { prefs.bool(forSetting: "DownloadSettings", key: "automaticallyMergeM3U8") }
-            set { prefs.set(newValue, forSetting: "DownloadSettings", key: "automaticallyMergeM3U8") }
-        }
-
         static var automaticRetryEnabled: Bool {
             get { prefs.bool(forSetting: "DownloadSettings", key: "automaticRetryEnabled") }
             set { prefs.set(newValue, forSetting: "DownloadSettings", key: "automaticRetryEnabled") }
@@ -559,42 +530,10 @@ final class BrowserPreferences {
             set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "openVideosInNewTab") }
         }
 
-        static var videoDecoder: String {
-            get { prefs.string(forSetting: "PlaybackSettings", key: "videoDecoder") ?? "automatic" }
-            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "videoDecoder") }
-        }
-
-        static var longPressPlaybackRate: Double {
-            get { max(0.5, min(prefs.double(forSetting: "PlaybackSettings", key: "longPressPlaybackRate"), 4)) }
-            set { prefs.set(max(0.5, min(newValue, 4)), forSetting: "PlaybackSettings", key: "longPressPlaybackRate") }
-        }
-
         static var allowsMultiplePlayers: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsMultiplePlayers") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsMultiplePlayers") } }
         static var allowsAutoplay: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsAutoplay") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsAutoplay") } }
-        static var allowsGestureSeeking: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsGestureSeeking") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsGestureSeeking") } }
         static var startsPictureInPictureOnBackground: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "startsPictureInPictureOnBackground") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "startsPictureInPictureOnBackground") } }
         static var allowsBackgroundPlayback: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsBackgroundPlayback") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsBackgroundPlayback") } }
-        static var mutesByDefault: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "mutesByDefault") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "mutesByDefault") } }
-        static var remembersPlaybackPosition: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "remembersPlaybackPosition") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "remembersPlaybackPosition") } }
-        static var allowsSwipeToMiniPlayer: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsSwipeToMiniPlayer") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsSwipeToMiniPlayer") } }
-        static var showsPlayerControls: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "showsPlayerControls") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "showsPlayerControls") } }
-
-        static func cornerAction(for key: String) -> PlayerCornerAction {
-            let rawValue = prefs.string(forSetting: "PlaybackSettings", key: key) ?? PlayerCornerAction.fullscreen.rawValue
-            return PlayerCornerAction(rawValue: rawValue) ?? .fullscreen
-        }
-
-        static func setCornerAction(_ action: PlayerCornerAction, for key: String) {
-            prefs.set(action.rawValue, forSetting: "PlaybackSettings", key: key)
-        }
-
-        static func isControlVisible(_ key: String) -> Bool {
-            prefs.bool(forSetting: "PlaybackSettings", key: key)
-        }
-
-        static func setControlVisible(_ isVisible: Bool, key: String) {
-            prefs.set(isVisible, forSetting: "PlaybackSettings", key: key)
-        }
     }
 
     // MARK: - Browsing

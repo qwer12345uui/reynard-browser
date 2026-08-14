@@ -236,10 +236,31 @@ final class DownloadStore: NSObject {
             }
             stateQueue.async {
                 self.prepareStorageLocked()
+                let savedAt = Date()
                 let formatter = ISO8601DateFormatter()
-                let fileName = "Image-\(formatter.string(from: Date()).replacingOccurrences(of: ":", with: "-")) .jpg".replacingOccurrences(of: " ", with: "")
+                let fileName = "Image-\(formatter.string(from: savedAt).replacingOccurrences(of: ":", with: "-")) .jpg".replacingOccurrences(of: " ", with: "")
                 let destinationURL = self.makeUniqueDestinationURLLocked(for: fileName)
-                try? imageData.write(to: destinationURL, options: .atomic)
+                do {
+                    try imageData.write(to: destinationURL, options: .atomic)
+                    self.persistedDownloads.insert(
+                        PersistedDownloadEntry(
+                            id: UUID(),
+                            fileName: destinationURL.lastPathComponent,
+                            relativePath: destinationURL.lastPathComponent,
+                            sourceURLString: "reynard://saved-image",
+                            originalURLString: nil,
+                            mimeType: "image/jpeg",
+                            fileSize: Int64(imageData.count),
+                            addedAt: savedAt
+                        ),
+                        at: 0
+                    )
+                    self.savePersistedDownloadsLocked()
+                    self.hasUnviewedCompletedDownloads = true
+                    self.postDidChange()
+                } catch {
+                    return
+                }
             }
         }
     }
