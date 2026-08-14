@@ -22,6 +22,8 @@ final class BottomToolbar: UIView {
         static let navigationGlassHorizontalInset: CGFloat = 12
         static let navigationGlassHeight: CGFloat = 42
         static let navigationGlassCornerRadius: CGFloat = 21
+        static let addressBarDockedVerticalAdjustment: CGFloat = 36
+        static let keyboardDockedBlurTopExtension: CGFloat = 24
     }
     
     enum LayoutState {
@@ -222,8 +224,8 @@ final class BottomToolbar: UIView {
             topConstraint.constant = -contentHeight
             contentHeightConstraint.constant = contentHeight
             isHidden = state == .hidden || state == .collapsed
-            backgroundView.isHidden = state == .focused
-            let hidesNavigationGlass = state == .focused || hidesButtons
+            backgroundView.isHidden = false
+            let hidesNavigationGlass = hidesButtons
             navigationGlassView.isHidden = hidesNavigationGlass
             navigationGlassShadowView.isHidden = hidesNavigationGlass
             
@@ -257,7 +259,7 @@ final class BottomToolbar: UIView {
     }
     
     func configureLibraryMenus(onSelect: @escaping (LibrarySection) -> Void) {
-        buttonMenus.installLibraryMenus(on: [libraryButton], onSelect: onSelect)
+        buttonMenus.installLibraryMenus(on: [basketButton], onSelect: onSelect)
     }
     
     func configureTabOverviewMenus(

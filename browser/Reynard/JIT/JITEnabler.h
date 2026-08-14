@@ -20,6 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 NS_SWIFT_NAME(enableJIT(forPID:hasTXMSupport:));
 
 - (void)detachAllJITSessions NS_SWIFT_NAME(detachAllJITSessions());
+- (BOOL)isHelperFailureError:(NSError *)error NS_SWIFT_NAME(isHelperFailure(error:));
 
 @end
 

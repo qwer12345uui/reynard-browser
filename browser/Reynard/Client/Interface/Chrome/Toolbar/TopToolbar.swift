@@ -309,7 +309,7 @@ final class TopToolbar: UIView {
     
     func configureLibraryMenus(onSelect: @escaping (LibrarySection) -> Void) {
         buttonMenus.installLibraryMenus(
-            on: [sidebarButton, libraryButton],
+            on: [sidebarButton, basketButton],
             onSelect: onSelect
         )
     }

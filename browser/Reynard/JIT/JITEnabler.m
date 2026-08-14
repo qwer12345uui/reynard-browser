@@ -182,6 +182,10 @@
     });
 }
 
+- (BOOL)isHelperFailureError:(NSError *)error {
+    return IsTSPtraceHelperError(error);
+}
+
 - (DeviceProvider *)getProvider:(NSError **)error {
     __block DeviceProvider *provider = NULL;
     __block NSError *providerError = nil;
