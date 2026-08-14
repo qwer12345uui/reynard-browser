@@ -9,6 +9,7 @@ import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
+    private var backgroundBlurView: UIVisualEffectView?
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
@@ -37,11 +38,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
         
+        removeBackgroundBlurIfNeeded()
         browserViewController.startScreenOrientationHandling()
         DownloadStore.shared.applicationDidBecomeActive()
         browserViewController.sessionManager.applicationDidBecomeActive()
         browserViewController.tabManager.applicationDidBecomeActive()
-        browserViewController.presentGesturePasswordIfNeeded()
+        browserViewController.handleClipboardURLIfNeeded()
     }
     
     func sceneWillResignActive(_ scene: UIScene) {
@@ -49,6 +51,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
         
+        showBackgroundBlurIfNeeded()
         browserViewController.stopScreenOrientationHandling()
         browserViewController.tabManager.applicationWillResignActive()
         browserViewController.sessionManager.applicationWillResignActive()
@@ -71,11 +74,28 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     func sceneDidEnterBackground(_ scene: UIScene) {
         DownloadStore.shared.applicationDidEnterBackground()
-        (window?.rootViewController as? BrowserViewController)?.prepareForGesturePasswordOnBackground()
         (window?.rootViewController as? BrowserViewController)?
             .sessionManager.setApplicationForeground(false)
     }
     
+    private func showBackgroundBlurIfNeeded() {
+        guard Prefs.BrowserFeatureSettings.usesBackgroundBlur,
+              let window,
+              backgroundBlurView == nil else {
+            return
+        }
+        let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+        blurView.frame = window.bounds
+        blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        window.addSubview(blurView)
+        backgroundBlurView = blurView
+    }
+
+    private func removeBackgroundBlurIfNeeded() {
+        backgroundBlurView?.removeFromSuperview()
+        backgroundBlurView = nil
+    }
+
     private func handleIncomingURLContexts(_ urlContexts: Set<UIOpenURLContext>) {
         guard let incomingURL = urlContexts.first?.url else {
             return

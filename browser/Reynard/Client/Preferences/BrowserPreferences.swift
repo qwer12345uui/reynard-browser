@@ -10,6 +10,52 @@ import UIKit
 
 typealias Prefs = BrowserPreferences
 
+enum DownloadSortOrder: String, CaseIterable {
+    case newestFirst
+    case oldestFirst
+    case sizeDescending
+    case sizeAscending
+    case nameDescending
+    case nameAscending
+
+    var localizedTitle: String {
+        switch self {
+        case .newestFirst: return "最近添加的靠前"
+        case .oldestFirst: return "最近添加的排后"
+        case .sizeDescending: return "按大小（降序）"
+        case .sizeAscending: return "按大小（升序）"
+        case .nameDescending: return "按名称（降序）"
+        case .nameAscending: return "按名称（升序）"
+        }
+    }
+}
+
+enum ImageSaveLocation: String, CaseIterable {
+    case photoLibrary
+    case appDownloads
+
+    var localizedTitle: String {
+        switch self {
+        case .photoLibrary: return "系统相册"
+        case .appDownloads: return "App - 下载文件"
+        }
+    }
+}
+
+enum PlayerCornerAction: String, CaseIterable {
+    case close
+    case miniPlayer
+    case fullscreen
+
+    var localizedTitle: String {
+        switch self {
+        case .close: return "关闭播放器"
+        case .miniPlayer: return "进入小窗口模式"
+        case .fullscreen: return "进入全屏模式"
+        }
+    }
+}
+
 final class BrowserPreferences {
     static var shared = BrowserPreferences()
     
@@ -57,9 +103,16 @@ final class BrowserPreferences {
             key("DownloadSettings", "confirmManualDownloads"): true,
             key("DownloadSettings", "continuesInBackground"): true,
             key("DownloadSettings", "backgroundTimeLimit"): 300,
-
-            // Security
-            key("SecuritySettings", "gesturePasswordEnabled"): false,
+            key("DownloadSettings", "sortOrder"): DownloadSortOrder.newestFirst.rawValue,
+            key("DownloadSettings", "imageSaveLocation"): ImageSaveLocation.appDownloads.rawValue,
+            key("DownloadSettings", "maximumConcurrentDownloads"): 3,
+            key("DownloadSettings", "allowsCellularDownloads"): true,
+            key("DownloadSettings", "automaticallyMergeM3U8"): true,
+            key("DownloadSettings", "automaticRetryEnabled"): true,
+            key("DownloadSettings", "retryIndefinitely"): false,
+            key("DownloadSettings", "maximumRetryCount"): 30,
+            key("DownloadSettings", "automaticallyBookmarkDownloadedVideos"): false,
+            key("DownloadSettings", "playsCompletionSound"): true,
 
             // Bottom toolbar
             key("ToolbarSettings", "longPressQuickActions"): true,
@@ -68,8 +121,41 @@ final class BrowserPreferences {
             key("ClipboardSettings", "automaticallyParseURLs"): false,
             key("ClipboardSettings", "lastHandledChangeCount"): 0,
 
+            // Browser behavior
+            key("BrowserFeatureSettings", "usesBackgroundBlur"): false,
+            key("BrowserFeatureSettings", "keepsScreenAwake"): false,
+            key("BrowserFeatureSettings", "showsNetworkSpeedOverlay"): false,
+            key("BrowserFeatureSettings", "touchFeedbackEnabled"): true,
+
             // Playback
             key("PlaybackSettings", "openVideosInNewTab"): true,
+            key("PlaybackSettings", "videoDecoder"): "automatic",
+            key("PlaybackSettings", "longPressPlaybackRate"): 2.0,
+            key("PlaybackSettings", "allowsMultiplePlayers"): true,
+            key("PlaybackSettings", "allowsAutoplay"): false,
+            key("PlaybackSettings", "allowsGestureSeeking"): true,
+            key("PlaybackSettings", "startsPictureInPictureOnBackground"): true,
+            key("PlaybackSettings", "allowsBackgroundPlayback"): true,
+            key("PlaybackSettings", "mutesByDefault"): false,
+            key("PlaybackSettings", "remembersPlaybackPosition"): true,
+            key("PlaybackSettings", "allowsSwipeToMiniPlayer"): true,
+            key("PlaybackSettings", "topLeftCornerAction"): PlayerCornerAction.close.rawValue,
+            key("PlaybackSettings", "topRightCornerAction"): PlayerCornerAction.miniPlayer.rawValue,
+            key("PlaybackSettings", "bottomLeftCornerAction"): PlayerCornerAction.fullscreen.rawValue,
+            key("PlaybackSettings", "bottomRightCornerAction"): PlayerCornerAction.fullscreen.rawValue,
+            key("PlaybackSettings", "showsPlayerControls"): true,
+            key("PlaybackSettings", "showsAudioModeControl"): true,
+            key("PlaybackSettings", "showsShareControl"): true,
+            key("PlaybackSettings", "showsBookmarkControl"): true,
+            key("PlaybackSettings", "showsCastControl"): true,
+            key("PlaybackSettings", "showsTimerControl"): true,
+            key("PlaybackSettings", "showsPreviousControl"): true,
+            key("PlaybackSettings", "showsNextControl"): true,
+            key("PlaybackSettings", "showsSeekBackwardControl"): true,
+            key("PlaybackSettings", "showsSeekForwardControl"): true,
+            key("PlaybackSettings", "showsSleepTimerControl"): true,
+            key("PlaybackSettings", "showsMirrorControl"): true,
+            key("PlaybackSettings", "showsFillModeControl"): true,
 
             // Compatibility
             key("CompatibilitySettings", "androidUserAgentDomains"): [],
@@ -305,16 +391,105 @@ final class BrowserPreferences {
                 prefs.set(boundedValue, forSetting: "DownloadSettings", key: "backgroundTimeLimit")
             }
         }
-    }
 
-    // MARK: - Security
-    struct SecuritySettings {
-        static var gesturePasswordEnabled: Bool {
+        static var sortOrder: DownloadSortOrder {
             get {
-                prefs.bool(forSetting: "SecuritySettings", key: "gesturePasswordEnabled") && GesturePasswordStore.hasPassword
+                let rawValue = prefs.string(forSetting: "DownloadSettings", key: "sortOrder") ?? DownloadSortOrder.newestFirst.rawValue
+                return DownloadSortOrder(rawValue: rawValue) ?? .newestFirst
             }
             set {
-                prefs.set(newValue && GesturePasswordStore.hasPassword, forSetting: "SecuritySettings", key: "gesturePasswordEnabled")
+                prefs.set(newValue.rawValue, forSetting: "DownloadSettings", key: "sortOrder")
+                NotificationCenter.default.post(name: .downloadStoreDidChange, object: nil)
+            }
+        }
+
+        static var imageSaveLocation: ImageSaveLocation {
+            get {
+                let rawValue = prefs.string(forSetting: "DownloadSettings", key: "imageSaveLocation") ?? ImageSaveLocation.appDownloads.rawValue
+                return ImageSaveLocation(rawValue: rawValue) ?? .appDownloads
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "DownloadSettings", key: "imageSaveLocation")
+            }
+        }
+
+        static var maximumConcurrentDownloads: Int {
+            get {
+                return max(1, min(prefs.integer(forSetting: "DownloadSettings", key: "maximumConcurrentDownloads"), 8))
+            }
+            set {
+                prefs.set(max(1, min(newValue, 8)), forSetting: "DownloadSettings", key: "maximumConcurrentDownloads")
+            }
+        }
+
+        static var allowsCellularDownloads: Bool {
+            get { prefs.bool(forSetting: "DownloadSettings", key: "allowsCellularDownloads") }
+            set { prefs.set(newValue, forSetting: "DownloadSettings", key: "allowsCellularDownloads") }
+        }
+
+        static var automaticallyMergeM3U8: Bool {
+            get { prefs.bool(forSetting: "DownloadSettings", key: "automaticallyMergeM3U8") }
+            set { prefs.set(newValue, forSetting: "DownloadSettings", key: "automaticallyMergeM3U8") }
+        }
+
+        static var automaticRetryEnabled: Bool {
+            get { prefs.bool(forSetting: "DownloadSettings", key: "automaticRetryEnabled") }
+            set { prefs.set(newValue, forSetting: "DownloadSettings", key: "automaticRetryEnabled") }
+        }
+
+        static var retryIndefinitely: Bool {
+            get { prefs.bool(forSetting: "DownloadSettings", key: "retryIndefinitely") }
+            set { prefs.set(newValue, forSetting: "DownloadSettings", key: "retryIndefinitely") }
+        }
+
+        static var maximumRetryCount: Int {
+            get { max(0, min(prefs.integer(forSetting: "DownloadSettings", key: "maximumRetryCount"), 99)) }
+            set { prefs.set(max(0, min(newValue, 99)), forSetting: "DownloadSettings", key: "maximumRetryCount") }
+        }
+
+        static var automaticallyBookmarkDownloadedVideos: Bool {
+            get { prefs.bool(forSetting: "DownloadSettings", key: "automaticallyBookmarkDownloadedVideos") }
+            set { prefs.set(newValue, forSetting: "DownloadSettings", key: "automaticallyBookmarkDownloadedVideos") }
+        }
+
+        static var playsCompletionSound: Bool {
+            get { prefs.bool(forSetting: "DownloadSettings", key: "playsCompletionSound") }
+            set { prefs.set(newValue, forSetting: "DownloadSettings", key: "playsCompletionSound") }
+        }
+    }
+
+    // MARK: - Browser Features
+    struct BrowserFeatureSettings {
+        static var usesBackgroundBlur: Bool {
+            get { prefs.bool(forSetting: "BrowserFeatureSettings", key: "usesBackgroundBlur") }
+            set {
+                prefs.set(newValue, forSetting: "BrowserFeatureSettings", key: "usesBackgroundBlur")
+                NotificationCenter.default.post(name: .browserFeaturePreferencesDidChange, object: nil)
+            }
+        }
+
+        static var keepsScreenAwake: Bool {
+            get { prefs.bool(forSetting: "BrowserFeatureSettings", key: "keepsScreenAwake") }
+            set {
+                prefs.set(newValue, forSetting: "BrowserFeatureSettings", key: "keepsScreenAwake")
+                UIApplication.shared.isIdleTimerDisabled = newValue
+                NotificationCenter.default.post(name: .browserFeaturePreferencesDidChange, object: nil)
+            }
+        }
+
+        static var showsNetworkSpeedOverlay: Bool {
+            get { prefs.bool(forSetting: "BrowserFeatureSettings", key: "showsNetworkSpeedOverlay") }
+            set {
+                prefs.set(newValue, forSetting: "BrowserFeatureSettings", key: "showsNetworkSpeedOverlay")
+                NotificationCenter.default.post(name: .browserFeaturePreferencesDidChange, object: nil)
+            }
+        }
+
+        static var touchFeedbackEnabled: Bool {
+            get { prefs.bool(forSetting: "BrowserFeatureSettings", key: "touchFeedbackEnabled") }
+            set {
+                prefs.set(newValue, forSetting: "BrowserFeatureSettings", key: "touchFeedbackEnabled")
+                NotificationCenter.default.post(name: .browserFeaturePreferencesDidChange, object: nil)
             }
         }
     }
@@ -380,12 +555,45 @@ final class BrowserPreferences {
     // MARK: - Playback
     struct PlaybackSettings {
         static var openVideosInNewTab: Bool {
-            get {
-                prefs.bool(forSetting: "PlaybackSettings", key: "openVideosInNewTab")
-            }
-            set {
-                prefs.set(newValue, forSetting: "PlaybackSettings", key: "openVideosInNewTab")
-            }
+            get { prefs.bool(forSetting: "PlaybackSettings", key: "openVideosInNewTab") }
+            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "openVideosInNewTab") }
+        }
+
+        static var videoDecoder: String {
+            get { prefs.string(forSetting: "PlaybackSettings", key: "videoDecoder") ?? "automatic" }
+            set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "videoDecoder") }
+        }
+
+        static var longPressPlaybackRate: Double {
+            get { max(0.5, min(prefs.double(forSetting: "PlaybackSettings", key: "longPressPlaybackRate"), 4)) }
+            set { prefs.set(max(0.5, min(newValue, 4)), forSetting: "PlaybackSettings", key: "longPressPlaybackRate") }
+        }
+
+        static var allowsMultiplePlayers: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsMultiplePlayers") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsMultiplePlayers") } }
+        static var allowsAutoplay: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsAutoplay") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsAutoplay") } }
+        static var allowsGestureSeeking: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsGestureSeeking") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsGestureSeeking") } }
+        static var startsPictureInPictureOnBackground: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "startsPictureInPictureOnBackground") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "startsPictureInPictureOnBackground") } }
+        static var allowsBackgroundPlayback: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsBackgroundPlayback") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsBackgroundPlayback") } }
+        static var mutesByDefault: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "mutesByDefault") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "mutesByDefault") } }
+        static var remembersPlaybackPosition: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "remembersPlaybackPosition") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "remembersPlaybackPosition") } }
+        static var allowsSwipeToMiniPlayer: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "allowsSwipeToMiniPlayer") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "allowsSwipeToMiniPlayer") } }
+        static var showsPlayerControls: Bool { get { prefs.bool(forSetting: "PlaybackSettings", key: "showsPlayerControls") } set { prefs.set(newValue, forSetting: "PlaybackSettings", key: "showsPlayerControls") } }
+
+        static func cornerAction(for key: String) -> PlayerCornerAction {
+            let rawValue = prefs.string(forSetting: "PlaybackSettings", key: key) ?? PlayerCornerAction.fullscreen.rawValue
+            return PlayerCornerAction(rawValue: rawValue) ?? .fullscreen
+        }
+
+        static func setCornerAction(_ action: PlayerCornerAction, for key: String) {
+            prefs.set(action.rawValue, forSetting: "PlaybackSettings", key: key)
+        }
+
+        static func isControlVisible(_ key: String) -> Bool {
+            prefs.bool(forSetting: "PlaybackSettings", key: key)
+        }
+
+        static func setControlVisible(_ isVisible: Bool, key: String) {
+            prefs.set(isVisible, forSetting: "PlaybackSettings", key: key)
         }
     }
 

@@ -5,6 +5,7 @@
 //  Created by Minh Ton on 2/4/26.
 //
 
+import AudioToolbox
 import Foundation
 import GeckoView
 import UIKit
@@ -91,6 +92,7 @@ final class DownloadStore: NSObject {
         var downloadedBytes: Int64
         var bytesPerSecond: Int64
         var isPaused: Bool
+        var retryCount: Int
         var lastProgressSample: ProgressSample?
         
         init(
@@ -101,7 +103,8 @@ final class DownloadStore: NSObject {
             destinationURL: URL,
             mimeType: String?,
             addedAt: Date,
-            task: URLSessionDownloadTask
+            task: URLSessionDownloadTask,
+            retryCount: Int = 0
         ) {
             self.id = id
             self.sourceURL = sourceURL
@@ -115,6 +118,7 @@ final class DownloadStore: NSObject {
             self.downloadedBytes = 0
             self.bytesPerSecond = 0
             self.isPaused = false
+            self.retryCount = retryCount
         }
     }
     
@@ -162,6 +166,8 @@ final class DownloadStore: NSObject {
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         configuration.timeoutIntervalForRequest = 120
         configuration.timeoutIntervalForResource = 60 * 60
+        configuration.allowsCellularAccess = Prefs.DownloadSettings.allowsCellularDownloads
+        configuration.httpMaximumConnectionsPerHost = Prefs.DownloadSettings.maximumConcurrentDownloads
         return URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
     }()
     
@@ -215,6 +221,26 @@ final class DownloadStore: NSObject {
         stateQueue.sync {
             prepareStorageLocked()
             return storage.downloadsDirectoryURL
+        }
+    }
+
+    func saveImage(_ image: UIImage) {
+        switch Prefs.DownloadSettings.imageSaveLocation {
+        case .photoLibrary:
+            DispatchQueue.main.async {
+                UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+            }
+        case .appDownloads:
+            guard let imageData = image.jpegData(compressionQuality: 0.95) else {
+                return
+            }
+            stateQueue.async {
+                self.prepareStorageLocked()
+                let formatter = ISO8601DateFormatter()
+                let fileName = "Image-\(formatter.string(from: Date()).replacingOccurrences(of: ":", with: "-")) .jpg".replacingOccurrences(of: " ", with: "")
+                let destinationURL = self.makeUniqueDestinationURLLocked(for: fileName)
+                try? imageData.write(to: destinationURL, options: .atomic)
+            }
         }
     }
 
@@ -568,7 +594,8 @@ final class DownloadStore: NSObject {
         sourceURL: URL,
         originalURL: URL?,
         suggestedFileName: String?,
-        mimeType: String?
+        mimeType: String?,
+        retryCount: Int = 0
     ) {
         stateQueue.async {
             self.prepareStorageLocked()
@@ -589,7 +616,8 @@ final class DownloadStore: NSObject {
                 destinationURL: destinationURL,
                 mimeType: mimeType,
                 addedAt: Date(),
-                task: task
+                task: task,
+                retryCount: retryCount
             )
             
             self.activeDownloads[task.taskIdentifier] = active
@@ -639,8 +667,7 @@ final class DownloadStore: NSObject {
                 )
             }
         
-        let activeItems = (sessionItems + capturedItems)
-            .sorted { $0.addedAt > $1.addedAt }
+        let activeItems = sortSnapshotItems(sessionItems + capturedItems)
         
         let completedItems = persistedDownloads
             .map { entry in
@@ -661,7 +688,27 @@ final class DownloadStore: NSObject {
                 )
             }
         
-        return DownloadStoreSnapshot(summary: makeSummaryLocked(), items: activeItems + completedItems)
+        return DownloadStoreSnapshot(
+            summary: makeSummaryLocked(),
+            items: sortSnapshotItems(activeItems + completedItems)
+        )
+    }
+
+    private func sortSnapshotItems(_ items: [DownloadItemSnapshot]) -> [DownloadItemSnapshot] {
+        switch Prefs.DownloadSettings.sortOrder {
+        case .newestFirst:
+            return items.sorted { $0.addedAt > $1.addedAt }
+        case .oldestFirst:
+            return items.sorted { $0.addedAt < $1.addedAt }
+        case .sizeDescending:
+            return items.sorted { max($0.totalBytes ?? $0.downloadedBytes, $0.downloadedBytes) > max($1.totalBytes ?? $1.downloadedBytes, $1.downloadedBytes) }
+        case .sizeAscending:
+            return items.sorted { max($0.totalBytes ?? $0.downloadedBytes, $0.downloadedBytes) < max($1.totalBytes ?? $1.downloadedBytes, $1.downloadedBytes) }
+        case .nameDescending:
+            return items.sorted { $0.fileName.localizedCaseInsensitiveCompare($1.fileName) == .orderedDescending }
+        case .nameAscending:
+            return items.sorted { $0.fileName.localizedCaseInsensitiveCompare($1.fileName) == .orderedAscending }
+        }
     }
     
     private func makeSummaryLocked() -> DownloadStoreSummary {
@@ -937,11 +984,35 @@ final class DownloadStore: NSObject {
             )
             savePersistedDownloadsLocked()
             hasUnviewedCompletedDownloads = true
+            handleDownloadCompletion(active)
         } catch {
             try? fileManager.removeItem(at: temporaryLocation)
         }
 
         postDidChange()
+    }
+
+    private func handleDownloadCompletion(_ active: ActiveDownload) {
+        if Prefs.DownloadSettings.automaticallyBookmarkDownloadedVideos,
+           isVideoDownload(active) {
+            let bookmarkURL = active.originalURL ?? active.sourceURL
+            if BookmarkStore.shared.bookmark(savedFor: bookmarkURL) == nil {
+                _ = BookmarkStore.shared.addBookmark(title: active.fileName, url: bookmarkURL)
+            }
+        }
+        if Prefs.DownloadSettings.playsCompletionSound {
+            DispatchQueue.main.async {
+                AudioServicesPlaySystemSound(1005)
+            }
+        }
+    }
+
+    private func isVideoDownload(_ active: ActiveDownload) -> Bool {
+        if active.mimeType?.lowercased().hasPrefix("video/") == true {
+            return true
+        }
+        let videoExtensions = ["mp4", "m4v", "mov", "mkv", "webm", "m3u8"]
+        return videoExtensions.contains(active.destinationURL.pathExtension.lowercased())
     }
     
     private func resolvedFileSize(at url: URL) -> Int64? {
@@ -981,10 +1052,27 @@ final class DownloadStore: NSObject {
     }
     
     private func failDownload(taskIdentifier: Int) {
-        guard activeDownloads.removeValue(forKey: taskIdentifier) != nil else {
+        guard let active = activeDownloads.removeValue(forKey: taskIdentifier) else {
+            return
+        }
+        let nextRetryCount = active.retryCount + 1
+        let canRetry = Prefs.DownloadSettings.automaticRetryEnabled &&
+        (Prefs.DownloadSettings.retryIndefinitely || nextRetryCount <= Prefs.DownloadSettings.maximumRetryCount)
+        guard canRetry else {
+            postDidChange()
             return
         }
 
+        let retryDelay = min(TimeInterval(nextRetryCount) * 2, 30)
+        stateQueue.asyncAfter(deadline: .now() + retryDelay) { [weak self] in
+            self?.enqueueDownload(
+                sourceURL: active.sourceURL,
+                originalURL: active.originalURL,
+                suggestedFileName: active.fileName,
+                mimeType: active.mimeType,
+                retryCount: nextRetryCount
+            )
+        }
         postDidChange()
     }
     

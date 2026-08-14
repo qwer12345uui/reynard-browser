@@ -37,10 +37,23 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
     weak var fullscreenSession: GeckoSession?
     private let allowsSidebarHosting: Bool
     private var shouldRestoreContentFocus = false
-    private var requiresGesturePasswordOnActivation = false
     private(set) var browserLayout = BrowserLayout.initial(
         interfaceIdiom: UIDevice.current.userInterfaceIdiom
     )
+    private lazy var networkSpeedLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = UIFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        label.textColor = .label
+        label.backgroundColor = UIColor.secondarySystemBackground.withAlphaComponent(0.92)
+        label.layer.cornerRadius = 9
+        label.layer.cornerCurve = .continuous
+        label.clipsToBounds = true
+        label.textAlignment = .center
+        label.isHidden = true
+        label.accessibilityLabel = "网速浮窗"
+        return label
+    }()
     
     // MARK: - Views And Coordinators
     
@@ -127,6 +140,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        UIApplication.shared.isIdleTimerDisabled = Prefs.BrowserFeatureSettings.keepsScreenAwake
         
         if sidebarCoordinator.installHostIfNeeded() {
             return
@@ -193,43 +207,6 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         }
     }
     
-    func prepareForGesturePasswordOnBackground() {
-        requiresGesturePasswordOnActivation = Prefs.SecuritySettings.gesturePasswordEnabled
-    }
-
-    func presentGesturePasswordIfNeeded() {
-        guard requiresGesturePasswordOnActivation else {
-            handleClipboardURLIfNeeded()
-            return
-        }
-        guard presentedViewController == nil else { return }
-        presentNumericPasswordPrompt()
-    }
-
-    private func presentNumericPasswordPrompt(showInvalidMessage: Bool = false) {
-        let message = showInvalidMessage ? "数字密码不正确，请重试。" : "请输入数字密码以继续使用浏览器。"
-        let alert = UIAlertController(title: "应用已锁定", message: message, preferredStyle: .alert)
-        alert.addTextField { field in
-            field.placeholder = "数字密码"
-            field.keyboardType = .numberPad
-            field.isSecureTextEntry = true
-        }
-        alert.addAction(UIAlertAction(title: "解锁", style: .default) { [weak self, weak alert] _ in
-            guard let self else { return }
-            let passcode = alert?.textFields?.first?.text ?? ""
-            guard GesturePasswordStore.matches(passcode: passcode) else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-                    self?.presentNumericPasswordPrompt(showInvalidMessage: true)
-                }
-                return
-            }
-            self.requiresGesturePasswordOnActivation = false
-            self.requestContentKeyboardFocus()
-            self.handleClipboardURLIfNeeded()
-        })
-        present(alert, animated: true)
-    }
-
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         toolbarController.updateLayout(
@@ -305,6 +282,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         view.addSubview(contentView)
         view.addSubview(tabBar)
         view.addSubview(browserChrome)
+        view.addSubview(networkSpeedLabel)
         view.addSubview(tabOverview)
         contentView.configureLayout(
             topAnchor: view.topAnchor,
@@ -320,6 +298,10 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             browserChrome.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             browserChrome.topAnchor.constraint(equalTo: view.topAnchor),
             browserChrome.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            networkSpeedLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 52),
+            networkSpeedLabel.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            networkSpeedLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 96),
+            networkSpeedLabel.heightAnchor.constraint(equalToConstant: 28),
             
             tabBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tabBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -758,8 +740,34 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             name: .newTabDisplayOptionDidChange,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateNetworkSpeedOverlay),
+            name: .downloadStoreDidChange,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateNetworkSpeedOverlay),
+            name: .browserFeaturePreferencesDidChange,
+            object: nil
+        )
+        updateNetworkSpeedOverlay()
     }
     
+    @objc private func updateNetworkSpeedOverlay() {
+        guard Prefs.BrowserFeatureSettings.showsNetworkSpeedOverlay else {
+            networkSpeedLabel.isHidden = true
+            return
+        }
+        let bytesPerSecond = DownloadStore.shared.currentSnapshot().items.reduce(Int64(0)) { partialResult, item in
+            partialResult + max(item.bytesPerSecond, 0)
+        }
+        let formattedSpeed = ByteCountFormatter.string(fromByteCount: bytesPerSecond, countStyle: .file)
+        networkSpeedLabel.text = "  网速 \(formattedSpeed)/s  "
+        networkSpeedLabel.isHidden = false
+    }
+
     @objc private func newTabDisplayOptionDidChange() {
         homepageOverlayCoordinator.updatePresentation(animated: true)
         captureThumbnail(forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode)

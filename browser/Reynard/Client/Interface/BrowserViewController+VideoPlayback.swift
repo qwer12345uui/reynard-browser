@@ -9,7 +9,7 @@ import Foundation
 
 extension BrowserViewController {
     func startVideoPlayback(at url: URL) {
-        if Prefs.PlaybackSettings.openVideosInNewTab {
+        if Prefs.PlaybackSettings.openVideosInNewTab && Prefs.PlaybackSettings.allowsMultiplePlayers {
             createNewTab()
         }
         tabManager.browse(to: url.absoluteString)

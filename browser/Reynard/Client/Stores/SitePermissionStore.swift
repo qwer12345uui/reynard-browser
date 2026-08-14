@@ -166,11 +166,17 @@ final class SitePermissionStore {
     func resolvedAction(for permission: SitePermission, host: String, session: GeckoSession) -> SitePermissionAction {
         let host = URLUtils.normalizedHost(host) ?? ""
         return stateQueue.sync {
+            let defaultAction: SitePermissionAction
+            if permission == .autoplay, Prefs.PlaybackSettings.allowsAutoplay {
+                defaultAction = .allowed
+            } else {
+                defaultAction = SiteSettingsUtils.defaultAction(for: permission)
+            }
             let resolvedAction: SitePermissionAction
             if session.isPrivateMode {
-                resolvedAction = privateActions[ObjectIdentifier(session)]?[host]?[permission] ?? SiteSettingsUtils.defaultAction(for: permission)
+                resolvedAction = privateActions[ObjectIdentifier(session)]?[host]?[permission] ?? defaultAction
             } else {
-                resolvedAction = actionLocked(for: permission, host: host) ?? SiteSettingsUtils.defaultAction(for: permission)
+                resolvedAction = actionLocked(for: permission, host: host) ?? defaultAction
             }
             
             if SiteSettingsUtils.isSystemDisabled(permission) {
