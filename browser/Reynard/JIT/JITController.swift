@@ -226,7 +226,7 @@ final class JITController {
         // Its policy can deny the bundled root-persona ptrace helper even when this
         // TrollStore package is otherwise valid. Treat helper-only errors as an
         // optional performance failure and keep the browser usable in JIT-less mode.
-        if usePtraceJIT(), JITEnabler.shared.isHelperFailure(error) {
+        if usePtraceJIT(), JITEnabler.shared.isHelperFailure(error: error) {
             hasHandledFailure = true
             NSLog("JIT ptrace helper unavailable; continuing in JIT-less mode: %@", error)
             activateJITLessMode()
