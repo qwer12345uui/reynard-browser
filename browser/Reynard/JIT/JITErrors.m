@@ -130,3 +130,18 @@ NSError *MakeError(ErrorCode code) {
         ErrorCategory: @(ErrorGroupForCode(code)),
     }];
 }
+
+BOOL IsTSPtraceHelperError(NSError *error) {
+    if (error == nil || ![error.domain isEqualToString:ErrorDomain]) {
+        return NO;
+    }
+
+    switch ((ErrorCode)error.code) {
+        case TSPtraceHelperMissing:
+        case TSPtraceHelperAttachFailed:
+        case TSPtraceHelperTerminated:
+            return YES;
+        default:
+            return NO;
+    }
+}

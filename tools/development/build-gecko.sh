@@ -16,9 +16,7 @@ if [ ! -d "$FIREFOX_DIR" ]; then
 	exit 1
 fi
 
-if [ -f "$FIREFOX_DIR/.mozconfig" ]; then
-	mv "$FIREFOX_DIR/.mozconfig" "$FIREFOX_DIR/.mozconfig.bak"
-fi
+mv "$FIREFOX_DIR/.mozconfig" "$FIREFOX_DIR/.mozconfig.bak"
 
 {
 	echo "ac_add_options --enable-application=mobile/ios"
@@ -41,6 +39,4 @@ cd "$FIREFOX_DIR"
 ./mach build
 
 rm "$FIREFOX_DIR/.mozconfig"
-if [ -f "$FIREFOX_DIR/.mozconfig.bak" ]; then
-	mv "$FIREFOX_DIR/.mozconfig.bak" "$FIREFOX_DIR/.mozconfig"
-fi
+mv "$FIREFOX_DIR/.mozconfig.bak" "$FIREFOX_DIR/.mozconfig"
