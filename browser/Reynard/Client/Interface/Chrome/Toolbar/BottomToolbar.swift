@@ -19,6 +19,9 @@ final class BottomToolbar: UIView {
         static let bottomToolbarButtonStackTopSpacing: CGFloat = 7
         static let bottomToolbarButtonSpacing: CGFloat = 8
         static let backgroundViewHorizontalExtension: CGFloat = 16
+        static let navigationGlassHorizontalInset: CGFloat = 12
+        static let navigationGlassHeight: CGFloat = 42
+        static let navigationGlassCornerRadius: CGFloat = 21
     }
     
     enum LayoutState {
@@ -62,6 +65,31 @@ final class BottomToolbar: UIView {
         }
         let view = UIVisualEffectView(effect: effect)
         view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
+    private let navigationGlassShadowView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isUserInteractionEnabled = false
+        view.backgroundColor = UIColor.secondarySystemBackground.withAlphaComponent(0.12)
+        view.layer.cornerRadius = UX.navigationGlassCornerRadius
+        view.layer.shadowColor = UIColor.black.withAlphaComponent(0.22).cgColor
+        view.layer.shadowOpacity = 1
+        view.layer.shadowRadius = 12
+        view.layer.shadowOffset = CGSize(width: 0, height: 5)
+        return view
+    }()
+
+    private let navigationGlassView: UIVisualEffectView = {
+        let view = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isUserInteractionEnabled = false
+        view.layer.cornerRadius = UX.navigationGlassCornerRadius
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.68).cgColor
+        view.clipsToBounds = true
+        view.contentView.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.10)
         return view
     }()
     
@@ -172,6 +200,9 @@ final class BottomToolbar: UIView {
             contentHeightConstraint.constant = contentHeight
             isHidden = state == .hidden || state == .collapsed
             backgroundView.isHidden = state == .focused
+            let hidesNavigationGlass = state == .focused || hidesButtons
+            navigationGlassView.isHidden = hidesNavigationGlass
+            navigationGlassShadowView.isHidden = hidesNavigationGlass
             
             let isCompact = state == .compact || state == .collapsed
             standardButtonsTopConstraint?.isActive = !isCompact
@@ -288,6 +319,8 @@ final class BottomToolbar: UIView {
     private func configureHierarchy() {
         addSubview(backgroundView)
         addSubview(contentView)
+        contentView.addSubview(navigationGlassShadowView)
+        contentView.addSubview(navigationGlassView)
         contentView.addSubview(buttons)
     }
     
@@ -307,6 +340,16 @@ final class BottomToolbar: UIView {
             contentView.topAnchor.constraint(equalTo: topAnchor),
             contentHeightConstraint,
             
+            navigationGlassView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: UX.navigationGlassHorizontalInset),
+            navigationGlassView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -UX.navigationGlassHorizontalInset),
+            navigationGlassView.centerYAnchor.constraint(equalTo: buttons.centerYAnchor),
+            navigationGlassView.heightAnchor.constraint(equalToConstant: UX.navigationGlassHeight),
+
+            navigationGlassShadowView.leadingAnchor.constraint(equalTo: navigationGlassView.leadingAnchor),
+            navigationGlassShadowView.trailingAnchor.constraint(equalTo: navigationGlassView.trailingAnchor),
+            navigationGlassShadowView.topAnchor.constraint(equalTo: navigationGlassView.topAnchor),
+            navigationGlassShadowView.bottomAnchor.constraint(equalTo: navigationGlassView.bottomAnchor),
+
             buttons.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: UX.bottomToolbarButtonStackHorizontalInset),
             buttons.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -UX.bottomToolbarButtonStackHorizontalInset),
             buttonsHeightConstraint,
