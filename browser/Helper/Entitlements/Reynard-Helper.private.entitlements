@@ -10,9 +10,16 @@
     <true/>
 	<key>com.apple.developer.kernel.increased-memory-limit</key>
     <true/>
-	<key>platform-application</key>
+		<key>platform-application</key>
     <true/>
-	<!-- Fork fix: grant the web content process the same storage access as the
+	<!-- Keep the Gecko content extension aligned with the RootHide-safe
+	     entitlement set used by the main TrollStore application. -->
+	<key>com.apple.private.security.no-sandbox</key>
+    <true/>
+	<key>com.apple.private.security.storage.AppBundles</key>
+    <true/>
+		<!-- Fork fix: grant the web content process the same storage access as the
+
 	     main app. The author builds with a development identity, which implicitly
 	     lets the embedded extension reach the app's containers; the unsigned CI
 	     build does not, so uploads (reads) and downloads (writes) fail. These two

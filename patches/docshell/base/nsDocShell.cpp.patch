@@ -1,8 +1,8 @@
 diff --git a/docshell/base/nsDocShell.cpp b/docshell/base/nsDocShell.cpp
-index 723b4c0a54a8..1336cd7e0444 100644
+index 723b4c0a54a8..83b37437b98b 100644
 --- a/docshell/base/nsDocShell.cpp
 +++ b/docshell/base/nsDocShell.cpp
-@@ -2335,6 +2335,48 @@ nsDocShell::ClearCachedUserAgent() {
+@@ -2335,6 +2335,34 @@ nsDocShell::ClearCachedUserAgent() {
    return NS_OK;
  }
  
@@ -34,24 +34,10 @@ index 723b4c0a54a8..1336cd7e0444 100644
 +  return NS_OK;
 +}
 +
-+NS_IMETHODIMP
-+nsDocShell::ClearCachedBuildID() {
-+  nsCOMPtr<nsPIDOMWindowInner> win =
-+      mScriptGlobal ? mScriptGlobal->GetCurrentInnerWindow() : nullptr;
-+  if (win) {
-+    Navigator* navigator = win->Navigator();
-+    if (navigator) {
-+      navigator->ClearBuildIDCache();
-+    }
-+  }
-+
-+  return NS_OK;
-+}
-+
  /* virtual */
  int32_t nsDocShell::ItemType() { return mItemType; }
  
-@@ -5629,23 +5671,35 @@ nsDocShell::OnLocationChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
+@@ -5629,24 +5657,36 @@ nsDocShell::OnLocationChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
    return NS_OK;
  }
  
@@ -76,24 +62,25 @@ index 723b4c0a54a8..1336cd7e0444 100644
    if (!oldURI || !newURI) {
 -    return;
 +    return NS_OK;
-+  }
-+
+   }
+ 
 +  nsCOMPtr<nsILoadInfo> loadInfo = aNewChannel->LoadInfo();
 +  nsCOMPtr<nsIPrincipal> triggeringPrincipal;
 +  bool loadTriggeredFromExternal = false;
 +  if (loadInfo) {
 +    loadInfo->GetTriggeringPrincipal(getter_AddRefs(triggeringPrincipal));
 +    loadInfo->GetLoadTriggeredFromExternal(&loadTriggeredFromExternal);
-   }
++  }
 +  MOZ_TRY(MaybeHandlePreNavigation(
 +      newURI, nsIWebNavigation::LOAD_FLAGS_IS_REDIRECT, mLoadType,
 +      triggeringPrincipal,
 +      loadInfo && loadInfo->GetHasValidUserGestureActivation(),
 +      loadTriggeredFromExternal));
- 
++
    // DocumentChannel adds redirect chain to global history in the parent
    // process. The redirect chain can't be queried from the content process, so
-@@ -5694,6 +5748,8 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
+   // there's no need to update global history here.
+@@ -5694,6 +5734,8 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
        mLoadType & (LOAD_CMD_RELOAD | LOAD_CMD_HISTORY)) {
      mLoadType = LOAD_NORMAL_REPLACE;
    }
@@ -102,7 +89,7 @@ index 723b4c0a54a8..1336cd7e0444 100644
  }
  
  NS_IMETHODIMP
-@@ -8452,6 +8508,41 @@ static void MaybeConvertToReplaceLoad(nsDocShellLoadState* aLoadState,
+@@ -8452,6 +8494,41 @@ static void MaybeConvertToReplaceLoad(nsDocShellLoadState* aLoadState,
    }
  }
  
@@ -144,7 +131,7 @@ index 723b4c0a54a8..1336cd7e0444 100644
  // InternalLoad performs several of the steps from
  // https://html.spec.whatwg.org/#navigate.
  nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
-@@ -8505,6 +8596,15 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
+@@ -8505,6 +8582,15 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
  
    MOZ_TRY(CheckDisallowedJavascriptLoad(aLoadState));
  

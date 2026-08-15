@@ -1,18 +1,17 @@
 diff --git a/docshell/base/BrowsingContext.h b/docshell/base/BrowsingContext.h
-index 6f7f58bba3be..86ac11456d94 100644
+index 6f7f58bba3be..5bd525dd753f 100644
 --- a/docshell/base/BrowsingContext.h
 +++ b/docshell/base/BrowsingContext.h
-@@ -235,6 +235,9 @@ struct EmbedderColorSchemes {
+@@ -235,6 +235,8 @@ struct EmbedderColorSchemes {
    FIELD(HasSessionHistory, bool)                                              \
    FIELD(UseErrorPages, bool)                                                  \
    FIELD(PlatformOverride, nsString)                                           \
 +  FIELD(AppVersionOverride, nsString)                                         \
 +  FIELD(OscpuOverride, nsString)                                              \
-+  FIELD(BuildIDOverride, nsString)                                            \
    /* Specifies if this BC has loaded documents besides the initial            \
     * about:blank document. about:privatebrowsing, about:home, about:newtab    \
     * and non-initial about:blank are not considered to be initial             \
-@@ -896,6 +899,19 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
+@@ -896,6 +898,14 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
    }
    void SetCustomPlatform(const nsAString& aPlatform, ErrorResult& aRv);
  
@@ -24,15 +23,10 @@ index 6f7f58bba3be..86ac11456d94 100644
 +  void GetCustomOscpu(nsAString& aOscpu) { aOscpu = Top()->GetOscpuOverride(); }
 +  void SetCustomOscpu(const nsAString& aOscpu, ErrorResult& aRv);
 +
-+  void GetCustomBuildID(nsAString& aBuildID) {
-+    aBuildID = Top()->GetBuildIDOverride();
-+  }
-+  void SetCustomBuildID(const nsAString& aBuildID, ErrorResult& aRv);
-+
    JSObject* WrapObject(JSContext* aCx);
  
    static JSObject* ReadStructuredClone(JSContext* aCx,
-@@ -1481,6 +1497,19 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
+@@ -1481,6 +1491,15 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
                        const nsString& aPlatformOverride,
                        ContentParent* aSource);
  
@@ -44,10 +38,6 @@ index 6f7f58bba3be..86ac11456d94 100644
 +  void DidSet(FieldIndex<IDX_OscpuOverride>);
 +  CanSetResult CanSet(FieldIndex<IDX_OscpuOverride>,
 +                      const nsString& aOscpuOverride, ContentParent* aSource);
-+
-+  void DidSet(FieldIndex<IDX_BuildIDOverride>);
-+  CanSetResult CanSet(FieldIndex<IDX_BuildIDOverride>,
-+                      const nsString& aBuildIDOverride, ContentParent* aSource);
 +
    void DidSet(FieldIndex<IDX_UserAgentOverride>);
    CanSetResult CanSet(FieldIndex<IDX_UserAgentOverride>,

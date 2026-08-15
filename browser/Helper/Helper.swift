@@ -17,11 +17,20 @@ private final class ProcessBootstrap {
 	private static var retainedConnections: [NSXPCConnection] = []
 	private static var retainedContexts: [NSExtensionContext] = []
 	private static var retainedProcesses: [any GeckoProcessExtension] = []
+	private static var hasStarted = false
 
 	static func start(
 		context: NSExtensionContext,
 		process: GeckoProcessExtension
 	) throws {
+		guard !hasStarted else {
+			throw NSError(
+				domain: "Reynard.ProcessBootstrap",
+				code: 3,
+				userInfo: [NSLocalizedDescriptionKey: "Gecko process bootstrap was requested more than once"]
+			)
+		}
+
 		guard
 			let input = context.inputItems.first as? NSExtensionItem,
 			let userInfo = input.userInfo,
@@ -51,6 +60,7 @@ private final class ProcessBootstrap {
 		retainedContexts.append(context)
 		retainedProcesses.append(process)
 		retainedConnections.append(connection)
+		hasStarted = true
 
 		GeckoRuntime.childMain(xpcConnection: xpcConnection, process: process)
 

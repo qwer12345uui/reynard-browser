@@ -11,21 +11,32 @@
 #import <dlfcn.h>
 #import <objc/runtime.h>
 #import <os/log.h>
+#include <stdlib.h>
 
-static void hook_do_nothing(void) {}
+static BOOL allowXPCDecoderClass(id receiver, SEL selector, Class allowedClass,
+                                 id key, BOOL allowingInvocations) {
+  return YES;
+}
 
 __attribute__((used, visibility("default"))) int NSExtensionMain(int argc,
                                                                  char *argv[]) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundeclared-selector"
-  method_setImplementation(
-      class_getInstanceMethod(NSClassFromString(@"NSXPCDecoder"), @selector
-                              (_validateAllowedClass:
-                                              forKey:allowingInvocations:)),
-      (IMP)hook_do_nothing);
+  Class decoderClass = NSClassFromString(@"NSXPCDecoder");
+  Method validationMethod = class_getInstanceMethod(
+      decoderClass,
+      @selector(_validateAllowedClass:forKey:allowingInvocations:));
+  if (validationMethod != NULL) {
+    method_setImplementation(validationMethod, (IMP)allowXPCDecoderClass);
+  }
 #pragma clang diagnostic pop
 
   int (*origNSExtensionMain)(int, char **) =
       (int (*)(int, char **))dlsym(RTLD_NEXT, "NSExtensionMain");
+  if (origNSExtensionMain == NULL || origNSExtensionMain == NSExtensionMain) {
+    os_log_error(OS_LOG_DEFAULT,
+                 "Unable to resolve the system NSExtensionMain entry point");
+    return EXIT_FAILURE;
+  }
   return origNSExtensionMain(argc, argv);
 }
