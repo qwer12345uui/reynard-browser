@@ -13,11 +13,12 @@ struct LinkPreviewMenu {
         showsPreview: Bool,
         isPrivate: Bool,
         sessionManager: SessionManager,
+        sourceView: UIView,
         onPreviewCreated: @escaping (LinkPreviewViewController) -> Void,
         openInNewTab: @escaping () -> Void,
         openInNewPrivateTab: @escaping () -> Void,
         openInBackground: @escaping () -> Void,
-        shareLink: @escaping (URL) -> Void
+        shareLink: @escaping (URL, UIView, CGRect) -> Void
     ) -> UIContextMenuConfiguration? {
         guard case .link(let url) = context.target else {
             return nil
@@ -51,7 +52,11 @@ struct LinkPreviewMenu {
                         UIPasteboard.general.string = url.absoluteString
                     },
                     UIAction(title: NSLocalizedString("Share Link", comment: ""), image: UIImage(named: "reynard.square.and.arrow.up")) { _ in
-                        shareLink(url)
+                        shareLink(
+                            url,
+                            sourceView,
+                            CGRect(origin: context.point, size: .zero)
+                        )
                     },
                 ]),
             ])

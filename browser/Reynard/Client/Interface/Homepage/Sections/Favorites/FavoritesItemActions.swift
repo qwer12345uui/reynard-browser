@@ -96,12 +96,17 @@ extension FavoritesSectionViewController: UIContextMenuInteractionDelegate {
                     
                     self.delegate?.homepageSection(self, didRequestOpenURL: bookmark.url, disposition: .newPrivateTab)
                 },
-                shareLink: { [weak self] url in
-                    guard let self else {
+                shareLink: { [weak self, weak anchorView] url in
+                    guard let self,
+                          let anchorView else {
                         return
                     }
                     
-                    self.delegate?.homepageSection(self, didRequestShareURL: url)
+                    self.delegate?.homepageSection(
+                        self,
+                        didRequestShareURL: url,
+                        sourceView: anchorView
+                    )
                 },
                 editBookmark: { [weak self] in
                     self?.presentBookmarkEditor(for: bookmark)

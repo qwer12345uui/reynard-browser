@@ -11,8 +11,8 @@ struct ImagePreviewMenu {
     static func configuration(
         for context: ContextMenuContext,
         showsPreview: Bool,
-        presentingController: UIViewController,
         sourceView: UIView,
+        shareImage: @escaping (UIImage, UIView, CGRect) -> Void,
         openLinkInNewTab: @escaping (URL) -> Void,
         openLinkInNewPrivateTab: @escaping (URL) -> Void,
         openLinkInBackground: @escaping (URL) -> Void,
@@ -51,11 +51,10 @@ struct ImagePreviewMenu {
                     },
                     UIAction(title: NSLocalizedString("Share Image", comment: ""), image: UIImage(named: "reynard.square.and.arrow.up")) { _ in
                         loadImage(from: url) { image in
-                            presentShareSheet(
-                                image: image,
-                                from: presentingController,
-                                sourceView: sourceView,
-                                sourcePoint: context.point
+                            shareImage(
+                                image,
+                                sourceView,
+                                CGRect(origin: context.point, size: .zero)
                             )
                         }
                     },
@@ -90,17 +89,4 @@ struct ImagePreviewMenu {
         }
     }
     
-    private static func presentShareSheet(
-        image: UIImage,
-        from controller: UIViewController,
-        sourceView: UIView,
-        sourcePoint: CGPoint
-    ) {
-        let sheet = UIActivityViewController(activityItems: [image], applicationActivities: nil)
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = sourceView
-            popover.sourceRect = CGRect(origin: sourcePoint, size: .zero)
-        }
-        controller.present(sheet, animated: true)
-    }
 }

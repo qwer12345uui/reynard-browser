@@ -1008,7 +1008,10 @@ extension AddressBar: UIContextMenuInteractionDelegate {
                 }
                 
                 interaction?.updateVisibleMenu { [weak self] visibleMenu in
-                    self?.makeContextMenu(for: url, includesPasteAndGo: true) ?? visibleMenu
+                    self?.makeContextMenu(
+                        for: url,
+                        includesPasteAndGo: true
+                    ) ?? visibleMenu
                 }
             }
         }
@@ -1025,7 +1028,10 @@ extension AddressBar: UIContextMenuInteractionDelegate {
         }
     }
     
-    private func makeContextMenu(for url: URL?, includesPasteAndGo: Bool) -> UIMenu {
+    private func makeContextMenu(
+        for url: URL?,
+        includesPasteAndGo: Bool
+    ) -> UIMenu {
         var children: [UIMenuElement] = []
         if includesPasteAndGo {
             children.append(UIAction(
@@ -1053,7 +1059,10 @@ extension AddressBar: UIContextMenuInteractionDelegate {
                 guard let self else {
                     return
                 }
-                self.delegate?.addressBar(self, didRequestShareLink: url)
+                self.delegate?.addressBar(
+                    self,
+                    didRequestShareLink: url
+                )
             })
         }
         

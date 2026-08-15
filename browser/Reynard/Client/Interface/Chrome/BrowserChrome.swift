@@ -161,8 +161,10 @@ final class BrowserChrome: UIView {
     }
     
     func sharePopoverSourceView() -> UIView {
-        guard let state else { return bottomToolbar }
-        return state.mode == .phone ? bottomToolbar : topToolbar
+        guard let state else { return bottomToolbar.sharePopoverSourceView() }
+        return state.mode == .phone
+        ? bottomToolbar.sharePopoverSourceView()
+        : topToolbar.sharePopoverSourceView()
     }
     
     // MARK: - Layout

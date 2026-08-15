@@ -1692,6 +1692,16 @@
         }
       }
     },
+    "Advanced Options" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced Options"
+          }
+        }
+      }
+    },
     "After you close a tab, Reynard won’t remember any of your browsing history or cookies. However, downloads and new bookmarks will be saved." : {
       "localizations" : {
         "en" : {

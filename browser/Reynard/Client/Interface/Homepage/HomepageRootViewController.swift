@@ -9,7 +9,11 @@ import UIKit
 
 protocol HomepageRootViewControllerDelegate: AnyObject {
     func homepageRootViewController(_ controller: HomepageRootViewController, didRequestOpenURL url: URL, disposition: TabOpenDisposition)
-    func homepageRootViewController(_ controller: HomepageRootViewController, didRequestShareURL url: URL)
+    func homepageRootViewController(
+        _ controller: HomepageRootViewController,
+        didRequestShareURL url: URL,
+        sourceView: UIView
+    )
     func homepageRootViewController(_ controller: HomepageRootViewController, didRequestHideFromSuggestions siteID: Int64)
     func homepageRootViewController(_ controller: HomepageRootViewController, didSelectRecentlyClosedTab id: UUID)
     func homepageRootViewControllerDidSelectFolder(_ folder: BookmarkFolderSnapshot)
@@ -396,8 +400,16 @@ extension HomepageRootViewController: HomepageSectionDelegate {
         delegate?.homepageRootViewController(self, didRequestOpenURL: url, disposition: disposition)
     }
     
-    func homepageSection(_ viewController: UIViewController, didRequestShareURL url: URL) {
-        delegate?.homepageRootViewController(self, didRequestShareURL: url)
+    func homepageSection(
+        _ viewController: UIViewController,
+        didRequestShareURL url: URL,
+        sourceView: UIView
+    ) {
+        delegate?.homepageRootViewController(
+            self,
+            didRequestShareURL: url,
+            sourceView: sourceView
+        )
     }
     
     func homepageSection(_ viewController: UIViewController, didRequestHideFromSuggestions siteID: Int64) {

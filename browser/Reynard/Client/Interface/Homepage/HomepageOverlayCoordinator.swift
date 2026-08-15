@@ -19,7 +19,7 @@ protocol HomepageOverlayCoordinatorDelegate: AnyObject {
     
     // Homepage section actions
     func openURLFromHomepage(_ url: URL, disposition: TabOpenDisposition)
-    func shareURLFromHomepage(_ url: URL)
+    func shareURLFromHomepage(_ url: URL, sourceView: UIView)
     func openSettingsFromHomepage()
     func restoreClosedTabFromHomepage(id: UUID) -> Bool
     
@@ -416,8 +416,15 @@ extension HomepageOverlayCoordinator: HomepageViewControllerDelegate {
         dismiss(animated: true)
     }
     
-    func homepageViewController(_ controller: HomepageViewController, didRequestShareURL url: URL) {
-        delegate?.shareURLFromHomepage(url)
+    func homepageViewController(
+        _ controller: HomepageViewController,
+        didRequestShareURL url: URL,
+        sourceView: UIView
+    ) {
+        delegate?.shareURLFromHomepage(
+            url,
+            sourceView: sourceView
+        )
     }
     
     func homepageViewController(_ controller: HomepageViewController, didRequestHideFromSuggestions siteID: Int64) {

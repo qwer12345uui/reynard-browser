@@ -67,12 +67,17 @@ extension FrequentlyVisitedSectionViewController: UIContextMenuInteractionDelega
                 
                 self.delegate?.homepageSection(self, didRequestOpenURL: site.url, disposition: .newPrivateTab)
             },
-            shareLink: { [weak self] url in
-                guard let self else {
+            shareLink: { [weak self, weak cardView] url in
+                guard let self,
+                      let cardView else {
                     return
                 }
                 
-                self.delegate?.homepageSection(self, didRequestShareURL: url)
+                self.delegate?.homepageSection(
+                    self,
+                    didRequestShareURL: url,
+                    sourceView: cardView
+                )
             },
             removeLink: { [weak self] in
                 guard let self else {

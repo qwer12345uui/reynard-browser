@@ -8,6 +8,32 @@
 import UIKit
 
 extension BrowserViewController {
+    func presentShareSheet(
+        items: [Any],
+        sourceView: UIView,
+        sourceRect: CGRect,
+        completion: ((Bool, Error?) -> Void)? = nil
+    ) {
+        guard !items.isEmpty else {
+            return
+        }
+        
+        let activityController = UIActivityViewController(
+            activityItems: items,
+            applicationActivities: nil
+        )
+        if let popover = activityController.popoverPresentationController {
+            popover.sourceView = sourceView
+            popover.sourceRect = sourceRect
+        }
+        if let completion {
+            activityController.completionWithItemsHandler = { _, completed, _, error in
+                completion(completed, error)
+            }
+        }
+        present(activityController, animated: true)
+    }
+    
     func presentContentModal(_ rootViewController: UIViewController) {
         let navigationController = ContentModalNavigationController(
             rootViewController: rootViewController
@@ -102,10 +128,10 @@ extension BrowserViewController {
         
         if tabOverview.isPresented {
             tabOverview.prepareNextTabChangesWithoutAnimation()
-            createTabFromOverview(mode: tabOverview.mode.tabMode)
+            createTabFromOverview(mode: targetMode)
         } else {
-            homepageOverlayCoordinator.prepareHomepageForNewTab(mode: tabManager.selectedTabMode)
-            let createdIndex = tabManager.createTab(selecting: true)
+            homepageOverlayCoordinator.prepareHomepageForNewTab(mode: targetMode)
+            let createdIndex = tabManager.createTab(selecting: true, mode: targetMode)
             applyNewTabDisplayOption(toTabAt: createdIndex)
             tabBar.setPendingExpansion(at: createdIndex)
             setTabOverviewVisible(false, animated: true)
@@ -115,7 +141,12 @@ extension BrowserViewController {
     func closeAllTabs() {
         toolbarController.reset()
         dismissAddressBarEditingAndOverlays()
-        tabManager.removeAllTabs(mode: tabManager.selectedTabMode)
+        let mode = tabManager.selectedTabMode
+        let shouldCreateNewTab = mode == .regular && !tabManager.regularTabs.isEmpty
+        tabManager.removeAllTabs(mode: mode)
+        if shouldCreateNewTab {
+            createNewTab(mode: .regular)
+        }
     }
     
     func closeTab() {
@@ -123,7 +154,11 @@ extension BrowserViewController {
             return
         }
         
-        closeTab(at: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode)
+        let mode = tabManager.selectedTabMode
+        closeTab(at: tabManager.selectedTabIndex, mode: mode)
+        if mode == .regular && tabManager.regularTabs.isEmpty {
+            createNewTab(mode: .regular)
+        }
     }
     
     func createNewTabAnimated(mode: TabMode) {

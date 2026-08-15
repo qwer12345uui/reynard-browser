@@ -90,6 +90,14 @@ func parsePromptRequest(_ data: [String: Any]) -> PromptRequest? {
             anchor: parseAnchor(data["rect"])
         ))
         
+    case "share":
+        return .share(SharePromptRequest(
+            id: promptID,
+            title: data["title"] as? String ?? "",
+            text: data["text"] as? String ?? "",
+            url: data["uri"] as? String
+        ))
+        
     default:
         return nil
     }

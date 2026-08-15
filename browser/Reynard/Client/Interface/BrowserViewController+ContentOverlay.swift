@@ -148,8 +148,12 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
         }
     }
     
-    func shareURLFromHomepage(_ url: URL) {
-        presentShareSheet(url: url.absoluteString)
+    func shareURLFromHomepage(_ url: URL, sourceView: UIView) {
+        presentShareSheet(
+            items: [url],
+            sourceView: sourceView,
+            sourceRect: sourceView.bounds
+        )
     }
     
     func openSettingsFromHomepage() {

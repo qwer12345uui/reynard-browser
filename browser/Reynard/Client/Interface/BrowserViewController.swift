@@ -413,7 +413,19 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             }
         )
         browserChrome.onShare = { [weak self] in
-            self?.presentShareSheet()
+            guard let self else {
+                return
+            }
+            guard let tab = self.tabManager.selectedTab,
+                  let url = self.tabManager.shareableURL(for: tab) else {
+                return
+            }
+            let sourceView = self.browserChrome.sharePopoverSourceView()
+            self.presentShareSheet(
+                items: [url],
+                sourceView: sourceView,
+                sourceRect: sourceView.bounds
+            )
         }
         browserChrome.onBasket = { [weak self] in
             self?.showToolbox(.bottom)

@@ -61,12 +61,17 @@ extension RecentlyClosedTabsSectionViewController: UIContextMenuInteractionDeleg
         return RecentlyCloseTabItemActions.configuration(
             for: tab,
             url: url,
-            shareLink: { [weak self] url in
-                guard let self else {
+            shareLink: { [weak self, weak cell] url in
+                guard let self,
+                      let cell else {
                     return
                 }
                 
-                self.delegate?.homepageSection(self, didRequestShareURL: url)
+                self.delegate?.homepageSection(
+                    self,
+                    didRequestShareURL: url,
+                    sourceView: cell
+                )
             },
             removeTab: { [weak self] in
                 guard let self else {

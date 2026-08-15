@@ -9,10 +9,6 @@ import GeckoView
 import UIKit
 
 extension BrowserViewController: ContextMenuCoordinatorHost {
-    var contextMenuPresenter: UIViewController {
-        return self
-    }
-    
     var contextMenuSourceView: ContentView {
         return contentView
     }
@@ -76,8 +72,12 @@ extension BrowserViewController: ContextMenuCoordinatorHost {
         }
     }
     
-    func contextMenuShareLink(_ url: URL) {
-        presentShareSheet(url: url.absoluteString)
+    func contextMenuPresentShareSheet(items: [Any], sourceView: UIView, sourceRect: CGRect) {
+        presentShareSheet(
+            items: items,
+            sourceView: sourceView,
+            sourceRect: sourceRect
+        )
     }
     
     func contextMenuRestoreInteraction(for session: GeckoSession) {

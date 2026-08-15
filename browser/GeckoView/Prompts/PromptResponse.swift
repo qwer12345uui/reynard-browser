@@ -44,4 +44,8 @@ public struct PromptResponse {
     public static func choices(_ ids: [String]) -> PromptResponse {
         return PromptResponse(geckoMessage: ["choices": ids])
     }
+    
+    public static func share(_ result: SharePromptResult) -> PromptResponse {
+        return PromptResponse(geckoMessage: ["response": result.rawValue])
+    }
 }

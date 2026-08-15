@@ -9,7 +9,11 @@ import UIKit
 
 protocol HomepageViewControllerDelegate: AnyObject {
     func homepageViewController(_ controller: HomepageViewController, didRequestOpenURL url: URL, disposition: TabOpenDisposition)
-    func homepageViewController(_ controller: HomepageViewController, didRequestShareURL url: URL)
+    func homepageViewController(
+        _ controller: HomepageViewController,
+        didRequestShareURL url: URL,
+        sourceView: UIView
+    )
     func homepageViewController(_ controller: HomepageViewController, didRequestHideFromSuggestions siteID: Int64)
     func homepageViewController(_ controller: HomepageViewController, didSelectRecentlyClosedTab id: UUID)
     func homepageViewControllerDidSelectSettings(_ controller: HomepageViewController)
@@ -129,8 +133,16 @@ extension HomepageViewController: HomepageRootViewControllerDelegate {
         homepageDelegate?.homepageViewController(self, didRequestOpenURL: url, disposition: disposition)
     }
     
-    func homepageRootViewController(_ controller: HomepageRootViewController, didRequestShareURL url: URL) {
-        homepageDelegate?.homepageViewController(self, didRequestShareURL: url)
+    func homepageRootViewController(
+        _ controller: HomepageRootViewController,
+        didRequestShareURL url: URL,
+        sourceView: UIView
+    ) {
+        homepageDelegate?.homepageViewController(
+            self,
+            didRequestShareURL: url,
+            sourceView: sourceView
+        )
     }
     
     func homepageRootViewController(_ controller: HomepageRootViewController, didRequestHideFromSuggestions siteID: Int64) {

@@ -211,6 +211,10 @@ final class BottomToolbar: UIView {
         return addressBar.hitTest(addressBar.convert(point, from: self), with: event)
     }
     
+    func sharePopoverSourceView() -> UIView {
+        return shareButton
+    }
+    
     func apply(state: LayoutState, hidesButtons: Bool) {
         let contentHeight: CGFloat
         switch state {

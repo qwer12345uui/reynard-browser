@@ -9,7 +9,6 @@ import GeckoView
 import UIKit
 
 protocol ContextMenuCoordinatorHost: AnyObject {
-    var contextMenuPresenter: UIViewController { get }
     var contextMenuSourceView: ContentView { get }
     var contextMenuTabActions: ContextMenuTabActions { get }
     var contextMenuSelectedTabIsPrivate: Bool { get }
@@ -17,7 +16,7 @@ protocol ContextMenuCoordinatorHost: AnyObject {
     
     func captureSourceTabThumbnail(completion: @escaping () -> Void)
     func contextMenuOpenLink(_ url: URL, disposition: TabOpenDisposition)
-    func contextMenuShareLink(_ url: URL)
+    func contextMenuPresentShareSheet(items: [Any], sourceView: UIView, sourceRect: CGRect)
     func contextMenuRestoreInteraction(for session: GeckoSession)
 }
 
@@ -181,8 +180,14 @@ extension ContextMenuCoordinator: UIContextMenuInteractionDelegate {
            let imageConfiguration = ImagePreviewMenu.configuration(
             for: context,
             showsPreview: context.allowsPreview && Prefs.BrowsingSettings.showImagePreviews,
-            presentingController: host.contextMenuPresenter,
             sourceView: host.contextMenuSourceView,
+            shareImage: { [weak host] image, sourceView, sourceRect in
+                host?.contextMenuPresentShareSheet(
+                    items: [image],
+                    sourceView: sourceView,
+                    sourceRect: sourceRect
+                )
+            },
             openLinkInNewTab: { [weak host] url in
                 host?.contextMenuOpenLink(url, disposition: .newTab)
             },
@@ -204,6 +209,7 @@ extension ContextMenuCoordinator: UIContextMenuInteractionDelegate {
             showsPreview: context.allowsPreview && Prefs.BrowsingSettings.showLinkPreviews,
             isPrivate: host.contextMenuSelectedTabIsPrivate,
             sessionManager: sessionManager,
+            sourceView: host.contextMenuSourceView,
             onPreviewCreated: { [weak self] preview in
                 self?.linkPreview = preview
             },
@@ -216,8 +222,12 @@ extension ContextMenuCoordinator: UIContextMenuInteractionDelegate {
             openInBackground: { [weak self] in
                 self?.openLinkPreview(disposition: .backgroundTab)
             },
-            shareLink: { [weak host] url in
-                host?.contextMenuShareLink(url)
+            shareLink: { [weak host] url, sourceView, sourceRect in
+                host?.contextMenuPresentShareSheet(
+                    items: [url],
+                    sourceView: sourceView,
+                    sourceRect: sourceRect
+                )
             }
         )
     }

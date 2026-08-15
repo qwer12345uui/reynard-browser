@@ -120,8 +120,15 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
         closeAllTabs()
     }
     
-    func addressBar(_ addressBar: AddressBar, didRequestShareLink url: URL) {
-        presentShareSheet(url: url.absoluteString)
+    func addressBar(
+        _ addressBar: AddressBar,
+        didRequestShareLink url: URL
+    ) {
+        presentShareSheet(
+            items: [url],
+            sourceView: addressBar,
+            sourceRect: addressBar.bounds
+        )
     }
     
     // MARK: - AddressBarGestureDelegate
