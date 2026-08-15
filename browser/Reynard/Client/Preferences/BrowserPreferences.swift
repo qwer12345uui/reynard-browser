@@ -136,6 +136,11 @@ final class BrowserPreferences {
             // Compatibility
             key("CompatibilitySettings", "androidUserAgentDomains"): [],
             key("CompatibilitySettings", "useAndroidUserAgent"): true,
+            key("CompatibilitySettings", "customUserAgent"): "",
+            key("CompatibilitySettings", "customPlatform"): "",
+            key("CompatibilitySettings", "customAppVersion"): "",
+            key("CompatibilitySettings", "customOscpu"): "",
+            key("CompatibilitySettings", "customBuildID"): "",
             
             // Browsing
             key("BrowsingSettings", "requestDesktopWebsite"): UIDevice.current.userInterfaceIdiom == .pad,
@@ -1052,6 +1057,51 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue, forSetting: "CompatibilitySettings", key: "useAndroidUserAgent")
+            }
+        }
+        
+        static var customUserAgent: String {
+            get {
+                return prefs.string(forSetting: "CompatibilitySettings", key: "customUserAgent") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "CompatibilitySettings", key: "customUserAgent")
+            }
+        }
+        
+        static var customPlatform: String {
+            get {
+                return prefs.string(forSetting: "CompatibilitySettings", key: "customPlatform") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "CompatibilitySettings", key: "customPlatform")
+            }
+        }
+        
+        static var customAppVersion: String {
+            get {
+                return prefs.string(forSetting: "CompatibilitySettings", key: "customAppVersion") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "CompatibilitySettings", key: "customAppVersion")
+            }
+        }
+        
+        static var customOscpu: String {
+            get {
+                return prefs.string(forSetting: "CompatibilitySettings", key: "customOscpu") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "CompatibilitySettings", key: "customOscpu")
+            }
+        }
+        
+        static var customBuildID: String {
+            get {
+                return prefs.string(forSetting: "CompatibilitySettings", key: "customBuildID") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "CompatibilitySettings", key: "customBuildID")
             }
         }
     }

@@ -13,6 +13,7 @@ public struct WebsiteModeSetting: Equatable {
         platformOverride: nil,
         appVersionOverride: nil,
         oscpuOverride: nil,
+        buildIDOverride: nil,
         userAgentMode: 0,
         viewportMode: 0
     )
@@ -21,6 +22,7 @@ public struct WebsiteModeSetting: Equatable {
     public let platformOverride: String?
     public let appVersionOverride: String?
     public let oscpuOverride: String?
+    public let buildIDOverride: String?
     public let userAgentMode: Int
     public let viewportMode: Int
     
@@ -29,6 +31,7 @@ public struct WebsiteModeSetting: Equatable {
         platformOverride: String?,
         appVersionOverride: String?,
         oscpuOverride: String?,
+        buildIDOverride: String?,
         userAgentMode: Int,
         viewportMode: Int
     ) {
@@ -36,6 +39,7 @@ public struct WebsiteModeSetting: Equatable {
         self.platformOverride = platformOverride
         self.appVersionOverride = appVersionOverride
         self.oscpuOverride = oscpuOverride
+        self.buildIDOverride = buildIDOverride
         self.userAgentMode = userAgentMode
         self.viewportMode = viewportMode
     }

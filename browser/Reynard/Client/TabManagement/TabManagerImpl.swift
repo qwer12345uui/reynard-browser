@@ -38,7 +38,7 @@ final class TabManagerImplementation: NSObject, TabManager {
     private let permissionCoordinator = PermissionCoordinator(
         promptPresenter: PermissionPromptPresenter()
     )
-    private let systemMediaSession = SystemMediaSession()
+    private lazy var systemMediaSession = SystemMediaSession(playbackObserver: self)
     private lazy var pictureInPictureCoordinator: PictureInPictureCoordinating? = {
         guard Prefs.ExperimentalSettings.isVideoPictureInPictureEnabled,
               #available(iOS 15.0, *) else {
@@ -1000,6 +1000,15 @@ final class TabManagerImplementation: NSObject, TabManager {
     }
 }
 
+extension TabManagerImplementation: SystemMediaSessionPlaybackObserver {
+    func systemMediaSessionPlaybackStateDidChange(
+        _ playbackState: SystemMediaSession.PlaybackState,
+        for session: GeckoSession
+    ) {
+        delegate?.tabManager(self, didChangeMediaPlayback: playbackState == .playing, for: session)
+    }
+}
+
 extension TabManagerImplementation: ContentDelegate {
     func onTitleChange(session: GeckoSession, title: String) {
         guard let location = tabLocation(for: session) else {
@@ -1041,7 +1050,16 @@ extension TabManagerImplementation: ContentDelegate {
             return
         }
         
-        delegate?.tabManager(self, didChangeFullscreen: fullScreen, for: session)
+        let mediaIsPlaying = systemMediaSession.selectedSnapshot.map {
+            $0.session === session && $0.playbackState == .playing
+        } ?? false
+        
+        delegate?.tabManager(
+            self,
+            didChangeFullscreen: fullScreen,
+            mediaIsPlaying: mediaIsPlaying,
+            for: session
+        )
     }
     
     func onMetaViewportFitChange(session: GeckoSession, viewportFit: String) {}

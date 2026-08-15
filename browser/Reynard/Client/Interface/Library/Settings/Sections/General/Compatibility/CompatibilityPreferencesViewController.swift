@@ -16,18 +16,28 @@ final class CompatibilityPreferencesViewController: SettingsTableViewController 
         }
     }
     
-    private enum Row: CaseIterable {
+    private enum Row {
         case useAndroidUserAgent
+        case advancedOptions
         case userAgentOverrides
     }
     
     private let androidUserAgentSwitch = UISwitch()
     
     private var displayedRows: [Row] {
-        return Prefs.CompatibilitySettings.useAndroidUserAgent ? [.useAndroidUserAgent] : Row.allCases
+        return Prefs.CompatibilitySettings.useAndroidUserAgent
+        ? [.useAndroidUserAgent, .advancedOptions]
+        : [.useAndroidUserAgent, .userAgentOverrides]
     }
     
     private var compatibilityUserAgentName: String {
+        if !Prefs.CompatibilitySettings.customUserAgent.isEmpty
+            || !Prefs.CompatibilitySettings.customPlatform.isEmpty
+            || !Prefs.CompatibilitySettings.customAppVersion.isEmpty
+            || !Prefs.CompatibilitySettings.customOscpu.isEmpty
+            || !Prefs.CompatibilitySettings.customBuildID.isEmpty {
+            return NSLocalizedString("Custom", comment: "")
+        }
         return Prefs.BrowsingSettings.requestDesktopWebsite ? NSLocalizedString("Desktop Firefox", comment: "") : NSLocalizedString("Firefox for Android", comment: "")
     }
     
@@ -81,6 +91,11 @@ final class CompatibilityPreferencesViewController: SettingsTableViewController 
             cell.selectionStyle = .none
             cell.accessoryView = androidUserAgentSwitch
             return cell
+        case .advancedOptions:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = NSLocalizedString("Advanced Options", comment: "")
+            cell.accessoryType = .disclosureIndicator
+            return cell
         case .userAgentOverrides:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = NSLocalizedString("User Agent Overrides", comment: "")
@@ -95,8 +110,13 @@ final class CompatibilityPreferencesViewController: SettingsTableViewController 
               displayedRows.indices.contains(indexPath.row) else {
             return
         }
-        if displayedRows[indexPath.row] == .userAgentOverrides {
+        switch displayedRows[indexPath.row] {
+        case .advancedOptions:
+            navigationController?.pushViewController(AdvancedOptionsPreferencesViewController(), animated: true)
+        case .userAgentOverrides:
             navigationController?.pushViewController(UserAgentOverridesPreferencesViewController(), animated: true)
+        case .useAndroidUserAgent:
+            break
         }
     }
     
@@ -126,24 +146,12 @@ final class CompatibilityPreferencesViewController: SettingsTableViewController 
     }
     
     @objc private func applyAndroidUserAgentPreference() {
-        let nowOn = androidUserAgentSwitch.isOn
-        Prefs.CompatibilitySettings.useAndroidUserAgent = nowOn
+        Prefs.CompatibilitySettings.useAndroidUserAgent = androidUserAgentSwitch.isOn
+        tableView.reloadData()
         
-        guard let overrideRow = Row.allCases.firstIndex(of: .userAgentOverrides),
-              let section = Section.allCases.firstIndex(of: .userAgent) else {
+        guard let section = Section.allCases.firstIndex(of: .userAgent) else {
             return
         }
-        let overrideRowIndexPath = IndexPath(row: overrideRow, section: section)
-        UIView.performWithoutAnimation {
-            tableView.beginUpdates()
-            if nowOn {
-                tableView.deleteRows(at: [overrideRowIndexPath], with: .none)
-            } else {
-                tableView.insertRows(at: [overrideRowIndexPath], with: .none)
-            }
-            tableView.endUpdates()
-        }
-        
         if let footer = tableView.footerView(forSection: section) {
             footer.textLabel?.text = sectionText(for: section).footerTitle
             footer.sizeToFit()

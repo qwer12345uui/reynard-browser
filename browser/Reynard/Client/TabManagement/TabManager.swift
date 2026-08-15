@@ -70,7 +70,8 @@ protocol TabManagerDelegate: AnyObject {
     func tabManager(_ tabManager: TabManager, didUpdateTabAt index: Int, reason: TabManagerUpdateReason)
     func tabManager(_ tabManager: TabManager, didFinishLoading session: GeckoSession)
     func tabManager(_ tabManager: TabManager, captureHistoryThumbnailForTabAt index: Int, mode: TabMode, url: String)
-    func tabManager(_ tabManager: TabManager, didChangeFullscreen fullScreen: Bool, for session: GeckoSession)
+    func tabManager(_ tabManager: TabManager, didChangeFullscreen fullScreen: Bool, mediaIsPlaying: Bool, for session: GeckoSession)
+    func tabManager(_ tabManager: TabManager, didChangeMediaPlayback isPlaying: Bool, for session: GeckoSession)
     func tabManager(_ tabManager: TabManager, animateNewTabSelectionAt index: Int, completion: @escaping () -> Void)
     func tabManager(_ tabManager: TabManager, didRequestDownload download: DownloadStore.PendingDownload)
     func tabManager(_ tabManager: TabManager, shouldStartExternalResponse response: ExternalResponseInfo, for session: GeckoSession) async -> Bool
@@ -85,7 +86,6 @@ extension TabManagerDelegate {
     func tabManager(_ tabManager: TabManager, didFinishLoading session: GeckoSession) {}
     func tabManager(_ tabManager: TabManager, captureHistoryThumbnailForTabAt index: Int, mode: TabMode, url: String) {}
     func tabManager(_ tabManager: TabManager, didReplaceSelectedSession previousSession: GeckoSession, with replacementSession: GeckoSession) {}
-    func tabManager(_ tabManager: TabManager, didChangeFullscreen fullScreen: Bool, for session: GeckoSession) {}
     func tabManager(_ tabManager: TabManager, animateNewTabSelectionAt index: Int, completion: @escaping () -> Void) {
         completion()
     }
