@@ -13,9 +13,9 @@ final class BottomToolbar: UIView {
         static let bottomToolbarCompactContentHeight: CGFloat = 44
         static let bottomToolbarButtonStackHeight: CGFloat = 30
         static let bottomToolbarButtonStackBottomInset: CGFloat = 5
-        // Lift the glass navigation cluster slightly above the home indicator
-        // without changing the toolbar's content or safe-area geometry.
-        static let navigationGlassVerticalLift: CGFloat = 6
+        // Align the navigation glass with the safe-area baseline. Keeping it
+        // flush avoids a visually awkward floating gap above the home indicator.
+        static let navigationGlassVerticalLift: CGFloat = 0
         static let addressBarHorizontalInset: CGFloat = 12
         static let addressBarTopInset: CGFloat = 8
         static let bottomToolbarButtonStackHorizontalInset: CGFloat = 24
@@ -23,8 +23,8 @@ final class BottomToolbar: UIView {
         static let bottomToolbarButtonSpacing: CGFloat = 8
         static let backgroundViewHorizontalExtension: CGFloat = 16
         static let navigationGlassHorizontalInset: CGFloat = 12
-        static let navigationGlassHeight: CGFloat = 42
-        static let navigationGlassCornerRadius: CGFloat = 21
+        static let navigationGlassHeight: CGFloat = 40
+        static let navigationGlassCornerRadius: CGFloat = 20
         static let addressBarDockedVerticalAdjustment: CGFloat = 36
         static let keyboardDockedBlurTopExtension: CGFloat = 24
     }
