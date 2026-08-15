@@ -73,6 +73,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     private var maxTopToolbarOffset: CGFloat = 0
     private var focusedInputTask: Task<Void, Never>?
     private var inputBottomRatio: CGFloat?
+    private var isSystemTextInputActive = false
     private var focusedInputOffset: CGFloat = 0
     
     private var canGoBack = false
@@ -208,6 +209,14 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         applyLayoutState(topAnchor: topAnchor, bottomAnchor: bottomAnchor)
     }
     
+    func setSystemTextInputActive(_ active: Bool) {
+        guard isSystemTextInputActive != active else {
+            return
+        }
+        isSystemTextInputActive = active
+        webContentView.setSystemTextInputActive(active)
+    }
+
     func updateWebContentSize() -> Bool {
         let size = webContentView.bounds.size
         guard size.width > 1, size.height > 1 else {
@@ -869,7 +878,8 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     }
     
     private var canBeginHistoryNavigation: Bool {
-        guard case .idle = historySwipeState else {
+        guard !isSystemTextInputActive,
+              case .idle = historySwipeState else {
             return false
         }
         

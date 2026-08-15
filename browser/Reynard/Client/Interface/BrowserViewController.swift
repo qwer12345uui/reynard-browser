@@ -936,6 +936,8 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         let keyboardOverlap = max(0, view.bounds.maxY - keyboardFrame.minY)
         let animation = keyboardAnimation(from: notification)
         let isInHardwareKeyboardMode = tabManager.selectedTab?.session.isInHardwareKeyboardMode() == true
+        let isSystemTextInputActive = keyboardInset > 0 && !isInHardwareKeyboardMode
+        contentView.setSystemTextInputActive(isSystemTextInputActive)
         if !searchOverlayCoordinator.isFocused
             && !tabOverview.isPresented
             && keyboardInset > 0
@@ -969,6 +971,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
     
     @objc private func keyboardWillHide(_ notification: Notification) {
         let animation = keyboardAnimation(from: notification)
+        contentView.setSystemTextInputActive(false)
         contentView.resetFocusedInputRelocation(
             animationDuration: animation.duration,
             animationOptions: animation.curve

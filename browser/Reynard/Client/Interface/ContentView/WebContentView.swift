@@ -34,6 +34,7 @@ final class WebContentView: UIView, UIScrollViewDelegate {
     private var refreshingSession: GeckoSession?
     private var isTrackingPullProgress = false
     private var pullToRefreshRecognizer: PullToRefreshGestureRecognizer?
+    private var isSystemTextInputActive = false
     private var lastScrollState: (position: CGFloat, zoomScale: CGFloat)?
     private var pageBackgroundTopConstraint: NSLayoutConstraint?
     
@@ -226,6 +227,20 @@ final class WebContentView: UIView, UIScrollViewDelegate {
             self.pullToRefreshRecognizer = nil
         }
     }
+
+    func setSystemTextInputActive(_ active: Bool) {
+        guard isSystemTextInputActive != active else {
+            return
+        }
+        isSystemTextInputActive = active
+        guard let pullToRefreshRecognizer else {
+            return
+        }
+        if active {
+            pullToRefreshRecognizer.cancelPull()
+        }
+        pullToRefreshRecognizer.isEnabled = !active
+    }
     
     func didFinishLoading(session: GeckoSession) {
         guard session === refreshingSession else {
@@ -276,7 +291,12 @@ final class WebContentView: UIView, UIScrollViewDelegate {
             target: self,
             action: #selector(handlePullToRefresh(_:))
         )
+        // This recognizer supplements Gecko scrolling only. It must never claim
+        // touches from UIKit's keyboard, Scribble or handwriting infrastructure.
+        recognizer.cancelsTouchesInView = false
+        recognizer.delaysTouchesBegan = false
         recognizer.delaysTouchesEnded = false
+        recognizer.isEnabled = !isSystemTextInputActive
         pullToRefreshRecognizer = recognizer
         webView.addGestureRecognizer(recognizer)
     }
@@ -615,12 +635,14 @@ private final class PullToRefreshGestureRecognizer: UIGestureRecognizer {
     
     private func validSingleTouch(in touches: Set<UITouch>, event: UIEvent) -> UITouch? {
         guard touches.count == 1,
-              event.allTouches?.count == 1 else {
+              event.allTouches?.count == 1,
+              let touch = touches.first,
+              touch.type != .stylus else {
             previousTap = nil
             rejectPull()
             return nil
         }
-        return touches.first
+        return touch
     }
     
     private func rejectPull() {

@@ -13,6 +13,9 @@ final class BottomToolbar: UIView {
         static let bottomToolbarCompactContentHeight: CGFloat = 44
         static let bottomToolbarButtonStackHeight: CGFloat = 30
         static let bottomToolbarButtonStackBottomInset: CGFloat = 5
+        // Lift the glass navigation cluster slightly above the home indicator
+        // without changing the toolbar's content or safe-area geometry.
+        static let navigationGlassVerticalLift: CGFloat = 6
         static let addressBarHorizontalInset: CGFloat = 12
         static let addressBarTopInset: CGFloat = 8
         static let bottomToolbarButtonStackHorizontalInset: CGFloat = 24
@@ -392,7 +395,7 @@ final class BottomToolbar: UIView {
         contentHeightConstraint = contentView.heightAnchor.constraint(equalToConstant: UX.bottomToolbarStandardContentHeight)
         standardButtonsBottomConstraint = buttons.bottomAnchor.constraint(
             equalTo: contentView.bottomAnchor,
-            constant: -UX.bottomToolbarButtonStackBottomInset
+            constant: -(UX.bottomToolbarButtonStackBottomInset + UX.navigationGlassVerticalLift)
         )
         compactButtonsTopConstraint = buttons.topAnchor.constraint(equalTo: contentView.topAnchor, constant: UX.bottomToolbarButtonStackTopSpacing)
         
