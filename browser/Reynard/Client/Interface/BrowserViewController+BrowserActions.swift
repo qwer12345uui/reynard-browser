@@ -123,6 +123,10 @@ extension BrowserViewController {
     }
 
     func createNewTab() {
+        createNewTab(mode: tabManager.selectedTabMode)
+    }
+
+    func createNewTab(mode targetMode: TabMode) {
         toolbarController.reset()
         dismissAddressBarEditingAndOverlays()
         
