@@ -75,6 +75,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     private var inputBottomRatio: CGFloat?
     private var isSystemTextInputActive = false
     private var focusedInputOffset: CGFloat = 0
+    private var historyEdgePanGestures: [UIScreenEdgePanGestureRecognizer] = []
     
     private var canGoBack = false
     private var canGoForward = false
@@ -177,6 +178,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         forwardGesture.edges = .right
         forwardGesture.delegate = self
         addGestureRecognizer(forwardGesture)
+        historyEdgePanGestures = [backGesture, forwardGesture]
         
         webContentView.historySwipeDirectionsProvider = { [weak self] in
             return self?.allowedTrackpadHistorySwipeDirections() ?? []
@@ -214,6 +216,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
             return
         }
         isSystemTextInputActive = active
+        historyEdgePanGestures.forEach { $0.isEnabled = !active }
         webContentView.setSystemTextInputActive(active)
     }
 

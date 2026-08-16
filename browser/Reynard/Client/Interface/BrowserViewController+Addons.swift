@@ -67,13 +67,26 @@ extension BrowserViewController: AddonCoordinatorDataSource, AddonCoordinatorDel
         at index: Int?,
         loadImmediately: Bool
     ) -> Tab? {
-        return tabManager.createRegularTab(
+        // Extension-created tabs must stay in the same privacy container as
+        // the active browsing context. Creating a regular tab here caused
+        // private-context requests to fall back to the regular homepage.
+        let mode = tabManager.selectedTabMode
+        let tabIndex = tabManager.createTab(
             selecting: selecting,
             windowId: windowId,
             target: index.map(TabInsertionTarget.index) ?? .end,
-            url: url,
-            loadImmediately: loadImmediately
+            mode: mode
         )
+        let tabs = mode == .private ? tabManager.privateTabs : tabManager.regularTabs
+        guard let tab = tabs[safe: tabIndex] else {
+            return nil
+        }
+
+        if let url = url?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !url.isEmpty {
+            loadImmediately ? tabManager.browse(to: url, in: tab) : (tab.state.displayState = .pending(url))
+        }
+        return tab
     }
     
     func selectAddonTab(_ coordinator: AddonCoordinator, at index: Int, mode: TabMode?) {

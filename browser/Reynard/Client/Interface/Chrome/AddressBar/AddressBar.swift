@@ -296,6 +296,9 @@ final class AddressBar: UIView {
             }
             self.searchDelegate?.addressBarDidTapDismiss(self)
         }
+        textField.onTextInteraction = { [weak self] in
+            self?.clearAutocomplete()
+        }
         let gestures = AddressBarGestures(addressBar: self, delegate: gestureDelegate)
         self.gestures = gestures
         gestures.configure()
@@ -990,7 +993,9 @@ final class AddressBar: UIView {
         textField.isAutocompleteActive = isShowingOverlay
         textField.textColor = isShowingOverlay ? .clear : .label
         textField.tintColor = isShowingOverlay ? .clear : tintColor
-        autocompleteButton.isHidden = !isShowingOverlay
+        // The label presents the suggestion only; it must not intercept a tap
+        // that UIKit needs to turn into an insertion-point or selection change.
+        autocompleteButton.isHidden = true
     }
     
     private func restoreCaretToEnd() {

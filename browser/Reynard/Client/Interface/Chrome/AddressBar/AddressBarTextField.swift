@@ -12,7 +12,7 @@ final class AddressBarTextField: UITextField {
     var isSuggestionNavigationEnabled: (() -> Bool)?
     var onMoveSuggestionSelection: ((Int) -> Void)?
     var onDismissEditing: (() -> Void)?
-    private var suppressTextActions = false
+    var onTextInteraction: (() -> Void)?
     
     private lazy var previousSuggestionCommand = makeSuggestionCommand(
         input: UIKeyCommand.inputUpArrow,
@@ -43,14 +43,9 @@ final class AddressBarTextField: UITextField {
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if isAutocompleteActive {
-            suppressTextActions = true
-            DispatchQueue.main.async { [weak self] in
-                self?.suppressTextActions = false
-            }
-            return
-        }
-        
+        // Clear the visual suggestion before UIKit calculates the insertion
+        // point, then pass through the original touch for native caret control.
+        onTextInteraction?()
         super.touchesBegan(touches, with: event)
     }
     
@@ -62,7 +57,7 @@ final class AddressBarTextField: UITextField {
             action == #selector(selectNextSuggestion(_:)) {
             return isSuggestionNavigationEnabled?() == true
         }
-        if isAutocompleteActive || suppressTextActions {
+        if isAutocompleteActive {
             return false
         }
         
