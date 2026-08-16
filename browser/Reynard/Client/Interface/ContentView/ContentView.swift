@@ -619,7 +619,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     }
     
     private func updateHistoryNavigation(
-        _ gesture: UIScreenEdgePanGestureRecognizer,
+        _ gesture: UIPanGestureRecognizer,
         direction: HistorySwipeDirection
     ) {
         let progress = historyNavigationProgress(for: gesture, direction: direction)

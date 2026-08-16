@@ -293,7 +293,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             target: self,
             action: #selector(dismissKeyboardWithTwoFingerLongPress(_:))
         )
-        dismissKeyboardGesture.minimumNumberOfTouches = 2
+        dismissKeyboardGesture.numberOfTouchesRequired = 2
         dismissKeyboardGesture.minimumPressDuration = 0.55
         dismissKeyboardGesture.cancelsTouchesInView = false
         dismissKeyboardGesture.delaysTouchesBegan = false
