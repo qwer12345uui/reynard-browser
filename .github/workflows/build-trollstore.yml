@@ -256,7 +256,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          sh ./tools/release/create-ipa.sh 2>&1 | tee package.log
+          sh ./tools/release/create-ipa.sh --trollstore 2>&1 | tee package.log
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
             MESSAGE="$(tail -n 50 package.log | cut -c1-400)"
