@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoKeyboardSupport.h b/widget/uikit/GeckoKeyboardSupport.h
 new file mode 100644
-index 000000000000..fbbe2b879db8
+index 000000000000..d5d9b24671f9
 --- /dev/null
 +++ b/widget/uikit/GeckoKeyboardSupport.h
-@@ -0,0 +1,118 @@
+@@ -0,0 +1,120 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -75,6 +75,8 @@ index 000000000000..fbbe2b879db8
 +namespace mozilla::widget {
 +
 +class TextInputHandler;
++
++Modifiers GeckoModifiersForUIKitModifiers(UIKeyModifierFlags aModifiers);
 +
 +class GeckoKeyboardSupport final {
 + public:

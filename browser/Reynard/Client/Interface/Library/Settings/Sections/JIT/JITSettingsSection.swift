@@ -24,6 +24,22 @@ final class JITSettingsSection: NSObject {
     var hasEntitledJIT: Bool {
         return getEntitlementValue("com.apple.private.security.no-sandbox")
     }
+
+    private var shouldUseTrollStore: Bool {
+        if #available(iOS 17.0, *) {
+            if #unavailable(iOS 17.0.1) {
+                return !hasEntitledJIT
+            }
+        }
+
+        if #available(iOS 14.0, *) {
+            if #unavailable(iOS 16.7) {
+                return !hasEntitledJIT
+            }
+        }
+
+        return false
+    }
     
     private let jitSwitch = UISwitch()
     private let backgroundQueue = DispatchQueue(label: "com.minh-ton.Reynard.JITSettingsSection.Queue", qos: .userInitiated)
@@ -54,12 +70,10 @@ final class JITSettingsSection: NSObject {
         case .importPairingFile:
             let cell = SettingsViewUtils.actionCell(title: NSLocalizedString("Import Pairing File…", comment: ""), tintColor: tintColor)
             
-            if #available(iOS 16.7, *) {
-                if #unavailable(iOS 17.4) {
-                    cell.textLabel?.textColor = .secondaryLabel
-                    cell.selectionStyle = .none
-                    cell.isUserInteractionEnabled = false
-                }
+            if #unavailable(iOS 17.4) {
+                cell.textLabel?.textColor = .secondaryLabel
+                cell.selectionStyle = .none
+                cell.isUserInteractionEnabled = false
             }
             
             return cell
@@ -81,12 +95,10 @@ final class JITSettingsSection: NSObject {
         }
         stackView.addArrangedSubview(performanceDetailLabel())
         
-        if #available(iOS 16.7, *) {
-            if #unavailable(iOS 17.4) {
-                stackView.addArrangedSubview(unsupportedVersionWarningLabel())
-            }
+        if #unavailable(iOS 17.4) {
+            stackView.addArrangedSubview(unsupportedVersionWarningLabel())
         }
-        
+
         footerView.contentView.addSubview(stackView)
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: footerView.contentView.layoutMarginsGuide.leadingAnchor),
@@ -287,10 +299,8 @@ final class JITSettingsSection: NSObject {
         warningLabel.adjustsFontForContentSizeCategory = true
         warningLabel.textColor = .systemRed
         warningLabel.text = NSLocalizedString("JIT is not supported on the OS version you are using.", comment: "")
-        if #available(iOS 17.0, *) {
-            if #unavailable(iOS 17.0.1) {
-                warningLabel.text = NSLocalizedString("Install the TrollStore version of Reynard to enable JIT automatically for improved performance and to ensure websites work properly.", comment: "")
-            }
+        if shouldUseTrollStore {
+            warningLabel.text = NSLocalizedString("Install the TrollStore version of Reynard to enable JIT automatically for improved performance and to ensure websites work properly.", comment: "")
         }
         return warningLabel
     }

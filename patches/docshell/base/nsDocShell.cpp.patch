@@ -1,8 +1,8 @@
 diff --git a/docshell/base/nsDocShell.cpp b/docshell/base/nsDocShell.cpp
-index 723b4c0a54a8..83b37437b98b 100644
+index 723b4c0a54a8..7d44b20237af 100644
 --- a/docshell/base/nsDocShell.cpp
 +++ b/docshell/base/nsDocShell.cpp
-@@ -2335,6 +2335,34 @@ nsDocShell::ClearCachedUserAgent() {
+@@ -2335,6 +2335,48 @@ nsDocShell::ClearCachedUserAgent() {
    return NS_OK;
  }
  
@@ -34,10 +34,24 @@ index 723b4c0a54a8..83b37437b98b 100644
 +  return NS_OK;
 +}
 +
++NS_IMETHODIMP
++nsDocShell::ClearCachedBuildID() {
++  nsCOMPtr<nsPIDOMWindowInner> win =
++      mScriptGlobal ? mScriptGlobal->GetCurrentInnerWindow() : nullptr;
++  if (win) {
++    Navigator* navigator = win->Navigator();
++    if (navigator) {
++      navigator->ClearBuildIDCache();
++    }
++  }
++
++  return NS_OK;
++}
++
  /* virtual */
  int32_t nsDocShell::ItemType() { return mItemType; }
  
-@@ -5629,24 +5657,36 @@ nsDocShell::OnLocationChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
+@@ -5629,24 +5671,36 @@ nsDocShell::OnLocationChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
    return NS_OK;
  }
  
@@ -80,7 +94,7 @@ index 723b4c0a54a8..83b37437b98b 100644
    // DocumentChannel adds redirect chain to global history in the parent
    // process. The redirect chain can't be queried from the content process, so
    // there's no need to update global history here.
-@@ -5694,6 +5734,8 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
+@@ -5694,6 +5748,8 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
        mLoadType & (LOAD_CMD_RELOAD | LOAD_CMD_HISTORY)) {
      mLoadType = LOAD_NORMAL_REPLACE;
    }
@@ -89,7 +103,7 @@ index 723b4c0a54a8..83b37437b98b 100644
  }
  
  NS_IMETHODIMP
-@@ -8452,6 +8494,41 @@ static void MaybeConvertToReplaceLoad(nsDocShellLoadState* aLoadState,
+@@ -8452,6 +8508,41 @@ static void MaybeConvertToReplaceLoad(nsDocShellLoadState* aLoadState,
    }
  }
  
@@ -131,7 +145,7 @@ index 723b4c0a54a8..83b37437b98b 100644
  // InternalLoad performs several of the steps from
  // https://html.spec.whatwg.org/#navigate.
  nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
-@@ -8505,6 +8582,15 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
+@@ -8505,6 +8596,15 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
  
    MOZ_TRY(CheckDisallowedJavascriptLoad(aLoadState));
  
@@ -147,3 +161,19 @@ index 723b4c0a54a8..83b37437b98b 100644
    // If we don't have a target, we're loading into ourselves, and our load
    // delegate may want to intercept that load.
    SameDocumentNavigationState sameDocumentNavigationState;
+@@ -12083,6 +12183,15 @@ nsresult nsDocShell::OnLinkClick(
+ 
+   bool noOpenerImplied = false;
+   nsAutoString target(aTargetSpec);
++#if defined(XP_IOS)
++  if (aFileName.IsVoid() && aIsUserTriggered && target.IsEmpty()) {
++    UserActivation::Modifiers modifiers;
++    mBrowsingContext->GetUserActivationModifiersForPopup(&modifiers);
++    if (modifiers.IsMeta()) {
++      target = u"_blank";
++    }
++  }
++#endif
+   if (aFileName.IsVoid() &&
+       ShouldOpenInBlankTarget(aTargetSpec, aURI, aContent, aIsUserTriggered)) {
+     target = u"_blank";

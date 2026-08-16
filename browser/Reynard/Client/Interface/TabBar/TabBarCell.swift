@@ -54,7 +54,7 @@ final class TabBarCell: UICollectionViewCell {
     private static let fallbackFavicon = UIImage(named: "reynard.globe")
     private static let selectedTabBackgroundColor = UIColor { traitCollection in
         let backgroundColor: UIColor = traitCollection.userInterfaceStyle == .dark
-        ? .secondarySystemBackground
+        ? .tertiarySystemBackground.withAlphaComponent(0.8)
         : .systemBackground.withAlphaComponent(0.8)
         return backgroundColor.resolvedColor(with: traitCollection)
     }

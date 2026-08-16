@@ -1290,7 +1290,7 @@ extension TabManagerImplementation: NavigationDelegate {
         return .allow
     }
     
-    func onNewSession(session: GeckoSession, uri: String, windowId: String) async -> GeckoSession? {
+    func onNewSession(session: GeckoSession, uri: String, windowId: String, target: LoadRequestTarget) async -> GeckoSession? {
         let sourceLocation = tabLocation(for: session)
         let mode = sourceLocation?.mode ?? selectedTabMode
         let sourceIsPrivate = mode == .private
@@ -1336,6 +1336,9 @@ extension TabManagerImplementation: NavigationDelegate {
         notifyUpdate(at: index, mode: mode, reason: .location)
         scheduleFaviconUpdate(forTabAt: index, mode: mode)
         persistState()
+        
+        guard target != .background else { return newSession }
+        
         if let previousSession = selectedTab?.session,
            previousSession !== newSession {
             sessionManager.deactivate(previousSession)

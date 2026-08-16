@@ -296,7 +296,7 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
     }
     
     func onLoadRequest(session: GeckoSession, request: LoadRequest) async -> AllowOrDeny {
-        guard request.target == .new else {
+        guard request.target != .current else {
             return .allow
         }
         
@@ -304,7 +304,7 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
         return .deny
     }
     
-    func onNewSession(session: GeckoSession, uri: String, windowId: String) async -> GeckoSession? {
+    func onNewSession(session: GeckoSession, uri: String, windowId: String,target: LoadRequestTarget) async -> GeckoSession? {
         return createSession(uri, windowId)
     }
     

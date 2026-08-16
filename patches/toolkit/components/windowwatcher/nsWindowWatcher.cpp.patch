@@ -1,0 +1,13 @@
+diff --git a/toolkit/components/windowwatcher/nsWindowWatcher.cpp b/toolkit/components/windowwatcher/nsWindowWatcher.cpp
+index d5ebdf441356..bdbe56bd9bff 100644
+--- a/toolkit/components/windowwatcher/nsWindowWatcher.cpp
++++ b/toolkit/components/windowwatcher/nsWindowWatcher.cpp
+@@ -2542,7 +2542,7 @@ bool nsWindowWatcher::IsWindowOpenLocationModified(
+   // toolkit/modules/BrowserUtils.sys.mjs for modifier key handling, and
+   // URILoadingHelper.openLinkIn in browser/modules/URILoadingHelper.sys.mjs
+   // for loadInBackground pref handling.
+-#ifdef XP_MACOSX
++#if defined(XP_MACOSX) || defined(XP_IOS)
+   bool metaKey = aModifiers.IsMeta();
+ #else
+   bool metaKey = aModifiers.IsControl();

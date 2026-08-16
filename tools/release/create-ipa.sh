@@ -14,9 +14,11 @@ BUILD_TYPE="${1:-normal}"
 case "$BUILD_TYPE" in
 	--trollstore)
 		OUTPUT_NAME="Reynard-TrollStore.tipa"
+		PTRACE_JIT_NAME="ts_ptrace_jit"
 		;;
 	--jailbroken)
 		OUTPUT_NAME="Reynard-Jailbroken.ipa"
+		PTRACE_JIT_NAME="jb_ptrace_jit"
 		;;
 	*)
 		BUILD_TYPE="normal"
@@ -52,7 +54,7 @@ cd "$WORK_DIR"
 
 if [ "$BUILD_TYPE" != "normal" ]; then
 	PTRACE_JIT_SRC="$ROOT_DIR/browser/Reynard/JIT/Unsandboxed/ptrace_jit.c"
-	PTRACE_JIT_OUT="Payload/Reynard.app/ptrace_jit"
+	PTRACE_JIT_OUT="Payload/Reynard.app/$PTRACE_JIT_NAME"
 
 	"$CLANG_PATH" \
 		-arch arm64 \

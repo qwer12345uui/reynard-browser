@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoPointerSupport.mm b/widget/uikit/GeckoPointerSupport.mm
 new file mode 100644
-index 000000000000..0d3491b33720
+index 000000000000..3a528e7545a1
 --- /dev/null
 +++ b/widget/uikit/GeckoPointerSupport.mm
-@@ -0,0 +1,782 @@
+@@ -0,0 +1,759 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -16,6 +16,7 @@ index 000000000000..0d3491b33720
 +#include <cmath>
 +
 +#include "GeckoEditableSupport.h"
++#include "GeckoKeyboardSupport.h"
 +#include "InputData.h"
 +#include "nsGkAtoms.h"
 +#include "nsWindow.h"
@@ -72,30 +73,6 @@ index 000000000000..0d3491b33720
 +static bool SupportsPointerInput() {
 +  NSOperatingSystemVersion version = {13, 4, 0};
 +  return [NSProcessInfo.processInfo isOperatingSystemAtLeastVersion:version];
-+}
-+
-+static Modifiers GeckoModifiersForUIKitModifiers(
-+    UIKeyModifierFlags aModifiers) {
-+  Modifiers modifiers = MODIFIER_NONE;
-+  if (aModifiers & UIKeyModifierAlphaShift) {
-+    modifiers |= MODIFIER_CAPSLOCK;
-+  }
-+  if (aModifiers & UIKeyModifierShift) {
-+    modifiers |= MODIFIER_SHIFT;
-+  }
-+  if (aModifiers & UIKeyModifierControl) {
-+    modifiers |= MODIFIER_CONTROL;
-+  }
-+  if (aModifiers & UIKeyModifierAlternate) {
-+    modifiers |= MODIFIER_ALT;
-+  }
-+  if (aModifiers & UIKeyModifierCommand) {
-+    modifiers |= MODIFIER_META;
-+  }
-+  if (aModifiers & UIKeyModifierNumericPad) {
-+    modifiers |= MODIFIER_NUMLOCK;
-+  }
-+  return modifiers;
 +}
 +
 +static TimeStamp GeckoTimeStampForUIKitTimestamp(NSTimeInterval aTimestamp) {

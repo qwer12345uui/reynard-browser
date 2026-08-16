@@ -1,0 +1,21 @@
+diff --git a/dom/base/Element.cpp b/dom/base/Element.cpp
+index a0fb5092f3f8..96353a204200 100644
+--- a/dom/base/Element.cpp
++++ b/dom/base/Element.cpp
+@@ -4642,8 +4642,14 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
+     case ePointerClick: {
+       WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
+       if (mouseEvent->IsLeftClickEvent()) {
+-        if (!mouseEvent->IsControl() && !mouseEvent->IsMeta() &&
+-            !mouseEvent->IsAlt() && !mouseEvent->IsShift()) {
++#if defined(XP_IOS)
++        const bool isCommandClick = mouseEvent->IsMeta();
++#else
++        const bool isCommandClick = false;
++#endif
++        if (isCommandClick ||
++            (!mouseEvent->IsControl() && !mouseEvent->IsMeta() &&
++             !mouseEvent->IsAlt() && !mouseEvent->IsShift())) {
+           if (OwnerDoc()->MayHaveDOMActivateListeners()) {
+             // The default action is simply to dispatch DOMActivate.
+             // But dispatch that only if needed.

@@ -108,7 +108,7 @@ final class ToolbarController {
             let topContentHeight = max(0, topToolbarHeight - rootView.safeAreaInsets.top)
             return (topContentHeight + bottomToolbarHeight, topContentHeight)
         case .pad:
-            let topChromeHeight = topToolbarHeight + (tabBar.visibility == .visible ? tabBar.bounds.height : 0)
+            let topChromeHeight = topToolbarHeight + (tabBar.visibility != .hidden ? tabBar.bounds.height : 0)
             let maxOffset = max(0, topChromeHeight - rootView.safeAreaInsets.top)
             return (maxOffset, maxOffset)
         }

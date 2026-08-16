@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoKeyboardSupport.mm b/widget/uikit/GeckoKeyboardSupport.mm
 new file mode 100644
-index 000000000000..9e081aa995a4
+index 000000000000..63d31455a417
 --- /dev/null
 +++ b/widget/uikit/GeckoKeyboardSupport.mm
-@@ -0,0 +1,841 @@
+@@ -0,0 +1,844 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -26,6 +26,29 @@ index 000000000000..9e081aa995a4
 +#include "nsWindow.h"
 +
 +namespace mozilla::widget {
++
++Modifiers GeckoModifiersForUIKitModifiers(UIKeyModifierFlags aModifiers) {
++  Modifiers modifiers = MODIFIER_NONE;
++  if (aModifiers & UIKeyModifierAlphaShift) {
++    modifiers |= MODIFIER_CAPSLOCK;
++  }
++  if (aModifiers & UIKeyModifierShift) {
++    modifiers |= MODIFIER_SHIFT;
++  }
++  if (aModifiers & UIKeyModifierControl) {
++    modifiers |= MODIFIER_CONTROL;
++  }
++  if (aModifiers & UIKeyModifierAlternate) {
++    modifiers |= MODIFIER_ALT;
++  }
++  if (aModifiers & UIKeyModifierCommand) {
++    modifiers |= MODIFIER_META;
++  }
++  if (aModifiers & UIKeyModifierNumericPad) {
++    modifiers |= MODIFIER_NUMLOCK;
++  }
++  return modifiers;
++}
 +
 +namespace {
 +
@@ -659,27 +682,7 @@ index 000000000000..9e081aa995a4
 +       CODE_NAME_INDEX_CapsLock},
 +  };
 +
-+  auto geckoModifiers = [](UIKeyModifierFlags aFlags) {
-+    Modifiers modifiers = MODIFIER_NONE;
-+    if (aFlags & UIKeyModifierAlphaShift) {
-+      modifiers |= MODIFIER_CAPSLOCK;
-+    }
-+    if (aFlags & UIKeyModifierShift) {
-+      modifiers |= MODIFIER_SHIFT;
-+    }
-+    if (aFlags & UIKeyModifierControl) {
-+      modifiers |= MODIFIER_CONTROL;
-+    }
-+    if (aFlags & UIKeyModifierAlternate) {
-+      modifiers |= MODIFIER_ALT;
-+    }
-+    if (aFlags & UIKeyModifierCommand) {
-+      modifiers |= MODIFIER_META;
-+    }
-+    return modifiers;
-+  };
-+
-+  mCurrentModifiers = geckoModifiers(aNewFlags);
++  mCurrentModifiers = GeckoModifiersForUIKitModifiers(aNewFlags);
 +  for (const auto& transition : transitions) {
 +    bool wasDown = aOldFlags & transition.mFlag;
 +    bool isDown = aNewFlags & transition.mFlag;

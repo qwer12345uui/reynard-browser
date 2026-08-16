@@ -27,6 +27,11 @@ final class UpdatesSettingsSection {
         return access(trollStoreMarkerPath, F_OK) == 0
     }
     
+    var isJailbreakBuild: Bool {
+        let markerPath = Bundle.main.bundlePath + "/jb_ptrace_jit"
+        return access(markerPath, F_OK) == 0
+    }
+    
     private var activeUpdateTask: URLSessionDownloadTask?
     private var updateProgressObservation: NSKeyValueObservation?
     
@@ -126,9 +131,10 @@ final class UpdatesSettingsSection {
         
         let expectedSize = latestEntry["size"] as? Int
         if installedThroughTrollStore {
+            let packageFileName = isJailbreakBuild ? "Reynard-Jailbroken.ipa" : "Reynard-TrollStore.tipa"
             let trollStorePackageURLString = packageURLString.replacingOccurrences(
                 of: "Reynard.ipa",
-                with: "Reynard-TrollStore.tipa"
+                with: packageFileName
             )
             let encodedPackageURLString = trollStorePackageURLString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ??
             trollStorePackageURLString
