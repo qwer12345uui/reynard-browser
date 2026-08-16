@@ -10,6 +10,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 BOOL getEntitlementValue(NSString *key);
+BOOL isRootHideInjectionActive(void);
 void updateJetsamControl(pid_t pid);
 int spawnRoot(NSString *path, NSArray<NSString *> *args);
 

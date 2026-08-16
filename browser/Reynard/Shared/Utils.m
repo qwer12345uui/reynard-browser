@@ -14,6 +14,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <mach-o/dyld.h>
 #import <spawn.h>
 #import <sys/wait.h>
 
@@ -39,6 +40,22 @@ BOOL getEntitlementValue(NSString *key) {
     BOOL hasValue = ![(__bridge id)value isKindOfClass:NSNumber.class] || [(__bridge NSNumber *)value boolValue];
     CFRelease(value);
     return hasValue;
+}
+
+BOOL isRootHideInjectionActive(void) {
+    static BOOL isActive = NO;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        uint32_t imageCount = _dyld_image_count();
+        for (uint32_t index = 0; index < imageCount; index++) {
+            const char *imagePath = _dyld_get_image_name(index);
+            if (imagePath && strstr(imagePath, "/usr/lib/roothideinit.dylib")) {
+                isActive = YES;
+                break;
+            }
+        }
+    });
+    return isActive;
 }
 
 void updateJetsamControl(pid_t pid) {

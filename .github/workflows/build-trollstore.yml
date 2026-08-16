@@ -46,7 +46,8 @@ jobs:
         id: key
         env:
           GECKO_HASH: ${{ hashFiles('engine/release.txt', 'patches/**/*.patch', 'tools/development/build-gecko.sh', 'tools/development/apply-patches.sh', 'tools/development/update-gecko.sh') }}
-        run: echo "value=$GECKO_HASH" >> "$GITHUB_OUTPUT"
+          GECKO_BUILD_VARIANT: libhooker-compat
+        run: echo "value=$GECKO_HASH-$GECKO_BUILD_VARIANT" >> "$GITHUB_OUTPUT"
 
       - name: Check for reusable Gecko build
         id: probe
@@ -135,7 +136,10 @@ jobs:
           export CC="$APPLE_CLANG -B$TOOLCHAIN_DIR"
           export CXX="$APPLE_CLANGXX -B$TOOLCHAIN_DIR"
           export SDKROOT="$MACOS_SDK"
-          ./tools/development/build-gecko.sh 2>&1 | tee gecko-build.log
+          # RootHide tweak injection commonly relies on libhooker. Build Gecko
+          # without jemalloc to avoid allocator-hook conflicts, high CPU and
+          # renderer/network stalls in injected processes.
+          ./tools/development/build-gecko.sh --disable-jemalloc 2>&1 | tee gecko-build.log
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
             FAILED_LINE="$(grep -n -m1 'failed to run custom build command' gecko-build.log | cut -d: -f1)"

@@ -33,7 +33,8 @@ final class JITController {
         guard !usePtraceJIT(),
               Prefs.JITSettings.isJITEnabled,
               hasTXMSupport(),
-              !hasHandledFailure else {
+              !hasHandledFailure,
+              !isJITLessModeActive else {
             return
         }
         
@@ -41,6 +42,12 @@ final class JITController {
     }
     
     func start() {
+        if isRootHideInjectionActive() {
+            NSLog("RootHide injection detected; starting in JIT-less mode to avoid ptrace helper conflicts.")
+            activateJITLessMode()
+            return
+        }
+
         guard usePtraceJIT() || !isDDIMissing() else {
             hasHandledFailure = true
             presentMissingDDIFailureScreen()
