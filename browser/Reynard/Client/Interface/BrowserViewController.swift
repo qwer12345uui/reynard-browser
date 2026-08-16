@@ -288,6 +288,17 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         
         view.addSubview(contentView)
         view.addSubview(browserChrome)
+
+        let dismissKeyboardGesture = UILongPressGestureRecognizer(
+            target: self,
+            action: #selector(dismissKeyboardWithTwoFingerLongPress(_:))
+        )
+        dismissKeyboardGesture.minimumNumberOfTouches = 2
+        dismissKeyboardGesture.minimumPressDuration = 0.55
+        dismissKeyboardGesture.cancelsTouchesInView = false
+        dismissKeyboardGesture.delaysTouchesBegan = false
+        dismissKeyboardGesture.delaysTouchesEnded = false
+        view.addGestureRecognizer(dismissKeyboardGesture)
         view.addSubview(networkSpeedLabel)
         view.addSubview(tabOverview)
         contentView.configureLayout(
@@ -820,6 +831,12 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
     private func observeNotifications() {
         NotificationCenter.default.addObserver(
             self,
+            selector: #selector(keyboardWillShow(_:)),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
             selector: #selector(keyboardFrameWillChange(_:)),
             name: UIResponder.keyboardWillChangeFrameNotification,
             object: nil
@@ -840,6 +857,12 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             self,
             selector: #selector(landscapeTabBarDidChange),
             name: .landscapeTabBarDidChange,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(browsingPreferencesDidChange),
+            name: .browsingPreferencesDidChange,
             object: nil
         )
         NotificationCenter.default.addObserver(
@@ -946,6 +969,30 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         return nil
     }
     
+    @objc private func browsingPreferencesDidChange() {
+        contentView.reloadBrowsingPreferences()
+        updateNavigationButtons()
+        toolbarController.reset()
+    }
+
+    @objc private func dismissKeyboardWithTwoFingerLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began,
+              Prefs.BrowsingSettings.twoFingerLongPressDismissesKeyboard,
+              !tabOverview.isPresented else {
+            return
+        }
+        view.endEditing(true)
+    }
+
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        guard tabManager.selectedTab?.session.isInHardwareKeyboardMode() != true else {
+            return
+        }
+        // UIKit sends this before the final keyboard frame. Disable browser pan
+        // recognizers immediately so Chinese handwriting/Scribble keeps every stroke.
+        contentView.setSystemTextInputActive(true)
+    }
+
     @objc private func keyboardFrameWillChange(_ notification: Notification) {
         guard let frameValue = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {
             return

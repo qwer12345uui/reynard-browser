@@ -56,6 +56,20 @@ enum PlayerCornerAction: String, CaseIterable {
     }
 }
 
+enum HistoryGestureMode: String, CaseIterable {
+    case fullscreen
+    case edge
+    case disabled
+
+    var localizedTitle: String {
+        switch self {
+        case .fullscreen: return "全屏触发"
+        case .edge: return "边缘触发"
+        case .disabled: return "禁用"
+        }
+    }
+}
+
 final class BrowserPreferences {
     static var shared = BrowserPreferences()
     
@@ -135,7 +149,7 @@ final class BrowserPreferences {
 
             // Compatibility
             key("CompatibilitySettings", "androidUserAgentDomains"): [],
-            key("CompatibilitySettings", "useAndroidUserAgent"): true,
+            key("CompatibilitySettings", "useAndroidUserAgent"): false,
             
             // Browsing
             key("BrowsingSettings", "requestDesktopWebsite"): UIDevice.current.userInterfaceIdiom == .pad,
@@ -143,6 +157,10 @@ final class BrowserPreferences {
             key("BrowsingSettings", "showImagePreviews"): true,
             key("BrowsingSettings", "openLinksInExternalApps"): true,
             key("BrowsingSettings", "defaultPageZoomLevel"): PageZoomLevels.defaultLevel,
+            key("BrowsingSettings", "hidesChromeOnScroll"): true,
+            key("BrowsingSettings", "historyGestureMode"): HistoryGestureMode.edge.rawValue,
+            key("BrowsingSettings", "pullToRefreshEnabled"): true,
+            key("BrowsingSettings", "twoFingerLongPressDismissesKeyboard"): true,
             
             // New Tab
             key("NewTabSettings", "newTabDisplayOption"): NewTabDisplayOption.homepage.rawValue,
@@ -150,6 +168,7 @@ final class BrowserPreferences {
             
             // Homepage
             key("HomepageSettings", "openingScreen"): HomepageOpeningScreen.homepage.rawValue,
+            key("HomepageSettings", "startupURL"): "",
             key("HomepageSettings", "showsFavorites"): true,
             key("HomepageSettings", "showsFavoritesInPrivateBrowsing"): false,
             key("HomepageSettings", "favoriteRowCount"): 2,
@@ -586,6 +605,38 @@ final class BrowserPreferences {
                 prefs.set(newValue, forSetting: "BrowsingSettings", key: "defaultPageZoomLevel")
             }
         }
+
+        static var hidesChromeOnScroll: Bool {
+            get { prefs.bool(forSetting: "BrowsingSettings", key: "hidesChromeOnScroll") }
+            set {
+                prefs.set(newValue, forSetting: "BrowsingSettings", key: "hidesChromeOnScroll")
+                NotificationCenter.default.post(name: .browsingPreferencesDidChange, object: nil)
+            }
+        }
+
+        static var historyGestureMode: HistoryGestureMode {
+            get {
+                let rawValue = prefs.string(forSetting: "BrowsingSettings", key: "historyGestureMode") ?? HistoryGestureMode.edge.rawValue
+                return HistoryGestureMode(rawValue: rawValue) ?? .edge
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "BrowsingSettings", key: "historyGestureMode")
+                NotificationCenter.default.post(name: .browsingPreferencesDidChange, object: nil)
+            }
+        }
+
+        static var pullToRefreshEnabled: Bool {
+            get { prefs.bool(forSetting: "BrowsingSettings", key: "pullToRefreshEnabled") }
+            set {
+                prefs.set(newValue, forSetting: "BrowsingSettings", key: "pullToRefreshEnabled")
+                NotificationCenter.default.post(name: .browsingPreferencesDidChange, object: nil)
+            }
+        }
+
+        static var twoFingerLongPressDismissesKeyboard: Bool {
+            get { prefs.bool(forSetting: "BrowsingSettings", key: "twoFingerLongPressDismissesKeyboard") }
+            set { prefs.set(newValue, forSetting: "BrowsingSettings", key: "twoFingerLongPressDismissesKeyboard") }
+        }
     }
     
     // MARK: - Clear Browsing Data
@@ -783,6 +834,15 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue.rawValue, forSetting: "HomepageSettings", key: "openingScreen")
+            }
+        }
+
+        static var startupURL: String {
+            get {
+                prefs.string(forSetting: "HomepageSettings", key: "startupURL") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "HomepageSettings", key: "startupURL")
             }
         }
         

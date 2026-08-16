@@ -546,7 +546,19 @@ final class TabManagerImplementation: NSObject, TabManager {
             }
         case .homepage:
             createHomepageInitialTab()
+        case .customURL:
+            createCustomURLInitialTab()
         }
+    }
+
+    private func createCustomURLInitialTab() {
+        let configuredURL = Prefs.HomepageSettings.startupURL
+        guard let normalizedURL = URLUtils.normalizedCustomURL(from: configuredURL) else {
+            createHomepageInitialTab()
+            return
+        }
+        let index = addTab(selecting: true, windowId: nil, at: nil, isPrivate: false)
+        loadURL(normalizedURL.absoluteString, in: regularTabs[index])
     }
     
     private func createHomepageInitialTab() {

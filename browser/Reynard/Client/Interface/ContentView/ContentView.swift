@@ -76,6 +76,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     private var isSystemTextInputActive = false
     private var focusedInputOffset: CGFloat = 0
     private var historyEdgePanGestures: [UIScreenEdgePanGestureRecognizer] = []
+    private var fullScreenHistoryPanGesture: UIPanGestureRecognizer?
     
     private var canGoBack = false
     private var canGoForward = false
@@ -179,6 +180,17 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         forwardGesture.delegate = self
         addGestureRecognizer(forwardGesture)
         historyEdgePanGestures = [backGesture, forwardGesture]
+
+        let fullScreenPanGesture = UIPanGestureRecognizer(
+            target: self,
+            action: #selector(handleFullScreenHistoryPan(_:))
+        )
+        fullScreenPanGesture.delegate = self
+        fullScreenPanGesture.cancelsTouchesInView = false
+        fullScreenPanGesture.delaysTouchesBegan = false
+        fullScreenPanGesture.delaysTouchesEnded = false
+        addGestureRecognizer(fullScreenPanGesture)
+        fullScreenHistoryPanGesture = fullScreenPanGesture
         
         webContentView.historySwipeDirectionsProvider = { [weak self] in
             return self?.allowedTrackpadHistorySwipeDirections() ?? []
@@ -217,7 +229,15 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         }
         isSystemTextInputActive = active
         historyEdgePanGestures.forEach { $0.isEnabled = !active }
+        fullScreenHistoryPanGesture?.isEnabled = !active
         webContentView.setSystemTextInputActive(active)
+    }
+
+    func reloadBrowsingPreferences() {
+        if Prefs.BrowsingSettings.historyGestureMode == .disabled {
+            resetHistoryNavigation()
+        }
+        updatePullToRefreshAvailability()
     }
 
     func updateWebContentSize() -> Bool {
@@ -535,9 +555,22 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     @objc private func handleForwardHistoryPan(_ gesture: UIScreenEdgePanGestureRecognizer) {
         handleHistoryPan(gesture, direction: .forward)
     }
+
+    @objc private func handleFullScreenHistoryPan(_ gesture: UIPanGestureRecognizer) {
+        let direction: HistorySwipeDirection?
+        switch gesture.state {
+        case .began:
+            let velocityX = gesture.velocity(in: self).x
+            direction = velocityX >= 0 ? .back : .forward
+        default:
+            direction = activeHistorySwipeDirection
+        }
+        guard let direction else { return }
+        handleHistoryPan(gesture, direction: direction)
+    }
     
     private func handleHistoryPan(
-        _ gesture: UIScreenEdgePanGestureRecognizer,
+        _ gesture: UIPanGestureRecognizer,
         direction: HistorySwipeDirection
     ) {
         switch gesture.state {
@@ -618,7 +651,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     }
     
     private func finishHistoryNavigation(
-        _ gesture: UIScreenEdgePanGestureRecognizer,
+        _ gesture: UIPanGestureRecognizer,
         direction: HistorySwipeDirection,
         cancelled: Bool
     ) {
@@ -712,7 +745,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     }
     
     private func historyNavigationProgress(
-        for gesture: UIScreenEdgePanGestureRecognizer,
+        for gesture: UIPanGestureRecognizer,
         direction: HistorySwipeDirection
     ) -> CGFloat {
         let translationX = gesture.translation(in: self).x
@@ -828,7 +861,8 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         } else {
             isHistoryNavigationIdle = false
         }
-        let isEnabled = session != nil &&
+        let isEnabled = Prefs.BrowsingSettings.pullToRefreshEnabled &&
+        session != nil &&
         state == .browsing &&
         webContentView.visibility == .visible &&
         layoutState.mode != .fullscreen &&
@@ -871,17 +905,29 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     }
     
     override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        guard gestureRecognizer is UIScreenEdgePanGestureRecognizer,
-              canBeginHistoryNavigation else {
+        guard canBeginHistoryNavigation else {
             return false
         }
-        
-        if let backGesture = gestureRecognizer as? UIScreenEdgePanGestureRecognizer,
-           backGesture.edges == .left {
-            return canGoBack
+
+        switch Prefs.BrowsingSettings.historyGestureMode {
+        case .disabled:
+            return false
+        case .edge:
+            guard let edgeGesture = gestureRecognizer as? UIScreenEdgePanGestureRecognizer else {
+                return false
+            }
+            return edgeGesture.edges == .left ? canGoBack : canGoForward
+        case .fullscreen:
+            guard gestureRecognizer === fullScreenHistoryPanGesture,
+                  let panGesture = gestureRecognizer as? UIPanGestureRecognizer else {
+                return false
+            }
+            let velocity = panGesture.velocity(in: self)
+            guard abs(velocity.x) > abs(velocity.y), abs(velocity.x) > 0 else {
+                return false
+            }
+            return velocity.x > 0 ? canGoBack : canGoForward
         }
-        
-        return canGoForward
     }
     
     private var canBeginHistoryNavigation: Bool {
