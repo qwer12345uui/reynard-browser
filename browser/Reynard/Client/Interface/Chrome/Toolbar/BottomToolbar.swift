@@ -27,6 +27,7 @@ final class BottomToolbar: UIView {
         static let navigationGlassCornerRadius: CGFloat = 20
         static let addressBarDockedVerticalAdjustment: CGFloat = 36
         static let keyboardDockedBlurTopExtension: CGFloat = 24
+        static let borderWidth: CGFloat = 0.5
     }
     
     enum LayoutState {
@@ -94,6 +95,16 @@ final class BottomToolbar: UIView {
         view.layer.borderColor = UIColor.white.withAlphaComponent(0.68).cgColor
         view.clipsToBounds = true
         view.contentView.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.10)
+        return view
+    }()
+    
+    private let backgroundTopBorderView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor.separator.withAlphaComponent(0.2)
+        if #available(iOS 26.0, *) {
+            view.isHidden = true
+        }
         return view
     }()
     
@@ -385,6 +396,7 @@ final class BottomToolbar: UIView {
     private func configureHierarchy() {
         addSubview(keyboardDockedBlurView)
         addSubview(backgroundView)
+        addSubview(backgroundTopBorderView)
         addSubview(contentView)
         contentView.addSubview(navigationGlassShadowView)
         contentView.addSubview(navigationGlassView)
@@ -404,6 +416,11 @@ final class BottomToolbar: UIView {
             backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: UX.backgroundViewHorizontalExtension),
             backgroundView.topAnchor.constraint(equalTo: contentView.topAnchor),
             backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            
+            backgroundTopBorderView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
+            backgroundTopBorderView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
+            backgroundTopBorderView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
+            backgroundTopBorderView.heightAnchor.constraint(equalToConstant: UX.borderWidth),
             
             contentView.leadingAnchor.constraint(equalTo: leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: trailingAnchor),

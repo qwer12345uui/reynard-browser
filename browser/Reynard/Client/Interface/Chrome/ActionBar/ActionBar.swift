@@ -87,6 +87,13 @@ final class ActionBar: UIView {
         return view
     }()
     
+    private let topBorderView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor.separator.withAlphaComponent(0.2)
+        return view
+    }()
+    
     private lazy var closeButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -108,7 +115,7 @@ final class ActionBar: UIView {
         updateShadowColor()
         updateBorderColor()
         setItem(nil)
-
+        
         findInPageActionBar.onDismiss = { [weak self] in
             self?.onClose?()
         }
@@ -152,6 +159,10 @@ final class ActionBar: UIView {
         pageZoomActionBar.isHidden = item != .pageZoom
     }
     
+    func setTopBorderVisible(_ visible: Bool) {
+        topBorderView.isHidden = !visible
+    }
+    
     func prepareForDismissal() {
         guard item == .findInPage, !hasPreparedFindInPageDismissal else {
             return
@@ -192,6 +203,7 @@ final class ActionBar: UIView {
         addSubview(closeShadowView)
         closeShadowView.addSubview(closeBackground)
         closeShadowView.addSubview(closeButton)
+        addSubview(topBorderView)
     }
     
     private func configureConstraints() {
@@ -222,6 +234,11 @@ final class ActionBar: UIView {
             closeButton.leadingAnchor.constraint(equalTo: closeShadowView.leadingAnchor),
             closeButton.trailingAnchor.constraint(equalTo: closeShadowView.trailingAnchor),
             closeButton.bottomAnchor.constraint(equalTo: closeShadowView.bottomAnchor),
+            
+            topBorderView.topAnchor.constraint(equalTo: topAnchor),
+            topBorderView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            topBorderView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            topBorderView.heightAnchor.constraint(equalToConstant: UX.borderWidth),
         ])
     }
     

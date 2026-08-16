@@ -39,6 +39,7 @@ final class AddressBar: UIView {
         static let addressBarBackgroundShadowOpacity: Float = 0.18
         static let addressBarBackgroundShadowRadius: CGFloat = 14
         static let addressBarBackgroundShadowOffset = CGSize(width: 0, height: 2)
+        static let borderWidth: CGFloat = 0.5
     }
     
     enum EditingState: Equatable {
@@ -138,6 +139,7 @@ final class AddressBar: UIView {
         view.layer.cornerCurve = .continuous
         view.layer.cornerRadius = UX.addressBarBackgroundCornerRadius
         view.clipsToBounds = true
+        view.layer.borderWidth = UX.borderWidth
         return view
     }()
     
@@ -241,6 +243,7 @@ final class AddressBar: UIView {
         configureConstraints()
         configureTargets()
         configureObservers()
+        updateBorderColor()
         applyState()
     }
     
@@ -272,6 +275,15 @@ final class AddressBar: UIView {
         ).cgPath
     }
     
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle else {
+            return
+        }
+        
+        updateBorderColor()
+    }
+    
     // MARK: - Configuration
     
     func configure(delegate: AddressBarDelegate, searchDelegate: AddressBarSearchDelegate, gestureDelegate: AddressBarGestureDelegate) {
@@ -289,6 +301,12 @@ final class AddressBar: UIView {
                 return
             }
             self.searchDelegate?.addressBar(self, didMoveSuggestionSelectionBy: offset)
+        }
+        textField.onMoveCursor = { [weak self] boundary in
+            guard let self else {
+                return
+            }
+            self.moveCursor(to: boundary)
         }
         textField.onDismissEditing = { [weak self] in
             guard let self else {
@@ -481,6 +499,10 @@ final class AddressBar: UIView {
         leadingButton.performAfterMenuDismissal(action)
     }
     
+    var addressBarButton: AddressBarButton {
+        return leadingButton
+    }
+    
     // MARK: - Tab Transitions
     
     func resetHorizontalTransition() {
@@ -512,6 +534,10 @@ final class AddressBar: UIView {
         addressBarBackground.layer.shadowRadius = UX.addressBarBackgroundShadowRadius
         addressBarBackground.layer.shadowOffset = UX.addressBarBackgroundShadowOffset
         addressBarBackground.layer.masksToBounds = false
+    }
+    
+    private func updateBorderColor() {
+        addressBarContent.layer.borderColor = UIColor.separator.withAlphaComponent(0.2).cgColor
     }
     
     private func configureHierarchy() {
@@ -873,6 +899,24 @@ final class AddressBar: UIView {
         }
     }
     
+    private func moveCursor(to boundary: AddressBarTextField.CursorBoundary) {
+        switch autocompleteState {
+        case .focusPreview:
+            clearFocusPreview()
+            restoreCaret(to: boundary)
+        case .suggestion:
+            switch boundary {
+            case .start:
+                clearAutocomplete()
+                restoreCaretToEnd()
+            case .end:
+                commitAutocompleteForEditing()
+            }
+        case .none:
+            break
+        }
+    }
+    
     // MARK: - Autocomplete Presentation
     
     private func commitAutocompleteForEditing() {
@@ -999,8 +1043,18 @@ final class AddressBar: UIView {
     }
     
     private func restoreCaretToEnd() {
-        let end = textField.endOfDocument
-        textField.selectedTextRange = textField.textRange(from: end, to: end)
+        restoreCaret(to: .end)
+    }
+    
+    private func restoreCaret(to boundary: AddressBarTextField.CursorBoundary) {
+        let position: UITextPosition
+        switch boundary {
+        case .start:
+            position = textField.beginningOfDocument
+        case .end:
+            position = textField.endOfDocument
+        }
+        textField.selectedTextRange = textField.textRange(from: position, to: position)
     }
     
     private func selectAllText() {

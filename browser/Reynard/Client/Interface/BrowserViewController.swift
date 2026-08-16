@@ -484,11 +484,34 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             self?.tabManager.selectedTab?.session.clearFindInPageMatches()
         }
         browserChrome.onFindInPageVisibilityChanged = { [weak self] visible in
-            if visible {
-                self?.toolbarController.collapse(animated: false)
-            } else {
-                self?.toolbarController.reset()
+            guard let self else {
+                return
             }
+            if visible, self.browserLayout.chromeMode == .pad {
+                self.toolbarController.lock(for: .actionBarPopover)
+            } else if !visible {
+                self.toolbarController.unlock(for: .actionBarPopover)
+            }
+            if visible {
+                self.toolbarController.collapseBottomToolbar()
+            } else {
+                self.toolbarController.restoreBottomToolbar()
+                self.requestContentKeyboardFocus()
+            }
+        }
+        browserChrome.onPresentActionBarPopover = { [weak self] popoverViewController in
+            guard let self,
+                  let popover = popoverViewController.popoverPresentationController else {
+                return
+            }
+            
+            let sourceButton = self.browserChrome.addressBarButton
+            popover.sourceView = sourceButton
+            popover.sourceRect = sourceButton.bounds
+            popover.passthroughViews = [self.contentView]
+            popover.permittedArrowDirections = .up
+            popover.delegate = popoverViewController
+            self.present(popoverViewController, animated: true)
         }
     }
     

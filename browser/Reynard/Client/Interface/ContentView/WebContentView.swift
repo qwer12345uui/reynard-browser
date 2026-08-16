@@ -193,6 +193,10 @@ final class WebContentView: UIView, UIScrollViewDelegate {
         pageBackgroundView.backgroundColor = color
     }
     
+    func resetScrollTracking() {
+        lastScrollState = nil
+    }
+    
     func showPageError(for url: String?) {
         guard UIApplication.shared.applicationState == .active else {
             return

@@ -21,6 +21,7 @@ final class TopToolbar: UIView {
         static let topToolbarAddressBarVerticalSpacing: CGFloat = 8
         static let topToolbarAddressBarWidthLimit: CGFloat = 650
         static let backgroundViewHorizontalExtension: CGFloat = 16
+        static let borderWidth: CGFloat = 0.5
     }
     
     enum LayoutState {
@@ -56,6 +57,16 @@ final class TopToolbar: UIView {
         }
         let view = UIVisualEffectView(effect: effect)
         view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private let backgroundBottomBorderView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor.separator.withAlphaComponent(0.2)
+        if #available(iOS 26.0, *) {
+            view.isHidden = true
+        }
         return view
     }()
     
@@ -380,6 +391,7 @@ final class TopToolbar: UIView {
     
     private func configureHierarchy() {
         addSubview(backgroundView)
+        addSubview(backgroundBottomBorderView)
         addSubview(contentView)
         contentView.addSubview(leadingButtons)
         contentView.addSubview(trailingButtons)
@@ -397,6 +409,11 @@ final class TopToolbar: UIView {
             backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: UX.backgroundViewHorizontalExtension),
             backgroundView.topAnchor.constraint(equalTo: topAnchor),
             backgroundBottomConstraint,
+            
+            backgroundBottomBorderView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
+            backgroundBottomBorderView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
+            backgroundBottomBorderView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
+            backgroundBottomBorderView.heightAnchor.constraint(equalToConstant: UX.borderWidth),
             
             heightConstraint,
             contentTopConstraint,

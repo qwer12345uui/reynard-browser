@@ -13,6 +13,7 @@ protocol AddonCoordinatorDataSource: AnyObject {
     var isSelectedAddonTabPrivate: Bool { get }
     var addonTabs: [Tab] { get }
     var selectedAddonTabMode: TabMode { get }
+    var shouldPresentAddonPopupAsPopover: Bool { get }
     
     func indexOfAddonTab(for session: GeckoSession) -> Int?
 }
@@ -398,6 +399,7 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
     }
     
     private func presentPopup(url: String) {
+        let isPopover = dataSource?.shouldPresentAddonPopupAsPopover == true
         let popupViewController = AddonPopupViewController(
             url: url,
             sessionManager: sessionManager,
@@ -412,12 +414,14 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
                     return
                 }
                 self.delegate?.restoreAddonTabInteraction(self)
-            }
+            },
+            presentation: isPopover ? .popover : .sheet
         )
-        
-        // Hack: Use .overFullScreen so GeckoView can scroll
-        popupViewController.modalPresentationStyle = .overFullScreen
-        popupViewController.isModalInPresentation = true
+        if !isPopover {
+            // Hack: Use .overFullScreen so GeckoView can scroll
+            popupViewController.modalPresentationStyle = .overFullScreen
+            popupViewController.isModalInPresentation = true
+        }
         delegate?.presentAddonViewController(self, popupViewController)
     }
     

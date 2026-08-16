@@ -50,11 +50,16 @@ extension BrowserViewController: TabManagerDelegate {
     }
     
     func tabManager(_ tabManager: TabManager, didSelectTabAt index: Int, previousIndex: Int?) {
+        toolbarController.unlock(for: .pageNavigation)
         toolbarController.reset()
         tabBar.setPendingExpansion(at: nil)
         
         guard let selectedTab = tabManager.activeTabs[safe: index] else {
             return
+        }
+        
+        if selectedTab.state.loadingState.isLoading {
+            toolbarController.lock(for: .pageNavigation)
         }
         
         browserChrome.setAddressBarLoadingProgress(
@@ -165,6 +170,8 @@ extension BrowserViewController: TabManagerDelegate {
             
         case .location:
             if index == tabManager.selectedTabIndex {
+                contentView.resetScrollTracking()
+                toolbarController.reset()
                 let tab = tabManager.activeTabs[index]
                 contentView.noteHistoryLocationChange()
                 refreshAddressBar()
@@ -191,6 +198,13 @@ extension BrowserViewController: TabManagerDelegate {
                     tab.state.loadingState.progress,
                     isLoading: tab.state.loadingState.isLoading
                 )
+                
+                if tab.state.loadingState.isLoading {
+                    contentView.resetScrollTracking()
+                    toolbarController.lock(for: .pageNavigation)
+                } else {
+                    toolbarController.unlock(for: .pageNavigation)
+                }
                 
                 if !tab.state.loadingState.isLoading {
                     contentView.finishHistoryLoad()

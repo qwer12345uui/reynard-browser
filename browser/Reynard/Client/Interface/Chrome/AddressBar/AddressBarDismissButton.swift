@@ -15,6 +15,7 @@ final class AddressBarDismissButton: UIButton {
         static let dismissButtonShadowRadius: CGFloat = 12
         static let dismissButtonShadowOffset = CGSize(width: 0, height: 4)
         static let dismissButtonSymbolPointSize: CGFloat = 20
+        static let dismissButtonBorderWidth: CGFloat = 0.5
     }
     
     // MARK: - Lifecycle
@@ -36,6 +37,15 @@ final class AddressBarDismissButton: UIButton {
         layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: layer.cornerRadius).cgPath
     }
     
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle else {
+            return
+        }
+        
+        updateBorderColor()
+    }
+    
     // MARK: - Appearance
     
     private func configureAppearance() {
@@ -53,10 +63,16 @@ final class AddressBarDismissButton: UIButton {
         layer.shadowRadius = UX.dismissButtonShadowRadius
         layer.shadowOffset = UX.dismissButtonShadowOffset
         layer.masksToBounds = false
+        layer.borderWidth = UX.dismissButtonBorderWidth
+        updateBorderColor()
         setImage(UIImage(named: "reynard.xmark"), for: .normal)
         setPreferredSymbolConfiguration(
             UIImage.SymbolConfiguration(pointSize: UX.dismissButtonSymbolPointSize, weight: .regular),
             forImageIn: .normal
         )
+    }
+    
+    private func updateBorderColor() {
+        layer.borderColor = UIColor.separator.withAlphaComponent(0.2).cgColor
     }
 }

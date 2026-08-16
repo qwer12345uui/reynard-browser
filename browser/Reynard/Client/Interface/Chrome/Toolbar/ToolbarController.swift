@@ -12,10 +12,13 @@ final class ToolbarController {
         case addressBarTransition
         case addressBarEditing
         case historyNavigation
+        case pageNavigation
         case homepageOverlay
         case searchOverlay
         case tabOverview
         case viewPresentation
+        case actionBarPopover
+        case addonPopover
     }
     
     private enum UX {
@@ -38,6 +41,7 @@ final class ToolbarController {
     private var snapStartTime: CFTimeInterval = 0
     private var pendingSnap: DispatchWorkItem?
     private var snapDisplayLink: CADisplayLink?
+    private var isBottomToolbarCollapsed = false
     private var lockReasons = Set<LockReason>()
     
     // MARK: - Lifecycle
@@ -104,7 +108,8 @@ final class ToolbarController {
             let topContentHeight = max(0, topToolbarHeight - rootView.safeAreaInsets.top)
             return (topContentHeight + bottomToolbarHeight, topContentHeight)
         case .pad:
-            let maxOffset = topToolbarHeight + (tabBar.visibility == .visible ? tabBar.bounds.height : 0)
+            let topChromeHeight = topToolbarHeight + (tabBar.visibility == .visible ? tabBar.bounds.height : 0)
+            let maxOffset = max(0, topChromeHeight - rootView.safeAreaInsets.top)
             return (maxOffset, maxOffset)
         }
     }
@@ -120,8 +125,8 @@ final class ToolbarController {
         let topToolbarOffset: CGFloat
         let topContentOffset: CGFloat
         let topToolbarContentAlpha: CGFloat
-        let bottomToolbarOffset: CGFloat
-        let bottomToolbarContentAlpha: CGFloat
+        var bottomToolbarOffset: CGFloat
+        var bottomToolbarContentAlpha: CGFloat
         let tabBarOffset: CGFloat
         switch chromeMode {
         case .phone:
@@ -142,10 +147,14 @@ final class ToolbarController {
         case .pad:
             topToolbarOffset = toolbarOffset
             topContentOffset = toolbarOffset
-            topToolbarContentAlpha = 1
+            topToolbarContentAlpha = 1 - (topToolbarOffset / max(maxTopToolbarOffset, 1))
             bottomToolbarOffset = 0
             bottomToolbarContentAlpha = 1
             tabBarOffset = toolbarOffset
+        }
+        if isBottomToolbarCollapsed {
+            bottomToolbarOffset = chromeMode == .pad ? 0 : bottomToolbarHeight
+            bottomToolbarContentAlpha = bottomToolbarHeight > 0 ? 0 : 1
         }
         browserChrome.setToolbarTransition(
             topOffset: -topToolbarOffset,
@@ -153,6 +162,9 @@ final class ToolbarController {
             topContentAlpha: topToolbarContentAlpha,
             bottomContentAlpha: bottomToolbarContentAlpha
         )
+        if chromeMode == .pad {
+            tabBar.setPresentationAlpha(topToolbarContentAlpha)
+        }
         tabBar.transform = CGAffineTransform(translationX: 0, y: -tabBarOffset)
         contentView.applyToolbarOffsets(
             top: topContentOffset,
@@ -175,8 +187,7 @@ final class ToolbarController {
     
     private func handleScroll(delta: CGFloat) {
         guard maxToolbarOffset > 0,
-              lockReasons.isEmpty,
-              !browserChrome.isShowingFindInPage else {
+              lockReasons.isEmpty else {
             return
         }
         cancelSnap()
@@ -229,8 +240,21 @@ final class ToolbarController {
     
     // MARK: - Reset
     
+    func collapseBottomToolbar() {
+        cancelSnap()
+        isBottomToolbarCollapsed = true
+        setToolbarOffset(toolbarOffset, refresh: true)
+    }
+    
+    func restoreBottomToolbar() {
+        cancelSnap()
+        isBottomToolbarCollapsed = false
+        setToolbarOffset(toolbarOffset, refresh: true)
+    }
+    
     func collapse(animated: Bool = true) {
         cancelSnap()
+        isBottomToolbarCollapsed = false
         guard animated else {
             setToolbarOffset(maxToolbarOffset, refresh: true)
             return
@@ -240,6 +264,7 @@ final class ToolbarController {
     
     func reset(animated: Bool = true) {
         cancelSnap()
+        isBottomToolbarCollapsed = false
         guard animated else {
             setToolbarOffset(0, refresh: true)
             return

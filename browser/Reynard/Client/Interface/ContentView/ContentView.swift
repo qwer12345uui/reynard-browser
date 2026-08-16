@@ -258,7 +258,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         historyTransitionOverlayView.transform = toolbarAlignedTransform(
             translationX: historyTransitionOverlayView.transform.tx
         )
-        let contentBottomOffset = -(top + bottom)
+        let contentBottomOffset = -bottom
         guard contentBottomOffset != self.contentBottomOffset else {
             return
         }
@@ -484,6 +484,10 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     
     func setPageBackgroundColor(_ color: UIColor) {
         webContentView.setPageBackgroundColor(color)
+    }
+    
+    func resetScrollTracking() {
+        webContentView.resetScrollTracking()
     }
     
     func showPageError(for url: String?) {

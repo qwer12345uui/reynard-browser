@@ -24,6 +24,7 @@ final class TabBarCell: UICollectionViewCell {
         static let expandedTabTitleWidthInset: CGFloat = 58
         static let contentCornerRadius: CGFloat = 16
         static let contentInsets = UIEdgeInsets(top: 2, left: 4, bottom: 2, right: 4)
+        static let borderWidth: CGFloat = 0.5
     }
     
     enum LayoutMode {
@@ -53,11 +54,10 @@ final class TabBarCell: UICollectionViewCell {
     private static let fallbackFavicon = UIImage(named: "reynard.globe")
     private static let selectedTabBackgroundColor = UIColor { traitCollection in
         let backgroundColor: UIColor = traitCollection.userInterfaceStyle == .dark
-        ? .tertiarySystemBackground
-        : .systemGray6
+        ? .secondarySystemBackground
+        : .systemBackground.withAlphaComponent(0.8)
         return backgroundColor.resolvedColor(with: traitCollection)
     }
-    
     var closeHandler: (() -> Void)?
     private(set) var tabID: UUID?
     
@@ -128,6 +128,7 @@ final class TabBarCell: UICollectionViewCell {
         configureContentPriorities()
         configureActions()
         configureConstraints()
+        updateBorderColor()
     }
     
     required init?(coder: NSCoder) {
@@ -138,6 +139,16 @@ final class TabBarCell: UICollectionViewCell {
         super.prepareForReuse()
         tabID = nil
         closeHandler = nil
+        tabContentView.layer.borderWidth = 0
+    }
+    
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle else {
+            return
+        }
+        
+        updateBorderColor()
     }
     
     // MARK: - Configuration
@@ -153,6 +164,7 @@ final class TabBarCell: UICollectionViewCell {
         titleLabel.text = displayTitle
         faviconView.image = tab.favicon ?? Self.fallbackFavicon
         tabContentView.backgroundColor = isSelected ? Self.selectedTabBackgroundColor : .clear
+        tabContentView.layer.borderWidth = isSelected ? UX.borderWidth : 0
         titleLabel.textColor = isSelected ? .label : .secondaryLabel
         faviconView.tintColor = isSelected ? .label : .secondaryLabel
         let minimumVisibleTitle = Self.minimumVisibleTabTitle as NSString
@@ -187,6 +199,7 @@ final class TabBarCell: UICollectionViewCell {
         tabContentView.layer.cornerRadius = UX.contentCornerRadius
         tabContentView.layer.cornerCurve = .continuous
         tabContentView.layer.masksToBounds = true
+        tabContentView.layer.borderWidth = 0
     }
     
     private func configureHierarchy() {
@@ -235,6 +248,10 @@ final class TabBarCell: UICollectionViewCell {
             closeButton.widthAnchor.constraint(equalToConstant: UX.tabCloseButtonSideLength),
             closeButton.heightAnchor.constraint(equalToConstant: UX.tabCloseButtonSideLength),
         ])
+    }
+    
+    private func updateBorderColor() {
+        tabContentView.layer.borderColor = UIColor.separator.withAlphaComponent(0.2).cgColor
     }
     
     // MARK: - Actions

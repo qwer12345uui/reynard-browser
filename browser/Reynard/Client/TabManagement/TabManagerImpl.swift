@@ -553,6 +553,17 @@ final class TabManagerImplementation: NSObject, TabManager {
         let didRestoreTabs = restoreTabsIfNeeded()
         
         if didRestoreTabs,
+           let lastTabIndex = regularTabs.indices.last,
+           displayedURL(for: regularTabs[lastTabIndex]) == nil {
+            let lastTab = regularTabs[lastTabIndex]
+            lastTab.state.showsStartupHomepage = true
+            if selectedTab?.id != lastTab.id {
+                selectTab(at: lastTabIndex, mode: .regular)
+            }
+            return
+        }
+        
+        if didRestoreTabs,
            let selectedTab,
            displayedURL(for: selectedTab) == nil {
             selectedTab.state.showsStartupHomepage = true

@@ -113,6 +113,7 @@ private final class TabBarCollectionLayout: UICollectionViewFlowLayout {
         attributes.zIndex = 1
         return attributes
     }
+    
 }
 
 final class TabBarCollection: UICollectionView, UIGestureRecognizerDelegate {
@@ -127,6 +128,7 @@ final class TabBarCollection: UICollectionView, UIGestureRecognizerDelegate {
         static let dragSnapshotSnapDamping: CGFloat = 0.82
         static let dragSnapshotBackgroundFadeDuration: TimeInterval = 0.12
         static let dragSnapshotBackgroundOpacity: CGFloat = 0.5
+        static let selectedDragSnapshotBackgroundOpacity: CGFloat = 0.75
     }
     
     private weak var tabBar: TabBar?
@@ -180,7 +182,6 @@ final class TabBarCollection: UICollectionView, UIGestureRecognizerDelegate {
         guard widthChanged else {
             return
         }
-        
         lastLayoutWidth = bounds.width
         guard !isUpdatingTabs else {
             return
@@ -560,23 +561,26 @@ final class TabBarCollection: UICollectionView, UIGestureRecognizerDelegate {
     
     private func beginDragSnapshot(for tabBarCell: TabBarCell, at location: CGPoint) {
         guard let dragContainer = tabBar?.superview,
-              let dragSnapshot = tabBarCell.snapshotView(afterScreenUpdates: false) else {
+              let dragSnapshot = tabBarCell.snapshotView(afterScreenUpdates: true) else {
             return
         }
         
         dragSnapshot.frame = tabBarCell.convert(tabBarCell.bounds, to: dragContainer)
         dragSnapshot.isUserInteractionEnabled = false
         var backgroundView: UIView?
+        var backgroundOpacity = UX.dragSnapshotBackgroundOpacity
         if let tabID = tabBarCell.tabID,
-           tabBar?.isTabSelected(id: tabID) == false {
-            let background = UIView(
-                frame: dragSnapshot.frame.inset(by: TabBarCell.contentInsets)
-            )
+           let isSelected = tabBar?.isTabSelected(id: tabID) {
+            let background = UIView(frame: dragSnapshot.frame.inset(by: TabBarCell.contentInsets))
             background.backgroundColor = .systemGray6
             background.layer.cornerRadius = TabBarCell.contentCornerRadius
             background.layer.cornerCurve = .continuous
+            background.clipsToBounds = true
             background.isUserInteractionEnabled = false
             background.alpha = 0
+            backgroundOpacity = isSelected
+            ? UX.selectedDragSnapshotBackgroundOpacity
+            : UX.dragSnapshotBackgroundOpacity
             dragContainer.addSubview(background)
             backgroundView = background
             dragSnapshotBackground = background
@@ -588,7 +592,7 @@ final class TabBarCollection: UICollectionView, UIGestureRecognizerDelegate {
             options: [.curveEaseOut, .beginFromCurrentState]
         ) {
             dragSnapshot.transform = CGAffineTransform(scaleX: UX.dragSnapshotScale, y: UX.dragSnapshotScale)
-            backgroundView?.alpha = UX.dragSnapshotBackgroundOpacity
+            backgroundView?.alpha = backgroundOpacity
             backgroundView?.transform = CGAffineTransform(scaleX: UX.dragSnapshotScale, y: UX.dragSnapshotScale)
         }
         

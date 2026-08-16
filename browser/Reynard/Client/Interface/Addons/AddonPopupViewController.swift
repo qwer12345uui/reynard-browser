@@ -8,10 +8,16 @@
 import GeckoView
 import UIKit
 
-final class AddonPopupViewController: UIViewController, ContentDelegate, NavigationDelegate {
+final class AddonPopupViewController: UIViewController, ContentDelegate, NavigationDelegate, UIPopoverPresentationControllerDelegate {
+    enum Presentation {
+        case sheet
+        case popover
+    }
+    
     private enum UX {
-        static let maxSheetWidth: CGFloat = 430
         static let mediumHeightMultiplier: CGFloat = 0.7
+        static let popoverWidth: CGFloat = 300
+        static let popoverMaximumHeight: CGFloat = 500
         static let sheetCornerRadius: CGFloat = 16
         static let closeButtonTopInset: CGFloat = 8
         static let closeButtonTrailingInset: CGFloat = 12
@@ -28,10 +34,18 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
     private let openInNewTab: (String) -> Void
     private let createSession: (String, String) -> GeckoSession?
     private let didDismiss: () -> Void
+    private let presentation: Presentation
     private let geckoView = GeckoView()
+    private let modalTopBorderView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor.separator.withAlphaComponent(0.2)
+        return view
+    }()
     private let session: GeckoSession
     private let promptCoordinator = PromptCoordinator(presenter: PromptPresenter())
     private var hasClosedSession = false
+    private var hasNotifiedDismissal = false
     
     // MARK: - Lifecycle
     
@@ -40,13 +54,15 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
         sessionManager: SessionManager,
         openInNewTab: @escaping (String) -> Void,
         createSession: @escaping (String, String) -> GeckoSession?,
-        didDismiss: @escaping () -> Void
+        didDismiss: @escaping () -> Void,
+        presentation: Presentation
     ) {
         self.url = url
         self.sessionManager = sessionManager
         self.openInNewTab = openInNewTab
         self.createSession = createSession
         self.didDismiss = didDismiss
+        self.presentation = presentation
         session = sessionManager.createSession(
             url: url,
             tabID: nil,
@@ -56,6 +72,13 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
             delegates: SessionDelegates()
         )
         super.init(nibName: nil, bundle: nil)
+        if case .popover = presentation {
+            modalPresentationStyle = .popover
+            preferredContentSize = CGSize(
+                width: UX.popoverWidth,
+                height: UX.popoverMaximumHeight
+            )
+        }
         configureSession()
     }
     
@@ -84,8 +107,7 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
             return
         }
         
-        closeSessionIfNeeded()
-        didDismiss()
+        notifyDismissalIfNeeded()
     }
     
     // MARK: - Setup
@@ -104,6 +126,10 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
     
     private func configureView() {
         view.backgroundColor = .clear
+        if case .popover = presentation {
+            configurePopoverView()
+            return
+        }
         
         let containerView = makeContainerView()
         let sheetView = makeSheetView()
@@ -113,11 +139,30 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
         containerView.addSubview(sheetView)
         sheetView.addSubview(closeButton)
         sheetView.addSubview(geckoView)
+        if #unavailable(iOS 26.0) {
+            sheetView.addSubview(modalTopBorderView)
+        }
         
         constrainContainerView(containerView)
         constrainSheetView(sheetView, in: containerView)
         constrainCloseButton(closeButton, in: sheetView)
         constrainGeckoView(in: sheetView, below: closeButton)
+        if #unavailable(iOS 26.0) {
+            constrainModalTopBorder(in: sheetView)
+        }
+    }
+    
+    private func configurePopoverView() {
+        view.backgroundColor = .systemBackground
+        geckoView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(geckoView)
+        
+        NSLayoutConstraint.activate([
+            geckoView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            geckoView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            geckoView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            geckoView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
     }
     
     private func loadPopup() {
@@ -138,8 +183,6 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
         view.layer.shadowOpacity = UX.shadowOpacity
         view.layer.shadowRadius = UX.shadowRadius
         view.layer.shadowOffset = UX.shadowOffset
-        view.layer.borderWidth = UX.borderWidth
-        view.layer.borderColor = UIColor.separator.cgColor
         return view
     }
     
@@ -166,10 +209,8 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
     
     private func constrainContainerView(_ containerView: UIView) {
         NSLayoutConstraint.activate([
-            containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            containerView.widthAnchor.constraint(lessThanOrEqualToConstant: UX.maxSheetWidth),
-            containerView.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor),
-            containerView.widthAnchor.constraint(equalTo: view.widthAnchor).withPriority(.defaultLow),
+            containerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         
@@ -204,6 +245,15 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
         ])
     }
     
+    private func constrainModalTopBorder(in sheetView: UIView) {
+        NSLayoutConstraint.activate([
+            modalTopBorderView.topAnchor.constraint(equalTo: sheetView.topAnchor),
+            modalTopBorderView.leadingAnchor.constraint(equalTo: sheetView.leadingAnchor),
+            modalTopBorderView.trailingAnchor.constraint(equalTo: sheetView.trailingAnchor),
+            modalTopBorderView.heightAnchor.constraint(equalToConstant: UX.borderWidth),
+        ])
+    }
+    
     private func constrainGeckoView(in sheetView: UIView, below closeButton: UIButton) {
         geckoView.translatesAutoresizingMaskIntoConstraints = false
         
@@ -230,6 +280,21 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
         }
     }
     
+    // MARK: - UIPopoverPresentationControllerDelegate
+    
+    nonisolated func adaptivePresentationStyle(
+        for controller: UIPresentationController,
+        traitCollection: UITraitCollection
+    ) -> UIModalPresentationStyle {
+        return .none
+    }
+    
+    nonisolated func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        Task { @MainActor [weak self] in
+            self?.notifyDismissalIfNeeded()
+        }
+    }
+    
     func onLoadRequest(session: GeckoSession, request: LoadRequest) async -> AllowOrDeny {
         guard request.target == .new else {
             return .allow
@@ -249,7 +314,18 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
         }
         
         hasClosedSession = true
+        geckoView.endEditing(true)
         geckoView.session = nil
         sessionManager.close(session)
+    }
+    
+    private func notifyDismissalIfNeeded() {
+        guard !hasNotifiedDismissal else {
+            return
+        }
+        
+        hasNotifiedDismissal = true
+        closeSessionIfNeeded()
+        didDismiss()
     }
 }

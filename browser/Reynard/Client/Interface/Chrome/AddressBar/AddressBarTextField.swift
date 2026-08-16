@@ -8,17 +8,31 @@
 import UIKit
 
 final class AddressBarTextField: UITextField {
+    enum CursorBoundary {
+        case start
+        case end
+    }
+    
     var isAutocompleteActive = false
     var isSuggestionNavigationEnabled: (() -> Bool)?
     var onMoveSuggestionSelection: ((Int) -> Void)?
+    var onMoveCursor: ((CursorBoundary) -> Void)?
     var onDismissEditing: (() -> Void)?
     var onTextInteraction: (() -> Void)?
     
-    private lazy var previousSuggestionCommand = makeSuggestionCommand(
+    private lazy var cursorToStartCommand = makeKeyCommand(
+        input: UIKeyCommand.inputLeftArrow,
+        action: #selector(moveCursorToStart(_:))
+    )
+    private lazy var cursorToEndCommand = makeKeyCommand(
+        input: UIKeyCommand.inputRightArrow,
+        action: #selector(moveCursorToEnd(_:))
+    )
+    private lazy var previousSuggestionCommand = makeKeyCommand(
         input: UIKeyCommand.inputUpArrow,
         action: #selector(selectPreviousSuggestion(_:))
     )
-    private lazy var nextSuggestionCommand = makeSuggestionCommand(
+    private lazy var nextSuggestionCommand = makeKeyCommand(
         input: UIKeyCommand.inputDownArrow,
         action: #selector(selectNextSuggestion(_:))
     )
@@ -35,7 +49,10 @@ final class AddressBarTextField: UITextField {
     }()
     
     override var keyCommands: [UIKeyCommand]? {
-        let commands = (super.keyCommands ?? []) + [dismissEditingCommand]
+        var commands = (super.keyCommands ?? []) + [dismissEditingCommand]
+        if isAutocompleteActive {
+            commands += [cursorToStartCommand, cursorToEndCommand]
+        }
         guard isSuggestionNavigationEnabled?() == true else {
             return commands
         }
@@ -57,6 +74,10 @@ final class AddressBarTextField: UITextField {
             action == #selector(selectNextSuggestion(_:)) {
             return isSuggestionNavigationEnabled?() == true
         }
+        if action == #selector(moveCursorToStart(_:)) ||
+            action == #selector(moveCursorToEnd(_:)) {
+            return isAutocompleteActive
+        }
         if isAutocompleteActive {
             return false
         }
@@ -64,7 +85,7 @@ final class AddressBarTextField: UITextField {
         return super.canPerformAction(action, withSender: sender)
     }
     
-    private func makeSuggestionCommand(input: String, action: Selector) -> UIKeyCommand {
+    private func makeKeyCommand(input: String, action: Selector) -> UIKeyCommand {
         let command = UIKeyCommand(
             input: input,
             modifierFlags: [],
@@ -74,6 +95,14 @@ final class AddressBarTextField: UITextField {
             command.wantsPriorityOverSystemBehavior = true
         }
         return command
+    }
+    
+    @objc private func moveCursorToStart(_ sender: UIKeyCommand) {
+        onMoveCursor?(.start)
+    }
+    
+    @objc private func moveCursorToEnd(_ sender: UIKeyCommand) {
+        onMoveCursor?(.end)
     }
     
     @objc private func selectPreviousSuggestion(_ sender: UIKeyCommand) {
