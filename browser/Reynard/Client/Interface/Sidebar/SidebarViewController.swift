@@ -143,11 +143,27 @@ final class SidebarViewController: UISplitViewController, UISplitViewControllerD
     
     // MARK: - Sections
     
-    func showSection(_ section: LibrarySection) {
+    func showSection(_ section: LibrarySection, startsEditingBookmarks: Bool = false) {
         setVisible(true)
-        menuController.showSection(section, animated: false)
+        menuController.showSection(
+            section,
+            animated: false,
+            startsEditingBookmarks: startsEditingBookmarks
+        )
     }
     
+    func toggleSection(_ section: LibrarySection) {
+        guard section != .history || !contentController.sidebarContentIsPrivate else {
+            return
+        }
+        if isSidebarVisible,
+           menuController.shownSection == section {
+            setVisible(false)
+            return
+        }
+        
+        showSection(section)
+    }
     // MARK: - UISplitViewControllerDelegate
     
     func splitViewController(_ svc: UISplitViewController, willChangeTo displayMode: UISplitViewController.DisplayMode) {
@@ -279,5 +295,27 @@ final class SidebarViewController: UISplitViewController, UISplitViewControllerD
         }
         
         contentController.updateBrowserLayoutIfNeeded(animated: animated, duration: duration)
+    }
+}
+
+extension SidebarViewController {
+    @objc private func showHistoryKeyCommand(_ sender: UIKeyCommand) {
+        toggleSection(.history)
+    }
+    
+    @objc private func showBookmarksKeyCommand(_ sender: UIKeyCommand) {
+        toggleSection(.bookmarks)
+    }
+    
+    @objc private func showDownloadsKeyCommand(_ sender: UIKeyCommand) {
+        toggleSection(.downloads)
+    }
+    
+    @objc private func toggleSidebarKeyCommand(_ sender: UIKeyCommand) {
+        toggleVisibility()
+    }
+    
+    @objc private func editBookmarksKeyCommand(_ sender: UIKeyCommand) {
+        showSection(.bookmarks, startsEditingBookmarks: true)
     }
 }

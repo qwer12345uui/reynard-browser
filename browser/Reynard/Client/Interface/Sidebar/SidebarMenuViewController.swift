@@ -15,6 +15,7 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
     private let mainSection = "main"
     private let cellReuseIdentifier = "SidebarActionCell"
     private let childSidebarButtonTag = 9101
+    private(set) var shownSection: LibrarySection?
     private var dataSource: UICollectionViewDiffableDataSource<String, LibrarySection>!
     
     private lazy var sidebarButton: UIButton = {
@@ -85,6 +86,9 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
     }
     
     func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
+        if viewController === self {
+            shownSection = nil
+        }
         refreshSidebarButton(for: viewController)
     }
     
@@ -100,27 +104,38 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
     
     // MARK: - Sections
     
-    func showSection(_ section: LibrarySection, animated: Bool) {
+    func showSection(
+        _ section: LibrarySection,
+        animated: Bool,
+        startsEditingBookmarks: Bool = false
+    ) {
         loadViewIfNeeded()
+        shownSection = section
         
         let indexPath = dataSource.indexPath(for: section)
         if let indexPath {
             collectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
         }
         
-        let viewController = makeSectionViewController(for: section)
+        let viewController = makeSectionViewController(
+            for: section,
+            startsEditingBookmarks: startsEditingBookmarks
+        )
         navigationController?.setViewControllers([self, viewController], animated: animated)
         if let indexPath {
             collectionView.deselectItem(at: indexPath, animated: animated)
         }
     }
     
-    private func makeSectionViewController(for section: LibrarySection) -> UIViewController {
+    private func makeSectionViewController(
+        for section: LibrarySection,
+        startsEditingBookmarks: Bool
+    ) -> UIViewController {
         let contentViewController: UIViewController
         
         switch section {
         case .bookmarks:
-            contentViewController = BookmarksViewController()
+            contentViewController = BookmarksViewController(startsEditing: startsEditingBookmarks)
         case .history:
             contentViewController = HistoryViewController()
         case .downloads:

@@ -278,6 +278,24 @@ final class AddressBar: UIView {
         self.delegate = delegate
         self.searchDelegate = searchDelegate
         textField.delegate = self
+        textField.isSuggestionNavigationEnabled = { [weak self] in
+            guard let self else {
+                return false
+            }
+            return self.searchDelegate?.addressBarCanNavigateSuggestions(self) == true
+        }
+        textField.onMoveSuggestionSelection = { [weak self] offset in
+            guard let self else {
+                return
+            }
+            self.searchDelegate?.addressBar(self, didMoveSuggestionSelectionBy: offset)
+        }
+        textField.onDismissEditing = { [weak self] in
+            guard let self else {
+                return
+            }
+            self.searchDelegate?.addressBarDidTapDismiss(self)
+        }
         let gestures = AddressBarGestures(addressBar: self, delegate: gestureDelegate)
         self.gestures = gestures
         gestures.configure()
@@ -1161,6 +1179,9 @@ extension AddressBar: UITextFieldDelegate {
     }
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if searchDelegate?.addressBarDidRequestSubmitSelectedSuggestion(self) == true {
+            return true
+        }
         let searchText: String?
         if case let .suggestion(_, submissionText) = autocompleteState {
             searchText = submissionText

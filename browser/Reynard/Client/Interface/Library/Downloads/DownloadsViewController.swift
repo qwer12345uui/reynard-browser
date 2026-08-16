@@ -109,6 +109,7 @@ final class DownloadsViewController: UIViewController, UITableViewDataSource, UI
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        DownloadStore.shared.markCompletedAsViewed()
         installDownloadsNavigationMenuIfNeeded()
         reloadDownloads()
     }

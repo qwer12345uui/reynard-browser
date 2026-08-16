@@ -18,6 +18,7 @@ final class BookmarksViewController: UIViewController, UITableViewDataSource, UI
     
     private let folderID: String?
     private let store: BookmarkStore
+    private let startsEditing: Bool
     private var sections: [(title: String, items: [BookmarkContentSnapshot])] = []
     private var query = ""
     private var searchVersion = 0
@@ -90,9 +91,14 @@ final class BookmarksViewController: UIViewController, UITableViewDataSource, UI
     
     // MARK: - Lifecycle
     
-    init(folderID: String? = nil, store: BookmarkStore = .shared) {
+    init(
+        folderID: String? = nil,
+        store: BookmarkStore = .shared,
+        startsEditing: Bool = false
+    ) {
         self.folderID = folderID
         self.store = store
+        self.startsEditing = startsEditing
         if #available(iOS 26.0, *) {
             showsNavigationMenu = folderID == nil
         } else {
@@ -131,6 +137,9 @@ final class BookmarksViewController: UIViewController, UITableViewDataSource, UI
         
         reloadBookmarkRows()
         updateToolbarItems(animated: false)
+        if startsEditing {
+            setEditing(true, animated: false)
+        }
     }
     
     override func viewDidLayoutSubviews() {
@@ -423,6 +432,10 @@ final class BookmarksViewController: UIViewController, UITableViewDataSource, UI
                 LibrarySharedUtils.presentLegacyContextMenu(from: bookmarkMenuButton)
             }
         }
+    }
+    
+    @objc private func editBookmarksKeyCommand(_ sender: UIKeyCommand) {
+        setEditing(true, animated: true)
     }
     
     // MARK: - Menu

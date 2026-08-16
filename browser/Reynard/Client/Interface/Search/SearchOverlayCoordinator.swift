@@ -39,6 +39,10 @@ final class SearchOverlayCoordinator {
     
     private(set) var isFocused = false
     
+    var canNavigateSuggestions: Bool {
+        return isVisible && searchViewController.hasSuggestions
+    }
+    
     // MARK: - Lifecycle
     
     init(
@@ -224,6 +228,20 @@ final class SearchOverlayCoordinator {
         }
         delegate?.refreshSearchAddressBar()
         delegate?.endSearchEditing()
+    }
+    
+    func moveSuggestionSelection(by offset: Int) {
+        guard isVisible else {
+            return
+        }
+        searchViewController.moveSuggestionSelection(by: offset)
+    }
+    
+    func submitSelectedSuggestion() -> Bool {
+        guard isVisible else {
+            return false
+        }
+        return searchViewController.submitSelectedSuggestion()
     }
     
     // MARK: - Layout

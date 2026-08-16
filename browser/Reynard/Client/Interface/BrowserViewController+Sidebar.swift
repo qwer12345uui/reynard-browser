@@ -21,6 +21,10 @@ extension BrowserViewController: SidebarContentController, SidebarCoordinatorHos
         return browserLayout
     }
     
+    var sidebarContentIsPrivate: Bool {
+        return tabManager.selectedTabMode == .private
+    }
+    
     func openExternalURL(_ url: URL) {
         tabManager.openExternalURL(url)
     }

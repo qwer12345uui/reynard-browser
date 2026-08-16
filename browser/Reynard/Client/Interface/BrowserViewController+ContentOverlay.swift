@@ -206,4 +206,16 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
         searchOverlayCoordinator.addressBar(addressBar, didChangeText: text, previousText: previousText, isDelete: isDelete)
         homepageOverlayCoordinator.addressBar(addressBar, didChangeText: text, previousText: previousText, isDelete: isDelete)
     }
+    
+    func addressBarCanNavigateSuggestions(_ addressBar: AddressBar) -> Bool {
+        return searchOverlayCoordinator.canNavigateSuggestions
+    }
+    
+    func addressBar(_ addressBar: AddressBar, didMoveSuggestionSelectionBy offset: Int) {
+        searchOverlayCoordinator.moveSuggestionSelection(by: offset)
+    }
+    
+    func addressBarDidRequestSubmitSelectedSuggestion(_ addressBar: AddressBar) -> Bool {
+        return searchOverlayCoordinator.submitSelectedSuggestion()
+    }
 }

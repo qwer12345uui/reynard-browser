@@ -47,4 +47,10 @@ if #unavailable(iOS 14.0),
    getEntitlementValue("com.apple.private.security.no-sandbox") {
     configureUnsandboxedAppDataDirectories()
 }
+
+_ = NotificationCenter.default.addObserver(forName: Notification.Name("GeckoView.BuildMenu"), object: nil, queue: .main) { notification in
+    guard let builder = notification.object as? UIMenuBuilder else { return }
+    ApplicationMenuBuilder.build(with: builder)
+}
+
 GeckoRuntime.main(argc: CommandLine.argc, argv: CommandLine.unsafeArgv)

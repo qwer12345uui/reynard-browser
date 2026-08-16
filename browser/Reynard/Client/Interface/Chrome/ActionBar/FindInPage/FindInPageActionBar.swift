@@ -33,6 +33,7 @@ final class FindInPageActionBar: UIView, UITextFieldDelegate {
     
     var onFind: ((_ query: String?, _ backwards: Bool) async -> (current: Int, total: Int)?)?
     var onClear: (() -> Void)?
+    var onDismiss: (() -> Void)?
     
     private let backgroundView: UIVisualEffectView = {
         let view = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
@@ -41,8 +42,8 @@ final class FindInPageActionBar: UIView, UITextFieldDelegate {
         return view
     }()
     
-    private let searchField: UITextField = {
-        let field = UITextField()
+    private let searchField: FindInPageTextField = {
+        let field = FindInPageTextField()
         field.translatesAutoresizingMaskIntoConstraints = false
         field.borderStyle = .none
         field.placeholder = NSLocalizedString("Find", comment: "Find in page search placeholder")
@@ -140,6 +141,9 @@ final class FindInPageActionBar: UIView, UITextFieldDelegate {
         configureHierarchy()
         configureConstraints()
         searchField.delegate = self
+        searchField.onDismiss = { [weak self] in
+            self?.onDismiss?()
+        }
         searchField.addTarget(self, action: #selector(searchTextChanged), for: .editingChanged)
         updateShadowColor()
         updateBorderColor()

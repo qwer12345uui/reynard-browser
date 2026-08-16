@@ -1,11 +1,13 @@
 diff --git a/widget/uikit/nsAppShell.mm b/widget/uikit/nsAppShell.mm
-index 4441c8faf625..7fb660eefaa2 100644
+index 4441c8faf625..71ebdb57108a 100644
 --- a/widget/uikit/nsAppShell.mm
 +++ b/widget/uikit/nsAppShell.mm
-@@ -3,10 +3,13 @@
+@@ -3,10 +3,15 @@
   * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
  #import <UIKit/UIApplication.h>
++#import <UIKit/UIMenuBuilder.h>
++#import <UIKit/UIResponder.h>
 +#import <UIKit/UIScene.h>
  #import <UIKit/UIScreen.h>
  #import <UIKit/UIWindow.h>
@@ -16,7 +18,7 @@ index 4441c8faf625..7fb660eefaa2 100644
  #include "mozilla/Services.h"
  #include "mozilla/dom/Document.h"
  #include "nsIObserverService.h"
-@@ -22,12 +25,13 @@
+@@ -22,12 +27,13 @@
  #include "nsIRollupListener.h"
  #include "nsIWidget.h"
  #include "nsThreadUtils.h"
@@ -31,7 +33,7 @@ index 4441c8faf625..7fb660eefaa2 100644
  #include "HeadlessScreenHelper.h"
  #include "nsWindow.h"
  #include "nsXREDirProvider.h"
-@@ -42,14 +46,73 @@
+@@ -42,25 +48,150 @@
    fprintf(stderr, "\n")
  
  static void ApplicationWillTerminate(bool aCallExit);
@@ -89,7 +91,8 @@ index 4441c8faf625..7fb660eefaa2 100644
  //
  // Acts as a delegate for the UIApplication
  
- @interface AppShellDelegate : NSObject <UIApplicationDelegate> {
+-@interface AppShellDelegate : NSObject <UIApplicationDelegate> {
++@interface AppShellDelegate : UIResponder <UIApplicationDelegate> {
 + @private
 +  BOOL mIsForeground;
 +  BOOL mIsActive;
@@ -105,7 +108,15 @@ index 4441c8faf625..7fb660eefaa2 100644
  @end
  
  @implementation AppShellDelegate
-@@ -58,9 +121,68 @@ - (BOOL)application:(UIApplication*)application
+ 
++- (void)buildMenuWithBuilder:(id<UIMenuBuilder>)builder {
++  [super buildMenuWithBuilder:builder];
++  [[NSNotificationCenter defaultCenter]
++      postNotificationName:@"GeckoView.BuildMenu"
++                    object:builder];
++}
++
+ - (BOOL)application:(UIApplication*)application
      didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
    ALOG("[AppShellDelegate application:didFinishLaunchingWithOptions:]");
  
@@ -174,7 +185,7 @@ index 4441c8faf625..7fb660eefaa2 100644
  - (void)applicationWillTerminate:(UIApplication*)application {
    ALOG("[AppShellDelegate applicationWillTerminate:]");
    ApplicationWillTerminate(/* aCallExit */ false);
-@@ -68,15 +190,129 @@ - (void)applicationWillTerminate:(UIApplication*)application {
+@@ -68,15 +199,129 @@ - (void)applicationWillTerminate:(UIApplication*)application {
  
  - (void)applicationDidBecomeActive:(UIApplication*)application {
    ALOG("[AppShellDelegate applicationDidBecomeActive:]");
@@ -305,7 +316,7 @@ index 4441c8faf625..7fb660eefaa2 100644
  }
  @end
  
-@@ -281,7 +517,12 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+@@ -281,7 +526,12 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
    ALOG("nsAppShell::Run");
  
    nsresult rv = NS_OK;
@@ -319,7 +330,7 @@ index 4441c8faf625..7fb660eefaa2 100644
      char argv[1][4] = {"app"};
      UIApplicationMain(1, (char**)argv, nil, @"AppShellDelegate");
      // UIApplicationMain doesn't exit. :-(
-@@ -298,7 +539,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+@@ -298,7 +548,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
  
    mTerminated = true;
  
@@ -331,7 +342,7 @@ index 4441c8faf625..7fb660eefaa2 100644
      // Dispatch a native event to the main queue to terminate. XPCOM doesn't
      // like being shut down from within an XPCOM runnable, so we cannot use
      // `NS_DispatchToMainThread` here.
-@@ -318,6 +562,11 @@ static void ApplicationWillTerminate(bool aCallExit) {
+@@ -318,6 +571,11 @@ static void ApplicationWillTerminate(bool aCallExit) {
      return;
    }
  
@@ -343,7 +354,7 @@ index 4441c8faf625..7fb660eefaa2 100644
    // Perform the steps which would normally happen after nsAppShell::Run, such
    // as `~ScopedXPCOMStartup`, as UIApplicationMain will never shutdown.
    if (nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service()) {
-@@ -331,12 +580,19 @@ static void ApplicationWillTerminate(bool aCallExit) {
+@@ -331,12 +589,19 @@ static void ApplicationWillTerminate(bool aCallExit) {
  
    gDirServiceProvider->DoShutdown();
  

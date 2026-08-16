@@ -108,6 +108,10 @@ final class ActionBar: UIView {
         updateShadowColor()
         updateBorderColor()
         setItem(nil)
+
+        findInPageActionBar.onDismiss = { [weak self] in
+            self?.onClose?()
+        }
     }
     
     required init?(coder: NSCoder) {
