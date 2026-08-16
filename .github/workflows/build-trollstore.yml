@@ -1,10 +1,11 @@
 name: Build TrollStore package
 
-# Build trigger: manual dispatch, or pushes that touch build inputs
-# (workflow, build tools, browser sources, engine patches, engine release).
-# The gecko job stores the compiled engine as an artifact keyed by its
-# inputs. App-only changes reuse the exact engine and finish in minutes;
-# a full rebuild only runs when the Gecko source, patches, or build scripts change.
+# Build trigger: manual dispatch, or pushes that touch build inputs.
+# Cache layer 1 is the long-lived Gecko engine artifact, keyed solely by
+# Firefox revision, Gecko patches and engine build scripts. Cache layer 2 is
+# application-layer Rust/Cargo output, keyed separately in the package job.
+# UI, settings and Swift-only changes therefore reuse the engine unchanged;
+# a full Gecko rebuild runs only when its own inputs change.
 on:
   workflow_dispatch:
     inputs:
@@ -30,6 +31,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Layer 1: compiled Gecko engine. This must remain isolated from app/UI code.
   gecko:
     runs-on: macos-26
     timeout-minutes: 360
@@ -59,7 +61,7 @@ jobs:
             echo "found=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          NAME="gecko-dist-${{ steps.key.outputs.value }}"
+          NAME="reynard-gecko-engine-${{ steps.key.outputs.value }}"
           FOUND=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$NAME&per_page=100" \
             --jq '[.artifacts[] | select(.expired == false)] | length')
           echo "Reusable artifacts named $NAME: $FOUND"
@@ -162,7 +164,7 @@ jobs:
         if: steps.probe.outputs.found != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: gecko-dist-${{ steps.key.outputs.value }}
+          name: reynard-gecko-engine-${{ steps.key.outputs.value }}
           path: |
             engine/firefox/obj-aarch64-apple-ios/dist
             engine/firefox/toolkit/mozapps/extensions/default-theme
@@ -180,7 +182,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: false
+          # The app dependency cache key includes idevice's Cargo files.
+          submodules: recursive
+
+      # Layer 2: application dependency cache. It is intentionally separate
+      # from Gecko so Swift/UI changes never invalidate engine products.
+      - name: Restore app dependency cache
+        id: app-dependencies
+        uses: actions/cache@v4
+        with:
+          key: reynard-app-deps-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/development/build-idevice.sh', 'support/idevice/Cargo.lock', 'support/idevice/ffi/Cargo.toml') }}
+          path: |
+            support/idevice/target
+            browser/Reynard/JIT/RPPairing/libidevice_ffi.a
 
       - name: Restore Gecko build products
         id: restore
@@ -190,7 +204,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          NAME="gecko-dist-$GECKO_KEY"
+          NAME="reynard-gecko-engine-$GECKO_KEY"
           ARTIFACT_ID=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$NAME&per_page=100" \
             --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id')
           if [ -z "$ARTIFACT_ID" ] || [ "$ARTIFACT_ID" = "null" ]; then
@@ -217,6 +231,9 @@ jobs:
 
       - name: Build idevice dependency
         run: ./tools/development/build-idevice.sh
+
+      # The IPA itself is deliberately not cached: every commit gets a fresh,
+      # verified package while the engine and reusable app dependencies remain cached.
 
       - name: Prepare unsigned build
         run: |

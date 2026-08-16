@@ -34,20 +34,6 @@ index 723b4c0a54a8..7d44b20237af 100644
 +  return NS_OK;
 +}
 +
-+NS_IMETHODIMP
-+nsDocShell::ClearCachedBuildID() {
-+  nsCOMPtr<nsPIDOMWindowInner> win =
-+      mScriptGlobal ? mScriptGlobal->GetCurrentInnerWindow() : nullptr;
-+  if (win) {
-+    Navigator* navigator = win->Navigator();
-+    if (navigator) {
-+      navigator->ClearBuildIDCache();
-+    }
-+  }
-+
-+  return NS_OK;
-+}
-+
  /* virtual */
  int32_t nsDocShell::ItemType() { return mItemType; }
  
