@@ -90,7 +90,19 @@ jobs:
 
       - name: Apply Reynard patches
         if: steps.probe.outputs.found != 'true'
-        run: ./tools/development/apply-patches.sh </dev/null
+        shell: bash
+        run: |
+          set +e
+          ./tools/development/apply-patches.sh </dev/null 2>&1 | tee patch-apply.log
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            MESSAGE="$(tail -n 40 patch-apply.log | cut -c1-400)"
+            MESSAGE="${MESSAGE//'%'/'%25'}"
+            MESSAGE="${MESSAGE//$'\n'/'%0A'}"
+            MESSAGE="${MESSAGE//$'\r'/'%0D'}"
+            echo "::error title=Gecko patch diagnostics::$MESSAGE"
+            exit "$STATUS"
+          fi
 
       - name: Prepare Gecko build configuration
         if: steps.probe.outputs.found != 'true'
@@ -159,6 +171,17 @@ jobs:
             echo "::error file=.github/workflows/build-trollstore.yml,title=Gecko compiler diagnostics::$MESSAGE"
             exit "$STATUS"
           fi
+
+      - name: Upload Gecko build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gecko-build-logs-${{ github.sha }}
+          path: |
+            patch-apply.log
+            gecko-build.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload Gecko build products
         if: steps.probe.outputs.found != 'true'
