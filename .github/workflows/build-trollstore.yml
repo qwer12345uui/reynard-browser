@@ -323,18 +323,19 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish automated prerelease
+      - name: Publish TrollStore prerelease
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
-          TAG="automated-${SHORT_SHA}"
+          VERSION=$(sed -n 's/^CURRENT_VERSION = //p' browser/Configuration/Reynard.xcconfig | head -n 1)
+          TAG="reynard-${SHORT_SHA}"
           gh release create "$TAG" \
             dist/Reynard-TrollStore.tipa \
             dist/Reynard-TrollStore.tipa.sha256 \
             --target "$GITHUB_SHA" \
-            --title "Automated TrollStore build ${SHORT_SHA}" \
-            --notes "Automated unsigned TrollStore build from commit ${GITHUB_SHA}." \
+            --title "Reynard ${VERSION:-修复更新} · ${SHORT_SHA}" \
+            --notes-file docs/修复日记.md \
             --prerelease
 
       - name: Upload build log on failure

@@ -55,6 +55,24 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         label.accessibilityLabel = "网速浮窗"
         return label
     }()
+    private lazy var dismissKeyboardButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle("关闭键盘", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        button.setTitleColor(.label, for: .normal)
+        button.backgroundColor = UIColor.secondarySystemBackground.withAlphaComponent(0.96)
+        button.layer.cornerRadius = 18
+        button.layer.cornerCurve = .continuous
+        button.clipsToBounds = true
+        button.isHidden = true
+        button.alpha = 0
+        button.accessibilityLabel = "关闭键盘"
+        button.accessibilityHint = "收起键盘并保留当前输入内容"
+        button.addTarget(self, action: #selector(dismissKeyboardFromButton), for: .touchUpInside)
+        return button
+    }()
+    private var dismissKeyboardButtonBottomConstraint: NSLayoutConstraint!
     
     // MARK: - Views And Coordinators
     
@@ -288,6 +306,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         
         view.addSubview(contentView)
         view.addSubview(browserChrome)
+        view.addSubview(dismissKeyboardButton)
 
         let dismissKeyboardGesture = UILongPressGestureRecognizer(
             target: self,
@@ -319,12 +338,20 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             networkSpeedLabel.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
             networkSpeedLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 96),
             networkSpeedLabel.heightAnchor.constraint(equalToConstant: 28),
+            dismissKeyboardButton.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            dismissKeyboardButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 108),
+            dismissKeyboardButton.heightAnchor.constraint(equalToConstant: 36),
             
             tabOverview.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tabOverview.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tabOverview.topAnchor.constraint(equalTo: view.topAnchor),
             tabOverview.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+        dismissKeyboardButtonBottomConstraint = dismissKeyboardButton.bottomAnchor.constraint(
+            equalTo: view.bottomAnchor,
+            constant: 0
+        )
+        dismissKeyboardButtonBottomConstraint.isActive = true
     }
     
     private func configureBrowserChromeActions() {
@@ -981,6 +1008,19 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
               !tabOverview.isPresented else {
             return
         }
+        dismissKeyboard()
+    }
+
+    @objc private func dismissKeyboardFromButton() {
+        guard !tabOverview.isPresented else {
+            return
+        }
+        dismissKeyboard()
+    }
+
+    private func dismissKeyboard() {
+        // End the UIKit text-input session without changing the current tab or
+        // navigation state. Gecko keeps the page's selection and entered text.
         view.endEditing(true)
     }
 
@@ -1036,6 +1076,11 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         )
         browserChrome.dockActionBar(offset: shouldDockActionBar ? -keyboardOverlap : 0)
         browserChrome.dockAddressBar(offset: shouldDockAddressBar ? -keyboardInset : 0)
+        updateDismissKeyboardButton(
+            isVisible: keyboardInset > 0 && !isInHardwareKeyboardMode && !tabOverview.isPresented,
+            keyboardOverlap: keyboardOverlap,
+            animation: animation
+        )
         animateLayout(animation)
     }
     
@@ -1048,7 +1093,47 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         )
         browserChrome.dockActionBar(offset: 0)
         browserChrome.dockAddressBar(offset: 0)
+        updateDismissKeyboardButton(isVisible: false, keyboardOverlap: 0, animation: animation)
         animateLayout(animation)
+    }
+
+    private func updateDismissKeyboardButton(
+        isVisible: Bool,
+        keyboardOverlap: CGFloat,
+        animation: KeyboardAnimation
+    ) {
+        let targetConstant = isVisible ? -keyboardOverlap - 8 : 0
+        dismissKeyboardButtonBottomConstraint.constant = targetConstant
+
+        guard isVisible else {
+            guard !dismissKeyboardButton.isHidden else {
+                return
+            }
+            UIView.animate(
+                withDuration: animation.duration,
+                delay: 0,
+                options: [animation.curve, .beginFromCurrentState, .allowUserInteraction]
+            ) {
+                self.dismissKeyboardButton.alpha = 0
+                self.view.layoutIfNeeded()
+            } completion: { _ in
+                self.dismissKeyboardButton.isHidden = true
+            }
+            return
+        }
+
+        if dismissKeyboardButton.isHidden {
+            dismissKeyboardButton.isHidden = false
+            dismissKeyboardButton.alpha = 0
+        }
+        UIView.animate(
+            withDuration: animation.duration,
+            delay: 0,
+            options: [animation.curve, .beginFromCurrentState, .allowUserInteraction]
+        ) {
+            self.dismissKeyboardButton.alpha = 1
+            self.view.layoutIfNeeded()
+        }
     }
     
     private func keyboardAnimation(from notification: Notification) -> KeyboardAnimation {
