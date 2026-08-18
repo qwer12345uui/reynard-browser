@@ -40,6 +40,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         removeBackgroundBlurIfNeeded()
         browserViewController.startScreenOrientationHandling()
+        browserViewController.sessionManager.setApplicationForeground(true)
         DownloadStore.shared.applicationDidBecomeActive()
         browserViewController.sessionManager.applicationDidBecomeActive()
         browserViewController.tabManager.applicationDidBecomeActive()
@@ -53,6 +54,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         showBackgroundBlurIfNeeded()
         browserViewController.stopScreenOrientationHandling()
+        // Pause active Gecko work as soon as the scene loses focus. Sessions
+        // remain open for reuse; the PiP session stays active in SessionManager.
+        browserViewController.sessionManager.setApplicationForeground(false)
         browserViewController.tabManager.applicationWillResignActive()
         browserViewController.sessionManager.applicationWillResignActive()
     }

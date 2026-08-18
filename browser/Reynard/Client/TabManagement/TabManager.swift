@@ -48,6 +48,7 @@ protocol TabManager: AnyObject {
     func navigationHistory(for tab: Tab) -> NavigationHistoryStore.Snapshot
     func navigationPreviewImages(for tab: Tab) -> NavigationPreviewImages
     func invalidateNavigationThumbnails()
+    func trimMemory()
     @discardableResult
     func changeWebsiteModeForSelectedTab() -> Bool
 }

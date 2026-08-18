@@ -194,6 +194,13 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         
         updateBrowserLayout(animated: false)
     }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Preserve open sessions and page state; only purge image previews that
+        // can be recreated when a tab is shown again.
+        tabManager.trimMemory()
+    }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)

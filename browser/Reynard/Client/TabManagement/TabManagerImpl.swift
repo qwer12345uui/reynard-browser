@@ -1004,6 +1004,17 @@ final class TabManagerImplementation: NSObject, TabManager {
     func invalidateNavigationThumbnails() {
         sessionManager.invalidateNavigationThumbnails()
     }
+
+    func trimMemory() {
+        // Tab thumbnails and navigation previews are recreated on demand. Drop
+        // them first on a memory warning while keeping every Gecko session and
+        // its navigation state available for instant reuse.
+        (regularTabs + privateTabs).forEach { tab in
+            tab.thumbnail = nil
+        }
+        invalidateNavigationThumbnails()
+        delegate?.tabManagerDidChangeTabs(self)
+    }
     
     // MARK: - Session Factory
     
