@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoKeyboardSupport.mm b/widget/uikit/GeckoKeyboardSupport.mm
 new file mode 100644
-index 000000000000..63d31455a417
+index 000000000000..9c70f01e6fae
 --- /dev/null
 +++ b/widget/uikit/GeckoKeyboardSupport.mm
-@@ -0,0 +1,844 @@
+@@ -0,0 +1,862 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -12,6 +12,8 @@ index 000000000000..63d31455a417
 + * https://github.com/minh-ton/reynard-browser in Feb 2026. */
 +
 +#include <dlfcn.h>
++#include <objc/message.h>
++#include <objc/runtime.h>
 +
 +#include "GeckoKeyboardSupport.h"
 +
@@ -135,6 +137,20 @@ index 000000000000..63d31455a417
 +    modifiers |= MODIFIER_META;
 +  }
 +  return modifiers;
++}
++
++static WebEventFlags CurrentWebEventFlags(WebEvent* aEvent) {
++  WebEventFlags modifierFlags = aEvent.modifierFlags;
++  if (aEvent.type == WebEventKeyDown) {
++    using ModifierFlagsFunction = WebEventFlags (*)(id, SEL);
++    static ModifierFlagsFunction modifierFlagsFunction =
++        reinterpret_cast<ModifierFlagsFunction>(objc_msgSend);
++    Class webEventClass = objc_getClass("WebEvent");
++    MOZ_RELEASE_ASSERT(webEventClass);
++    modifierFlags |= modifierFlagsFunction(reinterpret_cast<id>(webEventClass),
++                                           sel_registerName("modifierFlags"));
++  }
++  return modifierFlags;
 +}
 +
 +static TimeStamp GeckoTimeStampForWebEvent(CFTimeInterval aTimestamp) {
@@ -408,8 +424,7 @@ index 000000000000..63d31455a417
 +                                        bool aProcessedByIME,
 +                                        const nsAString* aInsertString,
 +                                        bool aForceRepeat) const {
-+  aEvent.mModifiers =
-+      GeckoModifiersForWebEventFlags(aNativeEvent.modifierFlags);
++  aEvent.mModifiers = mCurrentModifiers;
 +  aEvent.mCodeNameIndex = ComputeCodeNameIndex(aNativeEvent.keyCode);
 +  aEvent.mLocation =
 +      WidgetKeyboardEvent::ComputeLocationFromCodeValue(aEvent.mCodeNameIndex);
@@ -629,7 +644,10 @@ index 000000000000..63d31455a417
 +  }
 +
 +  RefPtr<TextInputHandler> kungFuDeathGrip(mHandler);
-+  mCurrentModifiers = GeckoModifiersForWebEventFlags(aEvent.modifierFlags);
++  const Modifiers eventModifiers =
++      GeckoModifiersForWebEventFlags(CurrentWebEventFlags(aEvent));
++  mCurrentModifiers = eventModifiers | (mCurrentModifiers &
++                                        (MODIFIER_SHIFT | MODIFIER_CAPSLOCK));
 +  if (aEvent.type == WebEventKeyUp) {
 +    if (mRepeatingEvent && mRepeatingEvent.keyCode == aEvent.keyCode) {
 +      StopKeyRepeat();

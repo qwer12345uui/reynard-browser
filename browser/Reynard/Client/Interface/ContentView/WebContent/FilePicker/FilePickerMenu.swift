@@ -70,7 +70,11 @@ extension FilePicker {
             return
         }
         
-        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        let alert = PromptAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        alert.onDismissed = { [weak self] in
+            self?.presentedController = nil
+            self?.handleMenuDismissed()
+        }
         for action in availableActions {
             alert.addAction(UIAlertAction(title: title(for: action), style: .default) { [weak self] _ in
                 self?.launchFollowupPicker {
@@ -78,9 +82,7 @@ extension FilePicker {
                 }
             })
         }
-        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel) { [weak self] _ in
-            self?.finish(with: nil)
-        })
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
         
         if let popover = alert.popoverPresentationController {
             popover.sourceView = geckoView
@@ -173,9 +175,9 @@ extension FilePicker {
     func handleMenuDismissed() {
         anchorButton?.removeFromSuperview()
         anchorButton = nil
-        if launchedFollowupPicker {
-            return
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !self.launchedFollowupPicker else { return }
+            self.finish(with: nil)
         }
-        finish(with: nil)
     }
 }

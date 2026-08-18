@@ -76,8 +76,8 @@ extension FilePicker {
         
         let picker = PHPickerViewController(configuration: configuration)
         picker.delegate = self
-        picker.presentationController?.delegate = self
         presenter.present(picker, animated: true)
+        picker.presentationController?.delegate = self
         presentedController = picker
     }
     
@@ -97,10 +97,10 @@ extension FilePicker {
         picker.delegate = self
         picker.sourceType = sourceType
         picker.mediaTypes = mediaTypes
-        picker.presentationController?.delegate = self
         configureCameraIfNeeded(picker, mediaTypes: mediaTypes, sourceType: sourceType)
         
         presenter.present(picker, animated: true)
+        picker.presentationController?.delegate = self
         presentedController = picker
     }
     
@@ -114,7 +114,6 @@ extension FilePicker {
         }
         
         picker.modalPresentationStyle = .fullScreen
-        picker.isModalInPresentation = true
         if let preferredDevice = resolvedCameraDevice(),
            UIImagePickerController.isCameraDeviceAvailable(preferredDevice) {
             picker.cameraDevice = preferredDevice

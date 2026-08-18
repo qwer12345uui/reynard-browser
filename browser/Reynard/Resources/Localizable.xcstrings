@@ -16,6 +16,12 @@
             "value": "sur %@"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の\n\n"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -43,6 +49,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ • Onglet Ouvert"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ • 開いたタブ"
           }
         },
         "ru": {
@@ -74,6 +86,12 @@
             "value": "%1$@ · A visité %2$@"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ • %2$@ に訪問済み"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -101,6 +119,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ et %2$@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@と%2$@"
           }
         },
         "ru": {
@@ -132,6 +156,12 @@
             "value": "%@ sont désactivés pour Reynard. Ouvrez les paramètres pour autoriser l'accès."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@は無効です。設定を開いて許可してください"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -159,6 +189,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ a reçu une mise à jour. Confirmez les permissions supplémentaires avant que la nouvelle version soit installée. Fermez ce message pour conserver la version actuelle. "
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@が更新されました。新しいバージョンをインストールする前に追加の権限を許可してください。許可しない場合現場のバージョンが使われます"
           }
         },
         "ru": {
@@ -190,6 +226,12 @@
             "value": "%@ est désactivé pour Reynard. Ouvrez les paramètres pour donner accès."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@は無効です。設定を開いて許可してください"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -217,6 +259,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ sur 5"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5つ中の%@つ"
           }
         },
         "ru": {
@@ -267,6 +315,18 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%1$@ sur 5 • %2$d Avis"
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "5つ中%1$@(星) • %2$dレビュー"
                 }
               }
             }
@@ -331,6 +391,12 @@
             "value": "%@ demande une collection de données supplémentaires."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@は追加のデータ収集をリクエストしてます"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -358,6 +424,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ demande des permissions supplémentaires."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@は追加の権限をリクエストしてます"
           }
         },
         "ru": {
@@ -389,6 +461,12 @@
             "value": "Suggestions pour %@"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ おすすめ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -418,6 +496,12 @@
             "value": "%1$@, et %2$@"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@と%2$@"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -445,6 +529,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@/sec"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@/秒"
           }
         },
         "ru": {
@@ -495,6 +585,18 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%d extensions n'ont pas pu être mises à jour."
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%d項目のアドオンが更新できませんでした"
                 }
               }
             }
@@ -583,6 +685,18 @@
             }
           }
         },
+        "ja": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%d項目のアドオンが権限のアップデートを必要としています"
+                }
+              }
+            }
+          }
+        },
         "ru": {
           "variations": {
             "plural": {
@@ -661,6 +775,18 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%d extensions mises à jour."
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%d項目のアドオンが更新されました"
                 }
               }
             }
@@ -749,6 +875,18 @@
             }
           }
         },
+        "ja": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%dドメイン%"
+                }
+              }
+            }
+          }
+        },
         "ru": {
           "variations": {
             "plural": {
@@ -827,6 +965,18 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%d Onglets"
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%dタブ"
                 }
               }
             }
@@ -915,6 +1065,18 @@
             }
           }
         },
+        "ja": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%d 個のトラッカーをブロックしました\n"
+                }
+              }
+            }
+          }
+        },
         "ru": {
           "variations": {
             "plural": {
@@ -973,6 +1135,12 @@
             "value": "▲ Le mode JITless est actuellement activé"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⚠︎JITなしモードが現在オンです"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -999,6 +1167,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "0 onglets"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "0タブ"
           }
         },
         "ru": {
@@ -1029,6 +1203,12 @@
             "value": "Le téléchargement d'une Image Disque de développeur est déjà en cours. "
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デベロッパーディスクイメージが現在ダウンロード中です"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1055,6 +1235,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Une nouvelle version du navigateur Reynard est disponible. Ouvrez les paramètres effectuer la mise à jour."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しいバージョンが公開されました。設定を開いてインストールしてください"
           }
         },
         "ru": {
@@ -1086,6 +1272,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@で問題が発生しました。"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "needs_review",
@@ -1112,6 +1304,12 @@
           "stringUnit": {
             "state": "needs_review",
             "value": ""
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このウェブページで問題が発生しました。\n"
           }
         },
         "ru": {
@@ -1142,6 +1340,12 @@
             "value": "À propos"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概要"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1168,6 +1372,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Accès"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アクセス"
           }
         },
         "ru": {
@@ -1199,6 +1409,12 @@
             "value": "Accéder à vos données sur les sites Web sur %@"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@で自分のデータにアクセスする"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1227,6 +1443,12 @@
             "value": "Activer le mode JITless"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JITなしモードをオンにする"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1248,6 +1470,30 @@
             "state": "translated",
             "value": "Actual Size"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille réelle"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -1263,6 +1509,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ajouter"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "追加"
           }
         },
         "ru": {
@@ -1294,6 +1546,12 @@
             "value": "Ajouter %@?"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@を追加しますか?"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1320,6 +1578,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ajouter une extension "
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンを追加"
           }
         },
         "ru": {
@@ -1350,6 +1614,12 @@
             "value": "Ajouter aux marque-pages"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブックマークを追加"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1376,6 +1646,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ajouter une langue"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "言語を追加"
           }
         },
         "ru": {
@@ -1406,6 +1682,12 @@
             "value": "Ajouter une langue..."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "言語を追加"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1432,6 +1714,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ajouter aux favoris"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "お気に入りを追加"
           }
         },
         "ru": {
@@ -1462,6 +1750,12 @@
             "value": "Ajouter un site web"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ウェブサイトを追加"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1488,6 +1782,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ajouter un site web…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ウェブサイトを追加"
           }
         },
         "ru": {
@@ -1519,6 +1819,12 @@
             "value": "Ajouter des sites web avec des erreurs lors de la connexion, des vérifications d'humain ou d'autres problèmes pour utiliser l'user agent %@. "
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "動作に問題のあるサイトなどを%@のユーザーエージェントを使用するには追加してください"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1547,6 +1853,12 @@
             "value": "Extensions"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオン"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1573,6 +1885,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Options supplémentaires"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "追加のオプション"
           }
         },
         "ru": {
@@ -1604,6 +1922,12 @@
             "value": "Adresse"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドレス"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1630,6 +1954,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Barre d'adresse"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドレスバー"
           }
         },
         "ru": {
@@ -1660,6 +1990,12 @@
             "value": "Réservé aux administrateurs"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理者のみ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1688,6 +2024,12 @@
             "value": "Avancé"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "詳細"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1709,6 +2051,30 @@
             "state": "translated",
             "value": "Advanced Options"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options avancées"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -1724,6 +2090,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Après la fermeture d'un onglet, Reynard ne conservera pas votre historique de navigation ou vos cookies. Cependant, vos téléchargements et les marques pages ajoutés seront conservés. "
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一度タブを閉じるとReynardは履歴とクッキーの情報を削除しますが、ダウンロードや新しいブックマークは保存されます"
           }
         },
         "ru": {
@@ -1754,6 +2126,12 @@
             "value": "Tous les téléchargements"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロード一覧"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1780,6 +2158,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tout l'historique"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "履歴一覧"
           }
         },
         "ru": {
@@ -1811,6 +2195,12 @@
             "value": "Autoriser"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "許可"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1838,6 +2228,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voulez-vous autoriser %@ à accéder aux applications et services sur les appareils connectés à votre réseau local ?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@にローカルネットワークに接続されてるデバイスやサービスへのアクセスを許可する"
           }
         },
         "ru": {
@@ -1869,6 +2265,12 @@
             "value": "Voulez-vous autoriser %@ à accéder à d'autres applications et services sur cet appareil ?"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@に端末上の他のアプリやサービスへのアクセスを許可しますか?"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1896,6 +2298,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voulez-vous autoriser %@ à jouer du contenu protégé par DRM ?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@に保護されたコンテンツ(DRM)の再生を許可しますか"
           }
         },
         "ru": {
@@ -1927,6 +2335,12 @@
             "value": "Voulez-vous autoriser %@ à envoyer des notifications ?"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@に通知を許可しますか"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -1954,6 +2368,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voulez-vous autoriser %@ à stocker des données dans la mémoire persistante ?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@に永続ストレージの使用を許可しますか"
           }
         },
         "ru": {
@@ -1985,6 +2405,12 @@
             "value": "Voulez-vous autoriser %1$@ à utiliser des cookies sur %2$@ ?"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@のクッキーを%2$@上での使用を%1$@に許可しますか"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2012,6 +2438,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voulez-vous autoriser %@ à utiliser votre caméra et votre microphone ?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@にカメラとマイクの使用を許可しますか?"
           }
         },
         "ru": {
@@ -2043,6 +2475,12 @@
             "value": "Voulez-vous autoriser %@ à utiliser votre caméra ?"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@にカメラの使用を許可しますか?"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2070,6 +2508,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voulez-vous autoriser %@ à utiliser votre position géographique ?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@に位置情報の使用を許可しますか?"
           }
         },
         "ru": {
@@ -2101,6 +2545,12 @@
             "value": "Voulez-vous autoriser %@ à utiliser votre microphone ?"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@にマイクの使用を許可しますか?"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2128,6 +2578,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Autoriser l'audio et la vidéo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "動画と音声を許可する"
           }
         },
         "ru": {
@@ -2158,6 +2614,12 @@
             "value": "Permettre en mode Navigation Privée"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プライベートモードでも許可する"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2186,6 +2648,12 @@
             "value": "Permettre sur Tous les Sites Web"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すべてのウェブサイトで許可\n"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2212,6 +2680,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Autoriser cette extension à accéder à tous les sites web."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このアドオンがすべてのウェブサイトにアクセスすることを許可\n"
           }
         },
         "ru": {
@@ -2243,6 +2717,12 @@
             "value": "%@ autorisé"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@を許可しました"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2269,6 +2749,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sites Web autorisés"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "許可されてるサイト"
           }
         },
         "ru": {
@@ -2299,6 +2785,12 @@
             "value": "Apparence"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "見た目"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2327,6 +2819,12 @@
             "value": "Applications et Services"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリとサービス"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2353,6 +2851,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Êtes-vous sûr de vouloir téléverser tous les fichiers ? Ne faites ceci que si vous avez confiance en ce site web."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップロードを本当に行いますか?信頼できるサイトでのみ行ってください"
           }
         },
         "ru": {
@@ -2384,6 +2888,12 @@
             "value": "Demander"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "毎度確認する"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2410,6 +2920,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Auteur"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "著作"
           }
         },
         "ru": {
@@ -2440,6 +2956,12 @@
             "value": "Lecture automatique"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オート再生"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2461,6 +2983,30 @@
             "state": "translated",
             "value": "Back"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrière"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -2476,6 +3022,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Page Blanche"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "空白ページ"
           }
         },
         "ru": {
@@ -2507,6 +3059,12 @@
             "value": "Bloquer l'audio et la vidéo"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "動画と音声をブロック"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2534,6 +3092,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bloquer uniquement l'audio"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音声のみブロック"
           }
         },
         "ru": {
@@ -2564,6 +3128,12 @@
             "value": "Bloqué"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブロック済み"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2590,6 +3160,12 @@
           "stringUnit": {
             "state": "needs_review",
             "value": ""
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブロックされたトラッカー"
           }
         },
         "ru": {
@@ -2620,6 +3196,12 @@
             "value": "Marque-pages"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブックマーク"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2646,6 +3228,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Marque-pages, Historique et Onglets"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブックマーク、履歴、タブ"
           }
         },
         "ru": {
@@ -2677,6 +3265,12 @@
             "value": "Bas"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面下部"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2703,6 +3297,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Navigation"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブラウジング"
           }
         },
         "ru": {
@@ -2733,6 +3333,12 @@
             "value": "Historique de navigation"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "履歴"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2759,6 +3365,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "octets"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "バイート"
           }
         },
         "ru": {
@@ -2789,6 +3401,12 @@
             "value": "Images et fichiers en mémoire tampon"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キャッシュ済みの画像とファイル"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2815,6 +3433,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Caméra"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カメラ"
           }
         },
         "ru": {
@@ -2845,6 +3469,12 @@
             "value": "Annuler"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取り消す"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2873,6 +3503,12 @@
             "value": "Annuler le Téléchargement"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロードを取り消す"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2899,6 +3535,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Annuler le téléchargement ?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロードを取り消しますか?"
           }
         },
         "ru": {
@@ -2930,6 +3572,12 @@
             "value": "Modifié %@"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@を変更しました"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2956,6 +3604,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choisir un Fichier"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイルを選択"
           }
         },
         "ru": {
@@ -2986,6 +3640,12 @@
             "value": "Choisir un Dossier"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フォルダを選択"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3007,6 +3667,30 @@
             "state": "translated",
             "value": "Choose Wallpaper…"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisir un fond d'écran..."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选取壁纸..."
+          }
         }
       }
     },
@@ -3023,6 +3707,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Effacer"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クリア"
           }
         },
         "ru": {
@@ -3053,6 +3743,12 @@
             "value": "Tout effacer"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全て削除"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3079,6 +3775,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Effacer toutes les données de navigation"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブラウジングデータを削除"
           }
         },
         "ru": {
@@ -3109,6 +3811,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cookie とウェブサイトデータを消去する"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3135,6 +3843,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Effacer la liste des téléchargements"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロードを削除"
           }
         },
         "ru": {
@@ -3165,6 +3879,12 @@
             "value": "Effacer l'historique"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "履歴を削除"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3191,6 +3911,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Effacer sur une période"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タイムフレームを削除"
           }
         },
         "ru": {
@@ -3227,6 +3953,78 @@
               }
             }
           }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Fermer %d onglet"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Fermer %d onglets"
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": ""
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": ""
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": ""
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": ""
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": ""
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "关闭 %d 个标签页"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -3242,6 +4040,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Fermer Tous les Onglets"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全てのタブを閉じる"
           }
         },
         "ru": {
@@ -3266,6 +4070,30 @@
             "state": "translated",
             "value": "Close Old Tabs..."
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fermer les onglets anciens..."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -3275,6 +4103,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Close Other Tabs"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fermer les autres onglets"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
           }
         }
       }
@@ -3286,6 +4138,30 @@
             "state": "translated",
             "value": "Close Tab"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fermer l'onglet"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -3295,6 +4171,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Close This Tab"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fermer cet onglet"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
           }
         }
       }
@@ -3311,6 +4211,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Compatibilité"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "互換性"
           }
         },
         "ru": {
@@ -3341,6 +4247,12 @@
             "value": "Terminer les mises à jour d'extensions"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンのアップデートを完了する"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3367,6 +4279,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Confirmer le Téléversement"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップロードを確定"
           }
         },
         "ru": {
@@ -3398,6 +4316,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "コンテンツ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "needs_review",
@@ -3426,6 +4350,12 @@
             "value": "Cookies et données de sites Web"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クッキーとサイトデータ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3447,6 +4377,30 @@
             "state": "translated",
             "value": "Copy Image"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copier l'image"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制图像"
+          }
         }
       }
     },
@@ -3456,6 +4410,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Copy Image Address"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copier l'adresse de l'image"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制图像链接"
           }
         }
       }
@@ -3472,6 +4450,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Copier le lien"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リンクをコピー"
           }
         },
         "ru": {
@@ -3502,6 +4486,12 @@
             "value": "Fichier corrompu"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "破損したファイル"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3528,6 +4518,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Impossible de récupérer l'URL de téléchargement."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロードURLが入手できません"
           }
         },
         "ru": {
@@ -3558,6 +4554,12 @@
             "value": "Impossible d'effacer l'historique de navigation"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブラウジングデータを削除できません"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3584,6 +4586,12 @@
           "stringUnit": {
             "state": "needs_review",
             "value": ""
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cookieとウェブサイトデータを消去できませんでした"
           }
         },
         "ru": {
@@ -3614,6 +4622,12 @@
             "value": "Impossible d'effacer l'historique"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "履歴を削除できません"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3642,6 +4656,12 @@
             "value": "Impossible de désactiver l'extension"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンをオフにできません"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3668,6 +4688,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Impossible d'activer l'extension"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンをオンにできません"
           }
         },
         "ru": {
@@ -3699,6 +4725,12 @@
             "value": "Impossible d'installer %@."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@をインストールできません"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3725,6 +4757,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Impossible d'installer cette extension."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このアドオンをインストールできません"
           }
         },
         "ru": {
@@ -3755,6 +4793,12 @@
             "value": "Impossible de recharger cette extension."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンをリロードできません"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3781,6 +4825,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Impossible de retirer cette extension."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンを削除できませんでした"
           }
         },
         "ru": {
@@ -3811,6 +4861,12 @@
             "value": "Impossible de mettre à jour les permissions"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "権限を更新できませんでした"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3839,6 +4895,12 @@
             "value": "Impossible de mettre à jour l'accès en mode Navigation Privée"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プライベートブラウジングへのアクセスを更新できませんでした"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3865,6 +4927,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cookies inter-site"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クロスサイトクッキー"
           }
         },
         "ru": {
@@ -3896,6 +4964,12 @@
             "value": "Personnalisé"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カスタム"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3924,6 +4998,12 @@
             "value": "URL de recherche personnalisée"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カスタム検索URL"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3950,6 +5030,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "URL Personnalisée"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カスタムURL"
           }
         },
         "ru": {
@@ -3981,6 +5067,12 @@
             "value": "Date d'ajout"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "追加された順"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4008,6 +5100,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jour"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日"
           }
         },
         "ru": {
@@ -4038,6 +5136,12 @@
             "value": "Paramètres par défaut"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デフォルト設定"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4064,6 +5168,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Supprimer"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "削除"
           }
         },
         "ru": {
@@ -4094,6 +5204,12 @@
             "value": "Supprimer le marque-page"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブックマークを削除"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4122,6 +5238,12 @@
             "value": "Supprimer le Dossier"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フォルダを削除"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4148,6 +5270,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Supprimé"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "削除されました"
           }
         },
         "ru": {
@@ -4179,6 +5307,12 @@
             "value": "%@ refusé"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@は許可されませんでした"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4205,6 +5339,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sites Web refusés"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "許可されてないウェブサイト"
           }
         },
         "ru": {
@@ -4236,6 +5376,12 @@
             "value": "Refuser"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拒否"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4262,6 +5408,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Firefox pour ordinateur"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デスクトップ版Firefox"
           }
         },
         "ru": {
@@ -4292,6 +5444,12 @@
             "value": "Détails"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "詳細"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4318,6 +5476,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Le téléchargement d'une Image Disque de développeur a été annulé."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デベロッパーディスクイメージのダウンロードが取り消されました"
           }
         },
         "ru": {
@@ -4348,6 +5512,12 @@
             "value": "L'URL source de l'Image Disque de développeur est invalide."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デベロッパーディスクイメージのダウンロード元URLが無効です"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4374,6 +5544,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Applications et services de l'appareil"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端末上のアプリとサービス"
           }
         },
         "ru": {
@@ -4404,6 +5580,12 @@
             "value": "Découvrir des extensions…"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンを探す"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4430,6 +5612,12 @@
           "stringUnit": {
             "state": "needs_review",
             "value": ""
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブロック禁止"
           }
         },
         "ru": {
@@ -4461,6 +5649,12 @@
             "value": "Voulez-vous télécharger \"%@\" ?"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%@\" をダウンロードしますか？"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4488,6 +5682,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voulez-vous arrêter de télécharger \"%@\" ?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%@\"のダウンロードを停止しますか？"
           }
         },
         "ru": {
@@ -4518,6 +5718,12 @@
             "value": "Ne Pas Autoriser"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "許可しない"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4544,6 +5750,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Télécharger"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロード"
           }
         },
         "ru": {
@@ -4574,6 +5786,12 @@
             "value": "Échec de téléchargement"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロード失敗"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4600,6 +5818,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Télécharger Reynard (.tipa)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reynard(.tipa)えおダウンロード"
           }
         },
         "ru": {
@@ -4630,6 +5854,12 @@
             "value": "Téléchargement en cours"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロード中"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4656,6 +5886,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Téléchargement d'une mise à jour en cours"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップデートをダウンロード中"
           }
         },
         "ru": {
@@ -4686,6 +5922,12 @@
             "value": "Téléchargements"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロード一覧"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4712,6 +5954,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Exemple : youtube.com"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "例 youtube.com"
           }
         },
         "ru": {
@@ -4742,6 +5990,12 @@
             "value": "Modifier"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編集"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4768,6 +6022,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Modifier le marque-page"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブックマークを編集"
           }
         },
         "ru": {
@@ -4798,6 +6058,12 @@
             "value": "Modifier les marque-pages"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブックマークを編集"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4824,6 +6090,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Activer l'extension"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンを有効にする"
           }
         },
         "ru": {
@@ -4854,6 +6126,12 @@
             "value": "Activer le JIT"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JITを有効化"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4880,6 +6158,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Activez le JIT pour améliorer les performances et s'assurer que les sites Web fonctionnent correctement."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "パフォーマンスの向上とサイトの正しい動作の為にJITを有効にしてください"
           }
         },
         "ru": {
@@ -4910,6 +6194,12 @@
             "value": "Version du Moteur"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブラウザエンジンバージョン"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4938,6 +6228,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "強化型トラッキング防止機能"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -4964,6 +6260,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Erreur"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "エラー"
           }
         },
         "ru": {
@@ -4995,6 +6297,12 @@
             "value": "Erreur %1$d: %2$@"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "エラー %1$d: %2$@"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5021,6 +6329,12 @@
           "stringUnit": {
             "state": "needs_review",
             "value": ""
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "例外"
           }
         },
         "ru": {
@@ -5051,6 +6365,12 @@
             "value": "Impossible d'activer le JIT"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JITの有効化に失敗しました"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5077,6 +6397,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Favoris"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "推しのタブス"
           }
         },
         "ru": {
@@ -5107,6 +6433,12 @@
             "value": "Les fichiers téléchargés apparaissent ici"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロード済みのファイルはここに表示されます"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5129,6 +6461,30 @@
             "state": "translated",
             "value": "Find"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trouver"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查找"
+          }
         }
       }
     },
@@ -5138,6 +6494,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Find in Page"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trouver dans la page"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在页面中查找"
           }
         }
       }
@@ -5154,6 +6534,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Firefox pour Android"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Android版Firefox"
           }
         },
         "ru": {
@@ -5184,6 +6570,12 @@
             "value": "Dossiers"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フォルダ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5205,6 +6597,30 @@
             "state": "translated",
             "value": "Forward"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avant"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -5220,6 +6636,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Visités Fréquemment"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "よく訪れるサイト"
           }
         },
         "ru": {
@@ -5250,6 +6672,12 @@
             "value": "Général"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全般"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5276,6 +6704,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "GitHub - @minh-ton"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub - @minhーton"
           }
         },
         "ru": {
@@ -5306,6 +6740,12 @@
             "value": "Historique"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "履歴"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5332,6 +6772,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Page d'accueil"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ホームページ"
           }
         },
         "ru": {
@@ -5362,6 +6808,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ホームページバナー\n"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5388,6 +6840,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sections de la page d'accueil"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ホームページセレクション"
           }
         },
         "ru": {
@@ -5418,6 +6876,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サイトが正常に機能しない場合、オフにしてみてください"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5444,6 +6908,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Échec de l'importation"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "インポートに失敗"
           }
         },
         "ru": {
@@ -5474,6 +6944,12 @@
             "value": "Importer un fichier de Pairing…"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ペアリングファイルをインポート"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5500,6 +6976,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Incompatible"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "非対応"
           }
         },
         "ru": {
@@ -5530,6 +7012,12 @@
             "value": "Information"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "詳細"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5556,6 +7044,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Installer une extension à partir d'un fichier"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイルからアドオンをインストール"
           }
         },
         "ru": {
@@ -5586,6 +7080,12 @@
             "value": "Installer la version TrollStore de Reynard afin d'activer le JIT automatiquement pour améliorer les performances et s'assurer que les sites Web fonctionnent correctement."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動でJITを有効にするにはTrollStore版のReynardをインストールしてください。パフォーマンスの向上とサイトが正しく動作する事が期待できます。"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5612,6 +7112,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Installer TrollStore"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TrollStoreをインストール"
           }
         },
         "ru": {
@@ -5642,6 +7148,12 @@
             "value": "Extensions installées"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "インストール済みのアドオン"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5668,6 +7180,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Installation de l'extension…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンをインストール中"
           }
         },
         "ru": {
@@ -5699,6 +7217,12 @@
             "value": "Il est très rare de rencontrer ce problème! Assurez-vous que votre installation de TrollStore ou que votre environnement de jailbreak est configuré correctement.\n\nVous devrez peut-être utiliser le navigateur sans JIT temporairement jusqu'au prochain démarrage en activant le mode JITless."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "非常に珍しい問題が起きました。脱獄環境、又はTrollStore環境が正しく構築されてる事を確認してください。\n\nJITなしモードをオンにすれば次回起動まで一時的にJIT無しの状態で動作します。\n"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5722,6 +7246,12 @@
           }
         },
         "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JIT"
+          }
+        },
+        "ja": {
           "stringUnit": {
             "state": "translated",
             "value": "JIT"
@@ -5755,6 +7285,12 @@
             "value": "Le JIT n'est pas pris en charge par la version d'OS de votre appareil."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ご使用のOSバージョンではJITが非対応です"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5783,6 +7319,12 @@
             "value": "Continuer à Télécharger"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロードを続ける"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5809,6 +7351,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Langues"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "言語"
           }
         },
         "ru": {
@@ -5840,6 +7388,12 @@
             "value": "Vérifié le %@."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最後に%@に確認済み"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5866,6 +7420,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dernière Heure"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1時間以内"
           }
         },
         "ru": {
@@ -5896,6 +7456,12 @@
             "value": "Dernier Onglet"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最後に開いたタブ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5924,6 +7490,12 @@
             "value": "Dernière mise à jour"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最終更新"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -5950,6 +7522,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "En savoir plus"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "詳しく"
           }
         },
         "ru": {
@@ -5981,6 +7559,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@防止について学ぶ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6007,6 +7591,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Liens"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リンク一覧"
           }
         },
         "ru": {
@@ -6037,6 +7627,12 @@
             "value": "Chargement des extensions…"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンをロード中"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6063,6 +7659,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Réseau Local"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ローカルネットワーク"
           }
         },
         "ru": {
@@ -6093,6 +7695,12 @@
             "value": "Appareils sur le réseau local"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ローカルネットワーク機器"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6119,6 +7727,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Emplacement"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位置情報"
           }
         },
         "ru": {
@@ -6149,6 +7763,12 @@
             "value": "Assurez-vous que le Schéma d'URL est activé sur TrollStore."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TrollStore URLスキームが有効化されているか確認してください。"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6175,6 +7795,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Média"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像と動画"
           }
         },
         "ru": {
@@ -6205,6 +7831,12 @@
             "value": "Microphone"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイク"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6231,6 +7863,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "En savoir plus sur cette extension"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このアドオンに関する詳細"
           }
         },
         "ru": {
@@ -6262,6 +7900,12 @@
             "value": "Nom"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名前"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6288,6 +7932,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Demande l'autorisation pour la mise à jour"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新には許可が必要です"
           }
         },
         "ru": {
@@ -6318,6 +7968,12 @@
             "value": "Erreur de Réseau"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ネットワークエラー"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6346,6 +8002,12 @@
             "value": "Nouveau dossier"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しいフォルダ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6367,6 +8029,30 @@
             "state": "translated",
             "value": "New Private Tab"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouvel Onglet en Navigation Privée"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -6383,6 +8069,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nouvelle collection de données requise : Le développeur indique que cette extension collectera %@."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新たに必要となるデータ収集 - 開発者によると、このアドオンは %@ を収集します。\n"
           }
         },
         "ru": {
@@ -6414,6 +8106,12 @@
             "value": "Nouvelles permissions nécessaires : %@"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しい必須権限: %@"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6440,6 +8138,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nouvel Onglet"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しいタブ"
           }
         },
         "ru": {
@@ -6470,6 +8174,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新着情報"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6491,6 +8201,30 @@
             "state": "translated",
             "value": "Next Tab"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onglet suivant"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -6507,6 +8241,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nuit"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "夜"
           }
         },
         "ru": {
@@ -6537,6 +8277,12 @@
             "value": "Non"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "いいえ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6563,6 +8309,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aucune extension"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンがありません"
           }
         },
         "ru": {
@@ -6593,6 +8345,12 @@
             "value": "Aucune extension installée"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンはインストールされてません"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6619,6 +8377,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aucun marque-page correspondant"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブックマークが見つかりませんでした"
           }
         },
         "ru": {
@@ -6649,6 +8413,12 @@
             "value": "Aucun téléchargement correspondant"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイルが見つかりませんでした"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6675,6 +8445,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aucune entrée correspondante dans l'historique"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "履歴が見つかりませんでした"
           }
         },
         "ru": {
@@ -6705,6 +8481,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保護なし\n"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6731,6 +8513,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aucune note de mise à jour disponible."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有効なリリースノートがありません"
           }
         },
         "ru": {
@@ -6761,6 +8549,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "トラッカーは見つかりませんでした\n"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6789,6 +8583,12 @@
             "value": "Aucune mise à jour disponible"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップデートはありません"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6815,6 +8615,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aucune mise à jour trouvée."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップデートは見つかりませんでした"
           }
         },
         "ru": {
@@ -6846,6 +8652,12 @@
             "value": "Aucun"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無し"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6872,6 +8684,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Interdit en mode Navigation Privée"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プライベートモードでは許可されてません"
           }
         },
         "ru": {
@@ -6902,6 +8720,12 @@
             "value": "Non Vérifié"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未認証"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6928,6 +8752,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nombre de lignes"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "行数"
           }
         },
         "ru": {
@@ -6958,6 +8788,12 @@
             "value": "Nombre d’onglets"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タブの数"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -6984,6 +8820,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nombre de sites Web"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サイトの数"
           }
         },
         "ru": {
@@ -7015,6 +8857,12 @@
             "value": "Désactivé"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オフ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7043,6 +8891,12 @@
             "value": "OK"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "はい"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7065,6 +8919,30 @@
             "state": "translated",
             "value": "Older Than 1 Day"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vieux de plus d'un jour"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -7076,6 +8954,30 @@
             "state": "translated",
             "value": "Older Than 1 Month"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vieux de plus d'un mois"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -7086,6 +8988,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Older Than 1 Week"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vieux de plus d'une semaine"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
           }
         }
       }
@@ -7103,6 +9029,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Activé"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オン"
           }
         },
         "ru": {
@@ -7133,6 +9065,12 @@
             "value": "Au Démarrage "
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スタートアップ時"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7154,6 +9092,30 @@
             "state": "translated",
             "value": "Open Image in New Tab"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir l'image dans un Nouvel Onglet"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在新标签页中打开图像"
+          }
         }
       }
     },
@@ -7170,6 +9132,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ouvrir dans\nFichiers"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイルで\n開く"
           }
         },
         "ru": {
@@ -7200,6 +9168,12 @@
             "value": "Ouvrir dans Fichiers"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイルで開く"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7226,6 +9200,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ouvrir dans un nouvel onglet en Navigation Privée"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しいプライベートタブで開く"
           }
         },
         "ru": {
@@ -7256,6 +9236,12 @@
             "value": "Ouvrir dans un nouvel onglet"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しいタブで開く"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7277,6 +9263,30 @@
             "state": "translated",
             "value": "Open Link in Background"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir le lien en arrière-plan"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在后台标签页打开链接"
+          }
         }
       }
     },
@@ -7286,6 +9296,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open Link in New Private Tab"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir le lien dans un Nouvel Onglet privé"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在新无痕标签页中打开链接"
           }
         }
       }
@@ -7297,6 +9331,30 @@
             "state": "translated",
             "value": "Open Link in New Tab"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir le lien dans un Nouvel Onglet"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在新标签页中打开链接"
+          }
         }
       }
     },
@@ -7307,6 +9365,30 @@
             "state": "translated",
             "value": "Open Links in External Apps"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir les liens dans les applications externes"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在外部应用中打开链接"
+          }
         }
       }
     },
@@ -7316,6 +9398,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open Location"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir l'emplacement"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
           }
         }
       }
@@ -7332,6 +9438,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ouvrir les nouveaux onglets sur"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しいタブ先"
           }
         },
         "ru": {
@@ -7362,6 +9474,12 @@
             "value": "Ouvrir les paramètres"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定を開く"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7388,6 +9506,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Onglets ouverts"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タブを開く"
           }
         },
         "ru": {
@@ -7418,6 +9542,12 @@
             "value": "Option"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オプション"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7444,6 +9574,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Collection de données optionnelles"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "任意のデータ取集"
           }
         },
         "ru": {
@@ -7474,6 +9610,12 @@
             "value": "Permissions optionnelles"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "任意の権限"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7500,6 +9642,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zoom sur la page"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ズーム率"
           }
         },
         "ru": {
@@ -7530,6 +9678,12 @@
             "value": "Zoom sur la page activé"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ズーム率"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7558,6 +9712,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "パスワード"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7579,6 +9739,30 @@
             "state": "translated",
             "value": "Paste and Go"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copier et y aller"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -7594,6 +9778,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recommandation de performance"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "パフォーマンス向上のおすすめ"
           }
         },
         "ru": {
@@ -7624,6 +9814,12 @@
             "value": "Permissions"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "権限一覧"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7652,6 +9848,12 @@
             "value": "Mémoire persistante"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "永続ストレージ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7678,6 +9880,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Galerie de photos"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フォトライブラリ "
           }
         },
         "ru": {
@@ -7709,6 +9917,12 @@
             "value": "Veuillez vérifier que votre fichier de Pairing est valide, que votre VPN de loopback est activé et que vous êtes connecté à un réseau Wi-Fi stable.\n\nVous pouvez utiliser le navigateur sans JIT temporairement jusqu'au prochain démarrage en activant le mode JITless."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ペアリングファイルが有効か確認の上、ループバックVPNと安定したWiFiネットワークに接続してください。\n\nJITなしモードをオンにすれば次回起動まで一時的にJIT無しの状態で動作します。"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7735,6 +9949,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Préparation du JIT"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JITを準備中"
           }
         },
         "ru": {
@@ -7766,6 +9986,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プレビュー"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "needs_review",
@@ -7792,6 +10018,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "7 derniers jours"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "過去7日間"
           }
         },
         "ru": {
@@ -7822,6 +10054,12 @@
             "value": "30 derniers jours"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "過去30日"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7843,6 +10081,30 @@
             "state": "translated",
             "value": "Previous Tab"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onglet précédent"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -7858,6 +10120,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vie privée"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プライバシー"
           }
         },
         "ru": {
@@ -7888,6 +10156,12 @@
             "value": "Privé"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プライベートモード"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7914,6 +10188,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Navigation Privée"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プライベートブラウジング"
           }
         },
         "ru": {
@@ -7944,6 +10224,12 @@
             "value": "Quitter Reynard"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reynardを閉じる"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -7970,6 +10256,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Avis"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "評価"
           }
         },
         "ru": {
@@ -8000,6 +10292,12 @@
             "value": "Onglets récemment fermés"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近閉じたタブ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8028,6 +10326,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おすすめ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8049,6 +10353,30 @@
             "state": "translated",
             "value": "Reload Page"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recharger la page"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -8064,6 +10392,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Retirer"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "削除"
           }
         },
         "ru": {
@@ -8095,6 +10429,12 @@
             "value": "Retirer %@?"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@を削除しますか？"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8121,6 +10461,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Retirer l'extension"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンを削除"
           }
         },
         "ru": {
@@ -8151,6 +10497,12 @@
             "value": "Retirer le lien"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リンクを削除"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8177,6 +10529,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Retirer l'onglet récemment fermé"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近閉じたタブを削除"
           }
         },
         "ru": {
@@ -8208,6 +10566,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ のCookieとウェブサイトデータを削除すると、再度サインインが必要になる場合があります。\n"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8229,6 +10593,30 @@
             "state": "translated",
             "value": "Reopen Last Closed Tab"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réouvrir le dernier onglet fermé"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -8244,6 +10632,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Demander la version pour ordinateur du site Web"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PC版サイトを見る"
           }
         },
         "ru": {
@@ -8274,6 +10668,12 @@
             "value": "Demander la version pour mobile du site Web"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "モバイル版サイトを見る"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8300,6 +10700,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Collection de données requises"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "データ収集（必須）"
           }
         },
         "ru": {
@@ -8330,6 +10736,12 @@
             "value": "Les fichiers DDI nécessaires sont manquants."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "必要なDDIファイルが見つかりません。"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8356,6 +10768,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Permissions requises"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "必要な権限"
           }
         },
         "ru": {
@@ -8387,6 +10805,12 @@
             "value": "Réinitialiser"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リセット"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8413,6 +10837,12 @@
           "stringUnit": {
             "state": "needs_review",
             "value": ""
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デスクトップ版ウェブサイトの設定をリセット"
           }
         },
         "ru": {
@@ -8443,6 +10873,12 @@
             "value": "Réinitialiser les paramètres de zoom de page Web"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ズーム設定をリセット"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8469,6 +10905,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Réinitialiser les permissions pour tous les sites Web"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全てのサイトの権限をリセット"
           }
         },
         "ru": {
@@ -8499,6 +10941,12 @@
             "value": "Réaliser les paramètres pour ce site Web"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このサイトの設定をリセット"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8525,6 +10973,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Redémarrage nécessaire"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再起動が必要"
           }
         },
         "ru": {
@@ -8555,6 +11009,12 @@
             "value": "Restreint"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "厳格"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8581,6 +11041,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Navigateur Web Reynard"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reynard Browser"
           }
         },
         "ru": {
@@ -8611,6 +11077,12 @@
             "value": "Reynard ne conservera pas votre historique de recherche ou vos cookies. Cependant, vos téléchargements et les marques pages ajoutés seront conservés. "
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一度タブを閉じるとReynardは履歴とクッキーの情報を削除しますが、ダウンロードや新しいブックマークは保存されます"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8637,6 +11109,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Enregistrer"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存"
           }
         },
         "ru": {
@@ -8667,6 +11145,12 @@
             "value": "Enregistrer dans Photos"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "写真に保存"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8693,6 +11177,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recherche"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検索"
           }
         },
         "ru": {
@@ -8723,6 +11213,12 @@
             "value": "Rechercher dans les marque-pages"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブックマークを検索"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8749,6 +11245,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rechercher dans l'historique de recherche"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "履歴を検索"
           }
         },
         "ru": {
@@ -8779,6 +11281,12 @@
             "value": "Rechercher dans les téléchargements"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロードを検索"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8805,6 +11313,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Moteur de Recherche"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検索エンジン"
           }
         },
         "ru": {
@@ -8835,6 +11349,12 @@
             "value": "Historique de recherche"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "履歴を検索"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8861,6 +11381,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rechercher dans les langues"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "言語を検索"
           }
         },
         "ru": {
@@ -8891,6 +11417,12 @@
             "value": "Rechercher dans les onglets ouverts"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開いているタブを検索"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8917,6 +11449,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rechercher ou entrer une adresse"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検索またはアドレスを入力"
           }
         },
         "ru": {
@@ -8947,6 +11485,12 @@
             "value": "Fournisseur de suggestions de recherche"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検索サジェストプロバイダー"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -8973,6 +11517,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Suggestions de recherche"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検索サジェスト"
           }
         },
         "ru": {
@@ -9003,6 +11553,12 @@
             "value": "Sélectionner une option"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オプション選択"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9031,6 +11587,12 @@
             "value": "Sélectionner des options"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オプションを選択"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9057,6 +11619,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Paramètres"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         },
         "ru": {
@@ -9088,6 +11656,12 @@
             "value": "Paramètres pour %@"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の設定"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9114,6 +11688,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Partager"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "共有"
           }
         },
         "ru": {
@@ -9144,6 +11724,12 @@
             "value": "Partager l’image"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像を共有"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9170,6 +11756,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Partager le Lien"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リンクを共有"
           }
         },
         "ru": {
@@ -9200,6 +11792,12 @@
             "value": "Tout afficher"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全てを表示"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9228,6 +11826,12 @@
             "value": "Afficher tous les sites Web"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全てのサイトを表示"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9249,6 +11853,30 @@
             "state": "translated",
             "value": "Show Bookmarks"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher les marque-pages"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -9264,6 +11892,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Afficher les favoris"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "お気に入りを表示"
           }
         },
         "ru": {
@@ -9294,6 +11928,12 @@
             "value": "Afficher les fichiers au-dessus"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フォルダを上に表示"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9320,6 +11960,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Afficher les sites visités fréquemment"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "よく訪れるサイトを表示"
           }
         },
         "ru": {
@@ -9350,6 +11996,12 @@
             "value": "Afficher l'adresse complète"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フルURLを表示"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9371,6 +12023,30 @@
             "state": "translated",
             "value": "Show History"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher l'historique"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -9386,6 +12062,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Afficher les aperçus d'image"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像プレビューを表示"
           }
         },
         "ru": {
@@ -9416,6 +12098,12 @@
             "value": "Afficher en Navigation Privée"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プライベートモードで表示"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9442,6 +12130,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Afficher moins"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "折りたたむ"
           }
         },
         "ru": {
@@ -9472,6 +12166,12 @@
             "value": "Afficher les aperçus de liens"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プレビューリンクを表示"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9493,6 +12193,30 @@
             "state": "translated",
             "value": "Show or Hide Sidebar"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher ou masquer la barre latérale"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -9508,6 +12232,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Afficher les onglets récemment fermes"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近閉じたタブを表示"
           }
         },
         "ru": {
@@ -9538,6 +12268,12 @@
             "value": "Afficher les suggestions de recherche"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検索サジェストを表示"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9559,6 +12295,30 @@
             "state": "translated",
             "value": "Show Tab %d"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher l'onglet %d"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -9574,6 +12334,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Afficher la barre d'onglets en mode Paysage"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "横向き時にタブバーを表示する\n"
           }
         },
         "ru": {
@@ -9597,6 +12363,30 @@
             "state": "translated",
             "value": "Show Tab Overview"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher l'aperçu des onglets"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -9606,6 +12396,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show Wallpaper"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher le fond d'écran"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示主页壁纸"
           }
         }
       }
@@ -9622,6 +12436,12 @@
           "stringUnit": {
             "state": "needs_review",
             "value": ""
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サインイン"
           }
         },
         "ru": {
@@ -9653,6 +12473,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@へサインイン"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9679,6 +12505,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Puisque c'est la première fois que vous activez le JIT, Reynard doit télécharger et monter l'Image Disque de développeur. Ceci est obligatoire pour le bon fonctionnement du JIT."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "初めてJITを有効するにあたって正しく動作させるためにはReynardはデベロッパーディスクイメージのダウンロードとマウントが必要です。"
           }
         },
         "ru": {
@@ -9709,6 +12541,12 @@
             "value": "Certains sites Web sont disponibles en plusieurs langues. Veuillez choisir les langues dans l'ordre de vos préférences"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "特定のウェブサイトは複数の言語で提供されています。好みの順番で言語を入れ替えてください。"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9737,6 +12575,12 @@
             "value": "Trier Par"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "並び替え基準"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9763,6 +12607,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Supporter Ce Projet"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロジェクトを支援"
           }
         },
         "ru": {
@@ -9794,6 +12644,12 @@
             "value": "Système"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "システム"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9820,6 +12676,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Onglets"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タブ"
           }
         },
         "ru": {
@@ -9850,6 +12712,12 @@
             "value": "Prendre une Photo"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "写真を撮る"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9876,6 +12744,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prendre une Photo ou une Vidéo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "写真、又は動画を撮る"
           }
         },
         "ru": {
@@ -9906,6 +12780,12 @@
             "value": "Prendre une Vidéo"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "動画を撮る"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9932,6 +12812,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reynard va se fermer afin d'appliquer la configuration du JIT."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JITに関する設定を有効化する為にアプリが一度落ちます"
           }
         },
         "ru": {
@@ -9963,6 +12849,12 @@
             "value": "Les fichiers d'Image Disque de développeur nécessaires ont l'activation du JIT sont introuvables. \n\nLe JIT a été désactivé. Veuillez quitter Reynard en utilisant le bouton ci-dessous, puis réactivez le JIT depuis les paramètres du navigateur."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JITを有効する為に必要なデベロッパーディスクイメージが見つかりませんでした。\n\nJITは無効化されました。一度アプリを閉じてからブラウザの設定からもう一度有効化してください"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -9989,6 +12881,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cette extension"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このアドオン"
           }
         },
         "ru": {
@@ -10019,6 +12917,12 @@
             "value": "Cette extension n'a pas pu être mise à jour."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このアドオンをアップデートできませんでした。"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10045,6 +12949,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cette extension ne requiert pas de permissions."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このアドオンは権限を必要としていません"
           }
         },
         "ru": {
@@ -10075,6 +12985,12 @@
             "value": "Cette extension n'est pas prise en charge par cette version de Reynard et a été désactivée."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このアドオンは現在使用中のReynardのバージョンは対応していませんので無効化されました"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10103,6 +13019,12 @@
             "value": "Ce build ne prend pas en charge les mises à jour dans l'application. Veuillez visites l'onglet Releases du projet pour télécharger la dernière version."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このビルドはアプリ内更新に対応していません。プロジェクトのリリースページを訪れてアプリの最新版を入手してください。"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10129,6 +13051,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ceci effacera les données de navigation sélectionnées. Cette action ne pourra pas être annulée."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択されたブラウジングデータは削除されます。この作業は取り消せません。"
           }
         },
         "ru": {
@@ -10179,6 +13107,18 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Cela fermera les onglets %d"
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%d項目のタブが閉ざされます"
                 }
               }
             }
@@ -10242,6 +13182,12 @@
             "value": "Ceci réinitialisera les permissions pour tous les sites Web. Cette action ne pourra pas être annulée."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全てのサイトに権限がリセットされます。この作業は取り消せません。"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10268,6 +13214,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ceci réinitialisera les paramètres pour ce site Web. Cette action ne pourra pas être annulée."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このサイトに関する設定がリセットされます。この作業は取り消せません。"
           }
         },
         "ru": {
@@ -10298,6 +13250,12 @@
             "value": "Titre"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タイトル"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10326,6 +13284,12 @@
             "value": "Aujourd’hui"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本日"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10352,6 +13316,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aujourd’hui et Hier"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本日と昨日"
           }
         },
         "ru": {
@@ -10383,6 +13353,12 @@
             "value": "Haut"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "トップ"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10409,6 +13385,12 @@
           "stringUnit": {
             "state": "needs_review",
             "value": ""
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "トラッキング防止\n"
           }
         },
         "ru": {
@@ -10439,6 +13421,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "トラッキング防止機能を有効にすることをお勧めします。"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10465,6 +13453,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Impossible d'accéder au répertoire de support d'application pour l'app"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリケーションの Application Support ディレクトリにアクセスできません。"
           }
         },
         "ru": {
@@ -10495,6 +13489,12 @@
             "value": "Erreur inconnue."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不明なエラー"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10521,6 +13521,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Taille inconnue"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不明なサイズ"
           }
         },
         "ru": {
@@ -10551,6 +13557,12 @@
             "value": "Non pris en charge"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未対応"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10577,6 +13589,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Extensions non prises en charge"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "非対応なアドオン"
           }
         },
         "ru": {
@@ -10607,6 +13625,12 @@
             "value": "Sans titre"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無題"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10633,6 +13657,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mettre à jour les permissions d'extension"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンの権限を更新"
           }
         },
         "ru": {
@@ -10663,6 +13693,12 @@
             "value": "Mettre à jour toutes les extensions"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全てのアドオンを更新"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10689,6 +13725,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mise à jour disponible"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップデートが利用可能です"
           }
         },
         "ru": {
@@ -10719,6 +13761,12 @@
             "value": "Échec de mise à jour"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新に失敗"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10745,6 +13793,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mettre à jour maintenant"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今すぐ更新"
           }
         },
         "ru": {
@@ -10775,6 +13829,12 @@
             "value": "Mise à jour indisponible"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "利用可能な更新がありません"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10801,6 +13861,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mis à jour"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新済み"
           }
         },
         "ru": {
@@ -10831,6 +13897,12 @@
             "value": "Mise à jour des extensions…"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アドオンを更新中"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10857,6 +13929,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mise à jour en cours…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新中"
           }
         },
         "ru": {
@@ -10887,6 +13965,12 @@
             "value": "Téléverser"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップロード"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10910,6 +13994,12 @@
           }
         },
         "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
+          }
+        },
+        "ja": {
           "stringUnit": {
             "state": "translated",
             "value": "URL"
@@ -10944,6 +14034,12 @@
             "value": "Utiliser %%s comme termes de recherche, par exemple : example.com/search?q=%%s"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\nexample.com/search?q=%%s のように、検索語句には %%s を使用してください。"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10970,6 +14066,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Utiliser un User Agent de compatibilité"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "互換性が増えるUser Agentを使用"
           }
         },
         "ru": {
@@ -11001,6 +14103,12 @@
             "value": "Utilisez l'User Agent %@ sur tous les sites Web pour améliorer la compatibilité"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@のUser Agentを使用して最大の互換性を入手する"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -11027,6 +14135,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "User Agents forcés"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User Agentの上書き設定"
           }
         },
         "ru": {
@@ -11057,6 +14171,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ユーザー名"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -11083,6 +14203,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Version"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "バージョン"
           }
         },
         "ru": {
@@ -11114,6 +14240,12 @@
             "value": "Version %@"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ バージョン"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -11142,6 +14274,12 @@
             "value": "Lire le code source"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ソースコードを表示"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -11163,6 +14301,30 @@
             "state": "translated",
             "value": "Wallpaper"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fond d'écran"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主页壁纸"
+          }
         }
       }
     },
@@ -11178,6 +14340,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Langue du Site Web"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ウェブサイト言語"
           }
         },
         "ru": {
@@ -11208,6 +14376,12 @@
             "value": "Permissions du Site Web"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ウェブサイト権限"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -11234,6 +14408,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Paramètres du Site Web"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ウェブサイト設定"
           }
         },
         "ru": {
@@ -11264,6 +14444,12 @@
             "value": "Sites web"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ウェブサイト"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -11290,6 +14476,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sites Web avec des paramètres personnalisés"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カスタム設定適応済みのウェブサイト"
           }
         },
         "ru": {
@@ -11321,6 +14513,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@防止がブロックするもの"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -11347,6 +14545,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "A la fin du téléchargement, veuillez choisir l'application avec laquelle vous avez installé Reynard depuis la fiche de partage afin de terminer la mise à jour."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロードが完了したら、共有画面でReynardのサイドロードに使用したアプリを選択してアップデートをインストールしてください。"
           }
         },
         "ru": {
@@ -11377,6 +14581,12 @@
             "value": "Oui"
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "はい"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -11403,6 +14613,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hier"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "昨日"
           }
         },
         "ru": {
@@ -11434,6 +14650,12 @@
             "value": "Si la raison pour laquelle %@ a besoin de cette permission n'est pas claire, vous pouvez y bloquer l'accès."
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@がこのデータをどのような用途で使用するか不明な場合アクセスをブロックすることをおすすめします"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -11460,6 +14682,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Votre historique de navigation apparaît ici"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "履歴はここに表示されます"
           }
         },
         "ru": {
@@ -11490,6 +14718,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログイン情報は安全に送信されます。\n"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -11518,6 +14752,12 @@
             "value": ""
           }
         },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログイン情報は安全に送信されません。\n"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -11539,6 +14779,30 @@
             "state": "translated",
             "value": "Zoom In"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoomer"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
         }
       }
     },
@@ -11554,6 +14818,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Niveau de Zoom"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ズーム率"
           }
         },
         "ru": {
@@ -11576,6 +14846,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zoom Out"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dézoomer"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": ""
           }
         }
       }

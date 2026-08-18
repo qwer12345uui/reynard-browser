@@ -87,6 +87,7 @@ final class FilePicker: NSObject {
     var anchorButton: FilePickerMenuAnchorButton?
     weak var presentedController: UIViewController?
     var launchedFollowupPicker = false
+    var isCompletingPicker = false
     
     // MARK: - Lifecycle
     
@@ -157,6 +158,20 @@ final class FilePicker: NSObject {
         guard let continuation else { return }
         self.continuation = nil
         continuation.resume(returning: result)
+    }
+    
+    func dismissPicker(
+        _ controller: UIViewController,
+        completion: @escaping @MainActor (FilePicker) async -> Void
+    ) {
+        isCompletingPicker = true
+        controller.dismiss(animated: true) { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.presentedController = nil
+                await completion(self)
+            }
+        }
     }
     
     // MARK: - Helpers
