@@ -62,7 +62,7 @@ index b83896074f5a..092e7ff6caee 100644
    if (aCallerType != CallerType::System) {
      // If fingerprinting resistance is on, we will spoof this value. See
      // nsRFPService.h for details about spoofed values.
-@@ -2027,6 +2066,18 @@ void Navigator::ClearPlatformCache() {
+@@ -2027,6 +2066,14 @@ void Navigator::ClearPlatformCache() {
    Navigator_Binding::ClearCachedPlatformValue(this);
  }
  
@@ -72,10 +72,6 @@ index b83896074f5a..092e7ff6caee 100644
 +
 +void Navigator::ClearOscpuCache() {
 +  Navigator_Binding::ClearCachedOscpuValue(this);
-+}
-+
-+void Navigator::ClearBuildIDCache() {
-+  Navigator_Binding::ClearCachedBuildIDValue(this);
 +}
 +
  void Navigator::ClearLanguageCache() {
