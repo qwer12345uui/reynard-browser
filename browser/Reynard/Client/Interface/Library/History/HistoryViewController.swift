@@ -462,6 +462,7 @@ final class HistoryViewController: UIViewController, UITableViewDataSource, UITa
         }
         
         browserViewController.loadViewIfNeeded()
+        browserViewController.exitFullscreenIfNeeded()
         browserViewController.tabManager.browse(to: item.url.absoluteString)
         
         if navigationController?.presentingViewController is BrowserViewController {

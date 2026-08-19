@@ -78,6 +78,29 @@ extension AddonRuntime {
             return nil
         case .newTab:
             return try await handleNewTab(message: message)
+        case .download:
+            guard let extensionID = message?["extensionId"] as? String,
+                  let addon = try await addon(byID: extensionID),
+                  let options = message?["options"] as? [String: Any?],
+                  let downloadResponse = await delegate?.addonController(
+                      self,
+                      didRequestDownload: options,
+                      for: addon
+                  ) else {
+                throw GeckoHandlerError("downloads.download is not supported")
+            }
+            return downloadResponse
+        case .downloadComplete:
+            guard let localFilePath = message?["localFilePath"] as? String else {
+                throw GeckoHandlerError("Invalid WebExtension download completion")
+            }
+            let succeeded = message?["succeeded"] as? Bool ?? false
+            delegate?.addonController(
+                self,
+                didCompleteDownloadAt: localFilePath,
+                succeeded: succeeded
+            )
+            return nil
         case .installPrompt:
             return try await installPromptResponse(message: message)
         case .optionalPrompt:

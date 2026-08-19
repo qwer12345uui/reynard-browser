@@ -24,16 +24,16 @@ class GeckoRuntimeImpl: NSObject, SwiftGeckoViewRuntime {
     func runtimeDispatcher() -> any SwiftEventDispatcher {
         return GeckoEventDispatcherWrapper.runtimeInstance
     }
-    
+
     func dispatcher(byName name: UnsafePointer<CChar>!) -> any SwiftEventDispatcher {
         return GeckoEventDispatcherWrapper.lookup(byName: String(cString: name))
     }
-    
+
     @objc(childProcessDidStartWithPID:processType:)
     func childProcessDidStart(withPID pid: Int32, processType: String) {
         // Update jetsam limit for the child process
         updateJetsamControl(pid)
-        
+
         NotificationCenter.default.post(
             name: Notification.Name("GeckoRuntime.ChildProcessDidStart"),
             object: nil,
@@ -43,7 +43,7 @@ class GeckoRuntimeImpl: NSObject, SwiftGeckoViewRuntime {
             ]
         )
     }
-    
+
     func lockScreenOrientation(
         _ orientationMask: UInt,
         completion: @escaping (GeckoOrientationLockResult) -> Void
@@ -60,7 +60,7 @@ class GeckoRuntimeImpl: NSObject, SwiftGeckoViewRuntime {
             )
         }
     }
-    
+
     func unlockScreenOrientation() {
         DispatchQueue.main.async {
             GeckoRuntime.orientationController.delegate?.unlockScreenOrientation()
@@ -71,11 +71,11 @@ class GeckoRuntimeImpl: NSObject, SwiftGeckoViewRuntime {
 public class GeckoRuntime {
     static let runtime = GeckoRuntimeImpl()
     public static let orientationController = GeckoScreenOrientationController()
-    
+
     public static var version: String {
         return GeckoRuntimeBridge.version()
     }
-    
+
     public static func setLocale(acceptLanguages: String) {
         GeckoEventDispatcherWrapper.runtimeInstance.dispatch(
             type: "GeckoView:SetLocale",
@@ -84,21 +84,28 @@ public class GeckoRuntime {
             ]
         )
     }
-    
+
     public static func setDefaultPrefs(_ preferences: [String: Any]) {
         GeckoEventDispatcherWrapper.runtimeInstance.dispatch(
             type: "GeckoView:SetDefaultPrefs",
             message: preferences
         )
     }
-    
+
+    public static func dispatchEvent(type: String, message: [String: Any?]? = nil) {
+        GeckoEventDispatcherWrapper.runtimeInstance.dispatch(
+            type: type,
+            message: message
+        )
+    }
+
     public static func main(
         argc: Int32,
         argv: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>
     ) {
         MainProcessInit(argc, argv, runtime)
     }
-    
+
     public static func childMain(
         xpcConnection: xpc_connection_t,
         process: GeckoProcessExtension

@@ -24,7 +24,7 @@ extension TabManager {
             isPrivate: mode == .private
         )
     }
-    
+
     @discardableResult
     func createRegularTab(
         selecting: Bool,
@@ -42,7 +42,7 @@ extension TabManager {
         guard regularTabs.indices.contains(tabIndex) else {
             return nil
         }
-        
+
         let tab = regularTabs[tabIndex]
         if let url = url?.trimmingCharacters(in: .whitespacesAndNewlines),
            !url.isEmpty {
@@ -50,26 +50,34 @@ extension TabManager {
         }
         return tab
     }
-    
+
     @discardableResult
     func openExternalURL(_ url: URL) -> Tab? {
         let tab = tabForExternalLoad()
         browse(to: url.absoluteString, in: tab)
         return tab
     }
-    
+
     func reloadOrStopSelectedTab() {
         guard let selectedTab else {
             return
         }
-        
+
         selectedTab.state.loadingState.isLoading ? selectedTab.session.stop() : selectedTab.session.reload()
     }
-    
+
+    func hardReloadSelectedTab() {
+        guard let selectedTab else {
+            return
+        }
+
+        selectedTab.session.reload(flags: GeckoSessionLoadFlags.bypassCache)
+    }
+
     var activeTabs: [Tab] {
         return selectedTabMode == .private ? privateTabs : regularTabs
     }
-    
+
     func index(for target: TabInsertionTarget, mode: TabMode) -> Int? {
         let tabs = mode == .private ? privateTabs : regularTabs
         switch target {
@@ -85,24 +93,24 @@ extension TabManager {
             return index
         }
     }
-    
+
     private func tabForExternalLoad() -> Tab {
         if let selectedTab,
            selectedTab.isPrivate == (selectedTabMode == .private),
            isBlankTab(selectedTab) {
             return selectedTab
         }
-        
+
         let tabIndex = createTab(selecting: true)
         return activeTabs[tabIndex]
     }
-    
+
     private func isBlankTab(_ tab: Tab) -> Bool {
         guard let url = tab.url?.trimmingCharacters(in: .whitespacesAndNewlines),
               !url.isEmpty else {
             return true
         }
-        
+
         return url.lowercased().hasPrefix("about:blank")
     }
 }
@@ -118,7 +126,7 @@ extension TabManagerImplementation {
               ) else {
             return false
         }
-        
+
         switch navigationAction {
         case .reload:
             sessionManager.updateSettings(of: tab.session, for: url, tabID: tab.id)

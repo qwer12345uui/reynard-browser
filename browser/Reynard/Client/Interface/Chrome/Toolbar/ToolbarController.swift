@@ -200,6 +200,9 @@ final class ToolbarController {
     // MARK: - Snapping
     
     private func scheduleSnap() {
+        guard chromeMode == .phone else {
+            return
+        }
         let snap = DispatchWorkItem { [weak self] in
             self?.beginSnap()
         }

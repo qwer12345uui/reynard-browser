@@ -771,6 +771,7 @@ final class BookmarksViewController: UIViewController, UITableViewDataSource, UI
         }
         
         browserViewController.loadViewIfNeeded()
+        browserViewController.exitFullscreenIfNeeded()
         browserViewController.tabManager.browse(to: bookmark.url.absoluteString)
         
         if navigationController?.presentingViewController is BrowserViewController {

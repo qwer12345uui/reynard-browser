@@ -43,8 +43,12 @@ private final class TabBarCollectionLayout: UICollectionViewFlowLayout {
     
     override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
         var attributes = super.layoutAttributesForElements(in: rect) ?? []
-        guard let tabCount = tabBar?.dataSource?.tabs.count,
-              tabCount > 1 else {
+        guard let collectionView,
+              let dataSourceTabCount = tabBar?.dataSource?.tabs.count else {
+            return attributes
+        }
+        let tabCount = min(collectionView.numberOfItems(inSection: 0), dataSourceTabCount)
+        guard tabCount > 1 else {
             return attributes
         }
         
@@ -73,9 +77,13 @@ private final class TabBarCollectionLayout: UICollectionViewFlowLayout {
     }
     
     private func showsSeparator(after index: Int) -> Bool {
-        guard let tabBar,
-              let tabCount = tabBar.dataSource?.tabs.count,
-              tabCount > 1,
+        guard let collectionView,
+              let tabBar,
+              let dataSourceTabCount = tabBar.dataSource?.tabs.count else {
+            return false
+        }
+        let tabCount = min(collectionView.numberOfItems(inSection: 0), dataSourceTabCount)
+        guard tabCount > 1,
               index >= 0,
               index < tabCount - 1 else {
             return false
