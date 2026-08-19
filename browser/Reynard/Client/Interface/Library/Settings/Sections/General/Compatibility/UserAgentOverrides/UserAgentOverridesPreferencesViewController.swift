@@ -54,7 +54,7 @@ final class UserAgentOverridesPreferencesViewController: SettingsTableViewContro
             return UITableViewCell()
         }
         
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         switch displayedRows[indexPath.row] {
         case .domain(let domain):
             cell.textLabel?.text = domain

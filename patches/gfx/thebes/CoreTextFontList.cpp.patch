@@ -1,8 +1,8 @@
 diff --git a/gfx/thebes/CoreTextFontList.cpp b/gfx/thebes/CoreTextFontList.cpp
-index e2a4ed57c87d..e24e720c5ff0 100644
+index 459abdb76f37..582d68d36c4f 100644
 --- a/gfx/thebes/CoreTextFontList.cpp
 +++ b/gfx/thebes/CoreTextFontList.cpp
-@@ -354,6 +354,12 @@ nsresult CTFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
+@@ -352,6 +352,12 @@ nsresult CTFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
      // if error occurred, initialize to null cmap
      charmap = new gfxCharacterMap(0);
      mHasCmapTable = false;
@@ -15,10 +15,10 @@ index e2a4ed57c87d..e24e720c5ff0 100644
    }
    if (setCharMap) {
      // Temporarily retain charmap, until the shared version is
-@@ -382,7 +388,13 @@ gfxFont* CTFontEntry::CreateFontInstance(const gfxFontStyle* aFontStyle) {
-     if (!baseFont) {
+@@ -385,7 +391,13 @@ gfxFont* CTFontEntry::CreateFontInstance(const gfxFontStyle* aFontStyle) {
        return nullptr;
      }
+     AutoWriteLock lock(mLock);
 -    unscaledFont = new UnscaledFontMac(baseFont, mIsDataUserFont);
 +    if (mFontDesc) {
 +      unscaledFont =
@@ -30,7 +30,7 @@ index e2a4ed57c87d..e24e720c5ff0 100644
      mUnscaledFont = unscaledFont;
    }
  
-@@ -441,6 +453,32 @@ CTFontEntry::CTFontEntry(const nsACString& aPostscriptName, WeightRange aWeight,
+@@ -444,6 +456,32 @@ CTFontEntry::CTFontEntry(const nsACString& aPostscriptName, WeightRange aWeight,
    mOpszAxis.mTag = 0;
  }
  
@@ -63,7 +63,7 @@ index e2a4ed57c87d..e24e720c5ff0 100644
  CTFontEntry::CTFontEntry(const nsACString& aPostscriptName, CGFontRef aFontRef,
                           WeightRange aWeight, StretchRange aStretch,
                           SlantStyleRange aStyle, bool aIsDataUserFont,
-@@ -478,9 +516,26 @@ gfxFontEntry* CTFontEntry::Clone() const {
+@@ -481,9 +519,26 @@ gfxFontEntry* CTFontEntry::Clone() const {
    fe->mStyleRange = mStyleRange;
    fe->mStretchRange = mStretchRange;
    fe->mFixedPitch = mFixedPitch;
@@ -90,7 +90,7 @@ index e2a4ed57c87d..e24e720c5ff0 100644
  CGFontRef CTFontEntry::GetFontRef() {
    {
      AutoReadLock lock(mLock);
-@@ -916,7 +971,7 @@ void CTFontFamily::FindStyleVariationsLocked(FontInfoData* aFontInfoData) {
+@@ -919,7 +974,7 @@ void CTFontFamily::FindStyleVariationsLocked(FontInfoData* aFontInfoData) {
    AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING("CTFontFamily::FindStyleVariations",
                                          LAYOUT, mName);
  
@@ -99,7 +99,7 @@ index e2a4ed57c87d..e24e720c5ff0 100644
      MOZ_ASSERT(gfxPlatform::HasVariationFontSupport());
  
      auto addToFamily = [&](CTFontRef aFont) MOZ_REQUIRES(mLock) {
-@@ -926,8 +981,14 @@ void CTFontFamily::FindStyleVariationsLocked(FontInfoData* aFontInfoData) {
+@@ -929,8 +984,14 @@ void CTFontFamily::FindStyleVariationsLocked(FontInfoData* aFontInfoData) {
        GetStringForCFString(psName, nameUTF16);
        CopyUTF16toUTF8(nameUTF16, nameUTF8);
  
@@ -114,7 +114,7 @@ index e2a4ed57c87d..e24e720c5ff0 100644
  
        // Set the appropriate style, assuming it may not have a variation range.
        CTFontSymbolicTraits traits = CTFontGetSymbolicTraits(aFont);
-@@ -940,17 +1001,18 @@ void CTFontFamily::FindStyleVariationsLocked(FontInfoData* aFontInfoData) {
+@@ -943,17 +1004,18 @@ void CTFontFamily::FindStyleVariationsLocked(FontInfoData* aFontInfoData) {
        AddFontEntryLocked(fe);
      };
  
@@ -141,7 +141,7 @@ index e2a4ed57c87d..e24e720c5ff0 100644
  
      SetHasStyles(true);
  
-@@ -1340,7 +1402,6 @@ gfxFontEntry* CoreTextFontList::PlatformGlobalFontFallback(
+@@ -1343,7 +1405,6 @@ gfxFontEntry* CoreTextFontList::PlatformGlobalFontFallback(
    // use CoreText to find the fallback family
  
    gfxFontEntry* fontEntry = nullptr;
@@ -149,7 +149,7 @@ index e2a4ed57c87d..e24e720c5ff0 100644
  
    if (!mDefaultFont) {
      mDefaultFont = CTFontCreateWithName(CFSTR("LucidaGrande"), 12.f, nullptr);
-@@ -1380,7 +1441,6 @@ gfxFontEntry* CoreTextFontList::PlatformGlobalFontFallback(
+@@ -1383,7 +1444,6 @@ gfxFontEntry* CoreTextFontList::PlatformGlobalFontFallback(
                aMatchedFamily = FontFamily(family);
              } else {
                fontEntry = nullptr;
@@ -157,7 +157,7 @@ index e2a4ed57c87d..e24e720c5ff0 100644
              }
            }
          }
-@@ -1398,19 +1458,66 @@ gfxFontEntry* CoreTextFontList::PlatformGlobalFontFallback(
+@@ -1401,19 +1461,66 @@ gfxFontEntry* CoreTextFontList::PlatformGlobalFontFallback(
                aMatchedFamily = FontFamily(family);
              } else {
                fontEntry = nullptr;
@@ -230,7 +230,7 @@ index e2a4ed57c87d..e24e720c5ff0 100644
    }
  
    CFRelease(str);
-@@ -1540,9 +1647,6 @@ bool CoreTextFontList::FindAndAddFamiliesLocked(
+@@ -1543,9 +1650,6 @@ bool CoreTextFontList::FindAndAddFamiliesLocked(
      nsTArray<FamilyAndGeneric>* aOutput, FindFamiliesFlags aFlags,
      gfxFontStyle* aStyle, nsAtom* aLanguage, gfxFloat aDevToCssSize) {
    if (aFamily.EqualsLiteral(kSystemFont_system)) {
@@ -240,7 +240,7 @@ index e2a4ed57c87d..e24e720c5ff0 100644
      if (auto* fam = FindSystemFontFamily(mSystemFontFamilyName)) {
        aOutput->AppendElement(fam);
        return true;
-@@ -1900,7 +2004,9 @@ void CoreTextFontList::InitSystemFontNames() {
+@@ -1903,7 +2007,9 @@ void CoreTextFontList::InitSystemFontNames() {
    // shared fontlist to manage "normal" fonts, because the hidden system fonts
    // may be excluded from the font list altogether. This family will be
    // populated based on the given NSFont.
@@ -251,7 +251,7 @@ index e2a4ed57c87d..e24e720c5ff0 100644
    if (fam) {
      nsAutoCString key;
      GenerateFontListKey(mSystemFontFamilyName, key);
-@@ -1911,14 +2017,10 @@ void CoreTextFontList::InitSystemFontNames() {
+@@ -1914,14 +2020,10 @@ void CoreTextFontList::InitSystemFontNames() {
  FontFamily CoreTextFontList::GetDefaultFontForPlatform(
      FontVisibilityProvider* aFontVisibilityProvider, const gfxFontStyle* aStyle,
      nsAtom* aLanguage) {

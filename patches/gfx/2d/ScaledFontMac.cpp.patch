@@ -1,8 +1,8 @@
 diff --git a/gfx/2d/ScaledFontMac.cpp b/gfx/2d/ScaledFontMac.cpp
-index a3fba650eb8d..55a4f4aa835e 100644
+index 1e440d7352fe..a85ffb67fd56 100644
 --- a/gfx/2d/ScaledFontMac.cpp
 +++ b/gfx/2d/ScaledFontMac.cpp
-@@ -780,9 +780,58 @@ cairo_font_face_t* ScaledFontMac::CreateCairoFontFace(
+@@ -783,9 +783,58 @@ cairo_font_face_t* ScaledFontMac::CreateCairoFontFace(
    return cairo_quartz_font_face_create_for_cgfont(mFont);
  }
  
@@ -63,7 +63,7 @@ index a3fba650eb8d..55a4f4aa835e 100644
      gfxWarning() << "Mac font descriptor is truncated.";
      return nullptr;
    }
-@@ -792,8 +841,14 @@ already_AddRefed<UnscaledFont> UnscaledFontMac::CreateFromFontDescriptor(
+@@ -795,8 +844,14 @@ already_AddRefed<UnscaledFont> UnscaledFontMac::CreateFromFontDescriptor(
    if (!name) {
      return nullptr;
    }
@@ -79,7 +79,7 @@ index a3fba650eb8d..55a4f4aa835e 100644
      return nullptr;
    }
  
-@@ -803,20 +858,40 @@ already_AddRefed<UnscaledFont> UnscaledFontMac::CreateFromFontDescriptor(
+@@ -806,20 +861,40 @@ already_AddRefed<UnscaledFont> UnscaledFontMac::CreateFromFontDescriptor(
      AutoRelease<CFStringRef> path(CFStringCreateWithBytes(
          kCFAllocatorDefault, (const UInt8*)aData + aIndex, aDataLength - aIndex,
          kCFStringEncodingUTF8, false));

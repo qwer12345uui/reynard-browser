@@ -187,6 +187,7 @@ final class ToolbarController {
     
     private func handleScroll(delta: CGFloat) {
         guard Prefs.BrowsingSettings.hidesChromeOnScroll,
+              Prefs.AppearanceSettings.scrollToHideToolbarEnabled,
               maxToolbarOffset > 0,
               lockReasons.isEmpty else {
             return

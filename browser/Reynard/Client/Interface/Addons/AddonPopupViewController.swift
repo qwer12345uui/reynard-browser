@@ -16,8 +16,7 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
     
     private enum UX {
         static let mediumHeightMultiplier: CGFloat = 0.7
-        static let popoverWidth: CGFloat = 300
-        static let popoverMaximumHeight: CGFloat = 500
+        static let popoverMaximumWidth: CGFloat = 430
         static let sheetCornerRadius: CGFloat = 16
         static let closeButtonTopInset: CGFloat = 8
         static let closeButtonTrailingInset: CGFloat = 12
@@ -74,10 +73,6 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
         super.init(nibName: nil, bundle: nil)
         if case .popover = presentation {
             modalPresentationStyle = .popover
-            preferredContentSize = CGSize(
-                width: UX.popoverWidth,
-                height: UX.popoverMaximumHeight
-            )
         }
         configureSession()
     }
@@ -94,6 +89,11 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
         super.viewDidLoad()
         configureView()
         loadPopup()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updatePopoverContentSize()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -163,6 +163,24 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
             geckoView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             geckoView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+    }
+    
+    private func updatePopoverContentSize() {
+        guard case .popover = presentation,
+              let presentingView = presentingViewController?.view else {
+            return
+        }
+        
+        let isCompact = traitCollection.horizontalSizeClass == .compact
+        && traitCollection.verticalSizeClass == .compact
+        let height = isCompact
+        ? presentingView.bounds.height
+        : presentingView.bounds.height * UX.mediumHeightMultiplier
+        
+        preferredContentSize = CGSize(
+            width: min(UX.popoverMaximumWidth, presentingView.bounds.width),
+            height: height
+        )
     }
     
     private func loadPopup() {

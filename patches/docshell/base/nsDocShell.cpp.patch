@@ -1,5 +1,5 @@
 diff --git a/docshell/base/nsDocShell.cpp b/docshell/base/nsDocShell.cpp
-index 723b4c0a54a8..7d44b20237af 100644
+index adeae302088a..0077db877ef7 100644
 --- a/docshell/base/nsDocShell.cpp
 +++ b/docshell/base/nsDocShell.cpp
 @@ -2335,6 +2335,34 @@ nsDocShell::ClearCachedUserAgent() {
@@ -37,7 +37,7 @@ index 723b4c0a54a8..7d44b20237af 100644
  /* virtual */
  int32_t nsDocShell::ItemType() { return mItemType; }
  
-@@ -5629,24 +5671,36 @@ nsDocShell::OnLocationChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
+@@ -5638,24 +5680,36 @@ nsDocShell::OnLocationChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
    return NS_OK;
  }
  
@@ -80,7 +80,7 @@ index 723b4c0a54a8..7d44b20237af 100644
    // DocumentChannel adds redirect chain to global history in the parent
    // process. The redirect chain can't be queried from the content process, so
    // there's no need to update global history here.
-@@ -5694,6 +5748,8 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
+@@ -5703,6 +5757,8 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
        mLoadType & (LOAD_CMD_RELOAD | LOAD_CMD_HISTORY)) {
      mLoadType = LOAD_NORMAL_REPLACE;
    }
@@ -89,7 +89,7 @@ index 723b4c0a54a8..7d44b20237af 100644
  }
  
  NS_IMETHODIMP
-@@ -8452,6 +8508,41 @@ static void MaybeConvertToReplaceLoad(nsDocShellLoadState* aLoadState,
+@@ -8488,6 +8544,41 @@ static void MaybeConvertToReplaceLoad(nsDocShellLoadState* aLoadState,
    }
  }
  
@@ -131,7 +131,7 @@ index 723b4c0a54a8..7d44b20237af 100644
  // InternalLoad performs several of the steps from
  // https://html.spec.whatwg.org/#navigate.
  nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
-@@ -8505,6 +8596,15 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
+@@ -8541,6 +8632,15 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
  
    MOZ_TRY(CheckDisallowedJavascriptLoad(aLoadState));
  
@@ -147,7 +147,7 @@ index 723b4c0a54a8..7d44b20237af 100644
    // If we don't have a target, we're loading into ourselves, and our load
    // delegate may want to intercept that load.
    SameDocumentNavigationState sameDocumentNavigationState;
-@@ -12083,6 +12183,15 @@ nsresult nsDocShell::OnLinkClick(
+@@ -12210,6 +12310,15 @@ nsresult nsDocShell::OnLinkClick(
  
    bool noOpenerImplied = false;
    nsAutoString target(aTargetSpec);

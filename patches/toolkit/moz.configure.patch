@@ -1,5 +1,5 @@
 diff --git a/toolkit/moz.configure b/toolkit/moz.configure
-index 593f8b9b9cfc..070f84e006ac 100644
+index 07c1fe054dcd..bf1a84119c1f 100644
 --- a/toolkit/moz.configure
 +++ b/toolkit/moz.configure
 @@ -2828,7 +2828,7 @@ def wasm_sandboxing_libraries():

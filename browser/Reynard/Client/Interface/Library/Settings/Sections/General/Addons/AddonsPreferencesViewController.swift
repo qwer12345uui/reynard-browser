@@ -148,7 +148,7 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
         switch displayedSections[indexPath.section] {
         case .installed:
             if installedAddons.isEmpty {
-                let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+                let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
                 cell.selectionStyle = .none
                 cell.textLabel?.text = isLoadingAddons ? NSLocalizedString("Loading Add-ons…", comment: "") : NSLocalizedString("No Add-ons Installed", comment: "")
                 cell.textLabel?.textColor = .secondaryLabel
@@ -161,7 +161,7 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
             
             let addon = installedAddons[indexPath.row]
             let statusText = statusText(for: addon)
-            let cell = UITableViewCell(style: statusText == nil ? .default : .subtitle, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: statusText == nil ? .default : .subtitle, reuseIdentifier: nil)
             cell.textLabel?.text = addon.metaData.name ?? addon.id
             cell.detailTextLabel?.text = statusText
             cell.detailTextLabel?.textColor = .secondaryLabel
@@ -177,7 +177,7 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
             
             let addon = unsupportedAddons[indexPath.row]
             let statusText = statusText(for: addon) ?? NSLocalizedString("Unsupported", comment: "")
-            let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .subtitle, reuseIdentifier: nil)
             cell.textLabel?.text = addon.metaData.name ?? addon.id
             cell.detailTextLabel?.text = statusText
             cell.detailTextLabel?.textColor = .secondaryLabel
@@ -190,7 +190,7 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
             guard displayedMoreRows.indices.contains(indexPath.row) else {
                 return UITableViewCell()
             }
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             switch displayedMoreRows[indexPath.row] {
             case .discover:
                 cell.textLabel?.text = NSLocalizedString("Discover Add-ons…", comment: "")

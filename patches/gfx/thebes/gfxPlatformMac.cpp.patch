@@ -1,17 +1,17 @@
 diff --git a/gfx/thebes/gfxPlatformMac.cpp b/gfx/thebes/gfxPlatformMac.cpp
-index 12d8567ec85a..c4d8234ded39 100644
+index 61fb01d3dc7c..69bf918edcbb 100644
 --- a/gfx/thebes/gfxPlatformMac.cpp
 +++ b/gfx/thebes/gfxPlatformMac.cpp
-@@ -22,6 +22,8 @@
+@@ -20,6 +20,8 @@
  #ifdef MOZ_WIDGET_COCOA
  #  include "mozilla/MacAutoreleasePool.h"
  #  include "nsCocoaFeatures.h"
 +#else
 +#  include "gfxUIKitVsyncSource.h"
  #endif
- #include "nsComponentManagerUtils.h"
- #include "nsIFile.h"
-@@ -1036,8 +1038,22 @@ gfxPlatformMac::CreateGlobalHardwareVsyncSource() {
+ #include "GeckoProfiler.h"
+ #include "gfx2DGlue.h"
+@@ -1034,8 +1036,22 @@ gfxPlatformMac::CreateGlobalHardwareVsyncSource() {
    osxVsyncSource->DisableVsync();
    return osxVsyncSource.forget();
  #else

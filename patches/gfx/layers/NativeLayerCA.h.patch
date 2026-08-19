@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/NativeLayerCA.h b/gfx/layers/NativeLayerCA.h
-index 4714b8a15791..03bce06ba608 100644
+index 950eb291b72e..c5ddccbdaf86 100644
 --- a/gfx/layers/NativeLayerCA.h
 +++ b/gfx/layers/NativeLayerCA.h
 @@ -7,6 +7,7 @@

@@ -60,7 +60,7 @@ final class HTTPSOnlyModePreferencesViewController: SettingsTableViewController 
         
         switch displayedRows[indexPath.row] {
         case .enabled:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = NSLocalizedString("HTTPS-Only Mode", tableName: "SettingsLocalizable", comment: "")
             cell.accessoryView = httpsOnlyModeSwitch
             cell.selectionStyle = .none
@@ -95,7 +95,7 @@ final class HTTPSOnlyModePreferencesViewController: SettingsTableViewController 
     }
     
     private func scopeCell(title: String, scope: HTTPSOnlyModeScope) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         cell.textLabel?.text = title
         cell.indentationLevel = UX.optionIndentationLevel
         cell.accessoryType = Prefs.HTTPSOnlyModePreferences.scope == scope ? .checkmark : .none

@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/wr/IpcResourceUpdateQueue.h b/gfx/layers/wr/IpcResourceUpdateQueue.h
-index 0321c85e59f7..09a0fd595a3f 100644
+index 9b8ec0ce4338..1d89d0b5cb93 100644
 --- a/gfx/layers/wr/IpcResourceUpdateQueue.h
 +++ b/gfx/layers/wr/IpcResourceUpdateQueue.h
 @@ -161,7 +161,8 @@ class IpcResourceUpdateQueue {

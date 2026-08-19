@@ -14,6 +14,7 @@ extension Notification.Name {
     static let bottomToolbarPreferencesDidChange = Notification.Name("Chrome.BottomToolbarPreferencesDidChange")
     static let browserFeaturePreferencesDidChange = Notification.Name("Browser.FeaturePreferencesDidChange")
     static let browsingPreferencesDidChange = Notification.Name("Browsing.PreferencesDidChange")
+    static let appearanceGestureSettingsDidChange = Notification.Name("Appearance.GestureSettingsDidChange")
     static let newTabDisplayOptionDidChange = Notification.Name("Browsing.NewTabDisplayOptionDidChange")
     static let homepageSettingsDidChange = Notification.Name("Homepage.SettingsDidChange")
     static let appUpdateAvailable = Notification.Name("Settings.AppUpdateAvailable")

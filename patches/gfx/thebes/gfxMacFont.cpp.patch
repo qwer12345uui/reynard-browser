@@ -1,8 +1,8 @@
 diff --git a/gfx/thebes/gfxMacFont.cpp b/gfx/thebes/gfxMacFont.cpp
-index 005688e3db92..53476d1724d5 100644
+index 3fc42a27d586..197979b45998 100644
 --- a/gfx/thebes/gfxMacFont.cpp
 +++ b/gfx/thebes/gfxMacFont.cpp
-@@ -26,6 +26,14 @@
+@@ -25,6 +25,14 @@
  using namespace mozilla;
  using namespace mozilla::gfx;
  

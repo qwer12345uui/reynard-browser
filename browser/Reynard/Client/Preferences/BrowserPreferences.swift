@@ -187,6 +187,10 @@ final class BrowserPreferences {
             key("AppearanceSettings", "addressBarPosition"): BrowserChromePosition.bottom.rawValue,
             key("AppearanceSettings", "showsFullWebsiteAddress"): false,
             key("AppearanceSettings", "showsLandscapeTabBar"): true,
+            key("AppearanceSettings", "pullToRefreshEnabled"): true,
+            key("AppearanceSettings", "scrollToHideToolbarEnabled"): true,
+            key("AppearanceSettings", "swipeAddressBarSidewaysEnabled"): true,
+            key("AppearanceSettings", "swipeAddressBarUpEnabled"): true,
             
             // Languages
             key("LanguageSettings", "websiteLanguages"): (try? JSONEncoder().encode(WebsiteLanguageCatalog.defaultLanguageCodes())) ?? Data(),
@@ -1156,6 +1160,46 @@ final class BrowserPreferences {
             set {
                 prefs.set(newValue, forSetting: "AppearanceSettings", key: "showsFullWebsiteAddress")
                 NotificationCenter.default.post(name: .showFullWebsiteAddressDidChange, object: nil)
+            }
+        }
+        
+        static var pullToRefreshEnabled: Bool {
+            get {
+                prefs.bool(forSetting: "AppearanceSettings", key: "pullToRefreshEnabled")
+            }
+            set {
+                prefs.set(newValue, forSetting: "AppearanceSettings", key: "pullToRefreshEnabled")
+                NotificationCenter.default.post(name: .appearanceGestureSettingsDidChange, object: nil)
+            }
+        }
+        
+        static var scrollToHideToolbarEnabled: Bool {
+            get {
+                prefs.bool(forSetting: "AppearanceSettings", key: "scrollToHideToolbarEnabled")
+            }
+            set {
+                prefs.set(newValue, forSetting: "AppearanceSettings", key: "scrollToHideToolbarEnabled")
+                NotificationCenter.default.post(name: .appearanceGestureSettingsDidChange, object: nil)
+            }
+        }
+        
+        static var swipeAddressBarSidewaysEnabled: Bool {
+            get {
+                prefs.bool(forSetting: "AppearanceSettings", key: "swipeAddressBarSidewaysEnabled")
+            }
+            set {
+                prefs.set(newValue, forSetting: "AppearanceSettings", key: "swipeAddressBarSidewaysEnabled")
+                NotificationCenter.default.post(name: .appearanceGestureSettingsDidChange, object: nil)
+            }
+        }
+        
+        static var swipeAddressBarUpEnabled: Bool {
+            get {
+                prefs.bool(forSetting: "AppearanceSettings", key: "swipeAddressBarUpEnabled")
+            }
+            set {
+                prefs.set(newValue, forSetting: "AppearanceSettings", key: "swipeAddressBarUpEnabled")
+                NotificationCenter.default.post(name: .appearanceGestureSettingsDidChange, object: nil)
             }
         }
         

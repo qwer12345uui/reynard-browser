@@ -182,7 +182,7 @@ final class SitePermissionDetailsViewController: SettingsTableViewController {
     }
     
     private func defaultActionCell(for indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         guard defaultActionOptions.indices.contains(indexPath.row) else {
             return cell
         }
@@ -195,7 +195,7 @@ final class SitePermissionDetailsViewController: SettingsTableViewController {
     
     private func allowedSiteEntryCell(for indexPath: IndexPath) -> UITableViewCell {
         guard allowedSiteEntries.indices.contains(indexPath.row) else {
-            return UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+            return SettingsTableViewCell(style: .subtitle, reuseIdentifier: nil)
         }
         
         let site = allowedSiteEntries[indexPath.row]
@@ -204,7 +204,7 @@ final class SitePermissionDetailsViewController: SettingsTableViewController {
     
     private func blockedSiteEntryCell(for indexPath: IndexPath) -> UITableViewCell {
         guard blockedSiteEntries.indices.contains(indexPath.row) else {
-            return UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+            return SettingsTableViewCell(style: .subtitle, reuseIdentifier: nil)
         }
         
         let site = blockedSiteEntries[indexPath.row]
@@ -213,7 +213,7 @@ final class SitePermissionDetailsViewController: SettingsTableViewController {
     
     private func customSiteActionCell(for indexPath: IndexPath) -> UITableViewCell {
         guard customSiteActions.indices.contains(indexPath.row) else {
-            return UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+            return SettingsTableViewCell(style: .subtitle, reuseIdentifier: nil)
         }
         
         let site = customSiteActions[indexPath.row]
@@ -224,7 +224,7 @@ final class SitePermissionDetailsViewController: SettingsTableViewController {
     }
     
     private func siteEntryCell(host: String, subtitle: String) -> UITableViewCell {
-        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .subtitle, reuseIdentifier: nil)
         cell.textLabel?.text = host
         cell.detailTextLabel?.text = subtitle
         cell.textLabel?.textColor = .label

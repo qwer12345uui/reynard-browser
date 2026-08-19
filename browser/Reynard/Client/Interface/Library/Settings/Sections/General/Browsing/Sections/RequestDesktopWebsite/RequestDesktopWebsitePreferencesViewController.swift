@@ -86,7 +86,7 @@ final class RequestDesktopWebsitePreferencesViewController: SettingsTableViewCon
         
         switch displayedSections[indexPath.section] {
         case .default:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = NSLocalizedString("Request Desktop Website", comment: "")
             defaultSwitch.isOn = Prefs.BrowsingSettings.requestDesktopWebsite
             cell.accessoryView = defaultSwitch
@@ -97,7 +97,7 @@ final class RequestDesktopWebsitePreferencesViewController: SettingsTableViewCon
                   let mode = websiteSettings[indexPath.row].websiteMode else {
                 return UITableViewCell()
             }
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = websiteSettings[indexPath.row].host
             let modeSwitch = UISwitch()
             modeSwitch.isOn = mode == .desktop
@@ -107,7 +107,7 @@ final class RequestDesktopWebsitePreferencesViewController: SettingsTableViewCon
             cell.selectionStyle = .none
             return cell
         case .reset:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = NSLocalizedString("Reset Desktop Website Settings", comment: "")
             cell.textLabel?.textColor = .systemRed
             cell.textLabel?.textAlignment = .center

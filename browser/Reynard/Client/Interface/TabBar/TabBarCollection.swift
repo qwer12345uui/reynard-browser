@@ -234,6 +234,7 @@ final class TabBarCollection: UICollectionView, UIGestureRecognizerDelegate {
         let deletedIndexPaths = deletedIndices.map { IndexPath(item: $0, section: 0) }
         let shouldRevealRightmostTab = insertedIndices.contains(tabCount - 1)
         layout.prepareForInsertion(at: insertedIndexPaths)
+        updateLayout()
         isUpdatingTabs = true
         performBatchUpdates({
             if !deletedIndexPaths.isEmpty {

@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/NativeLayerCA.mm b/gfx/layers/NativeLayerCA.mm
-index 94efd9b6c370..9039890c772e 100644
+index c53dbcecae09..11efc1dc5736 100644
 --- a/gfx/layers/NativeLayerCA.mm
 +++ b/gfx/layers/NativeLayerCA.mm
 @@ -167,6 +167,7 @@ static void EmitTelemetryForVideoLowPower(VideoLowPowerType aVideoLowPower) {

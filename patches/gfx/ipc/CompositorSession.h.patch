@@ -1,10 +1,10 @@
 diff --git a/gfx/ipc/CompositorSession.h b/gfx/ipc/CompositorSession.h
-index 178f19bdb5bc..ce36935f83fb 100644
+index 474b674ff7e2..882d1ace41c6 100644
 --- a/gfx/ipc/CompositorSession.h
 +++ b/gfx/ipc/CompositorSession.h
 @@ -8,9 +8,9 @@
- #include "mozilla/layers/LayersTypes.h"
  #include "mozilla/layers/CompositorTypes.h"
+ #include "mozilla/layers/LayersTypes.h"
  #include "nsISupportsImpl.h"
 -#if defined(MOZ_WIDGET_ANDROID)
 +#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)

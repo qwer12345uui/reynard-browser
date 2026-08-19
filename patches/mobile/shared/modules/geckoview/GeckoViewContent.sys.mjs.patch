@@ -1,5 +1,5 @@
 diff --git a/mobile/shared/modules/geckoview/GeckoViewContent.sys.mjs b/mobile/shared/modules/geckoview/GeckoViewContent.sys.mjs
-index c850b03ad280..e7bd51a1dd09 100644
+index 32c7ecf60d05..f420873fc78f 100644
 --- a/mobile/shared/modules/geckoview/GeckoViewContent.sys.mjs
 +++ b/mobile/shared/modules/geckoview/GeckoViewContent.sys.mjs
 @@ -3,6 +3,7 @@
@@ -19,9 +19,9 @@ index c850b03ad280..e7bd51a1dd09 100644
        "GeckoView:ProcessBackPressed",
        "GeckoView:ScrollBy",
        "GeckoView:ScrollTo",
-@@ -279,6 +282,12 @@ export class GeckoViewContent extends GeckoViewModule {
-       case "GeckoView:ContainsFormData":
-         this._containsFormData(aCallback);
+@@ -283,6 +286,12 @@ export class GeckoViewContent extends GeckoViewModule {
+       case "GeckoView:GetBrokenSiteReport":
+         this._getBrokenSiteReport(aCallback);
          break;
 +      case "GeckoView:Autofill:FillOneTimeCode":
 +        this._fillOneTimeCode(aData, aCallback);
@@ -32,7 +32,7 @@ index c850b03ad280..e7bd51a1dd09 100644
        case "GeckoView:GetWebCompatInfo":
          this._getWebCompatInfo(aCallback);
          break;
-@@ -455,6 +464,39 @@ export class GeckoViewContent extends GeckoViewModule {
+@@ -489,6 +498,39 @@ export class GeckoViewContent extends GeckoViewModule {
      aCallback.onSuccess(await this.actor.containsFormData());
    }
  

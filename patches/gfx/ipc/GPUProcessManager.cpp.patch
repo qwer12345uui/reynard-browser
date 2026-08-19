@@ -1,15 +1,16 @@
 diff --git a/gfx/ipc/GPUProcessManager.cpp b/gfx/ipc/GPUProcessManager.cpp
-index 8429c88bf057..32a97b79352a 100644
+index 004ab4ac457f..1d4ac699652d 100644
 --- a/gfx/ipc/GPUProcessManager.cpp
 +++ b/gfx/ipc/GPUProcessManager.cpp
-@@ -64,8 +64,10 @@
+@@ -63,9 +63,11 @@
+ 
  #if defined(MOZ_WIDGET_ANDROID)
  #  include "mozilla/java/SurfaceControlManagerWrappers.h"
+-#  include "mozilla/layers/UiCompositorControllerChild.h"
  #  include "mozilla/widget/AndroidUiThread.h"
-+#endif
+ #endif  // defined(MOZ_WIDGET_ANDROID)
 +#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
- #  include "mozilla/layers/UiCompositorControllerChild.h"
--#endif  // defined(MOZ_WIDGET_ANDROID)
++#  include "mozilla/layers/UiCompositorControllerChild.h"
 +#endif
  
  #if defined(XP_WIN)

@@ -1,5 +1,5 @@
 diff --git a/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp b/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp
-index 3050c592ceb4..7e4e8ca4b27f 100644
+index 56506493b1ff..ed153f504a48 100644
 --- a/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp
 +++ b/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp
 @@ -10,7 +10,6 @@
@@ -10,7 +10,7 @@ index 3050c592ceb4..7e4e8ca4b27f 100644
  #include "MediaTrackGraph.h"
  #include "PeerConnectionCtx.h"
  #include "RTCDataChannelDeclarations.h"
-@@ -150,6 +149,15 @@ static mozilla::LazyLogModule logModuleInfo("signaling");
+@@ -152,6 +151,15 @@ static mozilla::LazyLogModule logModuleInfo("signaling");
  
  // Getting exceptions back down from PCObserver is generally not harmful.
  namespace {
@@ -26,7 +26,7 @@ index 3050c592ceb4..7e4e8ca4b27f 100644
  // This is a terrible hack.  The problem is that SuppressException is not
  // inline, and we link this file without libxul in some cases (e.g. for our test
  // setup).  So we can't use ErrorResult or IgnoredErrorResult because those call
-@@ -1013,14 +1021,14 @@ PeerConnectionImpl::CreateDataChannel(
+@@ -1015,14 +1023,14 @@ PeerConnectionImpl::CreateDataChannel(
    Nullable<uint16_t> maxLifeTime;
    Nullable<uint16_t> maxRetransmits;
    switch (aType) {
@@ -44,7 +44,7 @@ index 3050c592ceb4..7e4e8ca4b27f 100644
        prPolicy = DataChannelReliabilityPolicy::LimitedLifetime;
        maxLifeTime.SetValue(aMaxTime);
        break;
-@@ -1593,16 +1601,16 @@ PeerConnectionImpl::SetLocalDescription(int32_t aAction, const char* aSDP) {
+@@ -1595,16 +1603,16 @@ PeerConnectionImpl::SetLocalDescription(int32_t aAction, const char* aSDP) {
    bool wasRestartingIce = mJsepSession->IsIceRestarting();
    JsepSdpType sdpType;
    switch (aAction) {
@@ -65,7 +65,7 @@ index 3050c592ceb4..7e4e8ca4b27f 100644
        sdpType = mozilla::kJsepSdpRollback;
        break;
      default:
-@@ -1663,7 +1671,7 @@ PeerConnectionImpl::SetRemoteDescription(int32_t action, const char* aSDP) {
+@@ -1665,7 +1673,7 @@ PeerConnectionImpl::SetRemoteDescription(int32_t action, const char* aSDP) {
      return NS_ERROR_FAILURE;
    }
  
@@ -74,7 +74,7 @@ index 3050c592ceb4..7e4e8ca4b27f 100644
      if (!PeerConnectionCtx::GetInstance()->isReady()) {
        // Uh oh. We're not ready yet. Enqueue this operation. (This must be a
        // remote offer, or else we would not have gotten this far)
-@@ -1692,16 +1700,16 @@ PeerConnectionImpl::SetRemoteDescription(int32_t action, const char* aSDP) {
+@@ -1694,16 +1702,16 @@ PeerConnectionImpl::SetRemoteDescription(int32_t action, const char* aSDP) {
    bool wasRestartingIce = mJsepSession->IsIceRestarting();
    JsepSdpType sdpType;
    switch (action) {

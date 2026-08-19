@@ -52,7 +52,7 @@ final class PageZoomLevelPreferencesViewController: SettingsTableViewController 
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         guard PageZoomLevels.all.indices.contains(indexPath.row) else {
             return cell
         }

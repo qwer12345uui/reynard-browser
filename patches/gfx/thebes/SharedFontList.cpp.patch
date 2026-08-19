@@ -1,20 +1,19 @@
 diff --git a/gfx/thebes/SharedFontList.cpp b/gfx/thebes/SharedFontList.cpp
-index 1770cd8315d7..671aaa0f635a 100644
+index 5aa667a0323e..69082e59d2e7 100644
 --- a/gfx/thebes/SharedFontList.cpp
 +++ b/gfx/thebes/SharedFontList.cpp
-@@ -6,6 +6,7 @@
- #include "gfxPlatformFontList.h"
- #include "gfxFontUtils.h"
- #include "gfxFont.h"
-+#include "nsUnicodeProperties.h"
- #include "nsReadableUtils.h"
- #include "prerror.h"
+@@ -10,6 +10,7 @@
  #include "mozilla/dom/ContentChild.h"
-@@ -501,6 +502,22 @@ Face* Family::FindFaceForStyle(FontList* aList, const gfxFontStyle& aStyle,
+ #include "mozilla/dom/ContentParent.h"
+ #include "nsReadableUtils.h"
++#include "nsUnicodeProperties.h"
+ #include "prerror.h"
+ 
+ #define LOG_FONTLIST(args) \
+@@ -501,6 +502,21 @@ Face* Family::FindFaceForStyle(FontList* aList, const gfxFontStyle& aStyle,
  
  void Family::SearchAllFontsForChar(FontList* aList,
                                     GlobalFontMatch* aMatchData) {
-+
 +  const bool hasPresentationRequest =
 +      aMatchData->mPresentation != FontPresentation::Any;
 +  const bool prefersColor = PrefersColor(aMatchData->mPresentation);
@@ -33,7 +32,7 @@ index 1770cd8315d7..671aaa0f635a 100644
    auto* charmap = mCharacterMap.ToPtr<const SharedBitSet>(aList);
    if (!charmap) {
      // If the face list is not yet initialized, or if character maps have
-@@ -515,7 +532,7 @@ void Family::SearchAllFontsForChar(FontList* aList,
+@@ -515,7 +531,7 @@ void Family::SearchAllFontsForChar(FontList* aList,
      }
      charmap = mCharacterMap.ToPtr<const SharedBitSet>(aList);
    }
@@ -42,7 +41,7 @@ index 1770cd8315d7..671aaa0f635a 100644
      return;
    }
  
-@@ -536,33 +553,42 @@ void Family::SearchAllFontsForChar(FontList* aList,
+@@ -536,33 +552,42 @@ void Family::SearchAllFontsForChar(FontList* aList,
      if (charmap) {
        ++charMapsLoaded;
      }

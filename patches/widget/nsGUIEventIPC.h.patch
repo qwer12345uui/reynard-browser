@@ -1,24 +1,18 @@
 diff --git a/widget/nsGUIEventIPC.h b/widget/nsGUIEventIPC.h
-index baf960fdb593..f1be2ed1b103 100644
+index 199981100e3c..3534744e40f8 100644
 --- a/widget/nsGUIEventIPC.h
 +++ b/widget/nsGUIEventIPC.h
-@@ -1149,6 +1149,7 @@ struct ParamTraits<mozilla::ContentCache> {
-     WriteParam(aWriter, aParam.mCaret);
-     WriteParam(aWriter, aParam.mTextRectArray);
-     WriteParam(aWriter, aParam.mLastCommitStringTextRectArray);
-+    WriteParam(aWriter, aParam.mEditorRectIsEditable);
-     WriteParam(aWriter, aParam.mEditorRect);
-   }
+@@ -838,7 +838,8 @@ DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::ContentCache::TextRectArray, mStart,
+ DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::ContentCache, mCompositionStart,
+                                   mText, mSelection, mFirstCharRect, mCaret,
+                                   mTextRectArray,
+-                                  mLastCommitStringTextRectArray, mEditorRect);
++                                  mLastCommitStringTextRectArray,
++                                  mEditorRectIsEditable, mEditorRect);
  
-@@ -1160,6 +1161,7 @@ struct ParamTraits<mozilla::ContentCache> {
-            ReadParam(aReader, &aResult->mCaret) &&
-            ReadParam(aReader, &aResult->mTextRectArray) &&
-            ReadParam(aReader, &aResult->mLastCommitStringTextRectArray) &&
-+           ReadParam(aReader, &aResult->mEditorRectIsEditable) &&
-            ReadParam(aReader, &aResult->mEditorRect);
-   }
- };
-@@ -1376,6 +1378,7 @@ struct ParamTraits<mozilla::PanGestureInput>
+ // InputData.h
+ 
+@@ -1007,6 +1008,7 @@ struct ParamTraits<mozilla::PanGestureInput>
      WriteParam(aWriter, aParam.mMayTriggerSwipe);
      WriteParam(aWriter, aParam.mOverscrollBehaviorAllowsSwipe);
      WriteParam(aWriter, aParam.mSimulateMomentum);
@@ -26,7 +20,7 @@ index baf960fdb593..f1be2ed1b103 100644
      WriteParam(aWriter, aParam.mIsNoLineOrPageDelta);
    }
  
-@@ -1399,6 +1402,8 @@ struct ParamTraits<mozilla::PanGestureInput>
+@@ -1030,6 +1032,8 @@ struct ParamTraits<mozilla::PanGestureInput>
                                 &paramType::SetOverscrollBehaviorAllowsSwipe) &&
             ReadBoolForBitfield(aReader, aResult,
                                 &paramType::SetSimulateMomentum) &&

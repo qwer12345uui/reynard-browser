@@ -178,7 +178,7 @@ final class AddonInformationPreferencesViewController: SettingsTableViewControll
             }
             switch DescriptionRow.allCases[indexPath.row] {
             case .description:
-                let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+                let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
                 cell.selectionStyle = .none
                 cell.textLabel?.numberOfLines = 0
                 cell.textLabel?.text = addonDescriptionText
@@ -189,7 +189,7 @@ final class AddonInformationPreferencesViewController: SettingsTableViewControll
                 return UITableViewCell()
             }
             let row = metadataRows[indexPath.row]
-            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .value1, reuseIdentifier: nil)
             cell.textLabel?.text = row.title
             cell.detailTextLabel?.text = row.value
             cell.detailTextLabel?.textColor = row.link == nil ? .secondaryLabel : view.tintColor
@@ -200,7 +200,7 @@ final class AddonInformationPreferencesViewController: SettingsTableViewControll
                 return UITableViewCell()
             }
             let row = externalLinkRows[indexPath.row]
-            let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .subtitle, reuseIdentifier: nil)
             cell.textLabel?.text = row.title
             cell.detailTextLabel?.text = row.value
             cell.detailTextLabel?.numberOfLines = 0

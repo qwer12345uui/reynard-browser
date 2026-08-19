@@ -1,5 +1,5 @@
 diff --git a/dom/ipc/BrowserChild.h b/dom/ipc/BrowserChild.h
-index 7561b9d512e1..5efe8ad56d06 100644
+index ccca98761f22..afa9b3944c4e 100644
 --- a/dom/ipc/BrowserChild.h
 +++ b/dom/ipc/BrowserChild.h
 @@ -454,7 +454,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,

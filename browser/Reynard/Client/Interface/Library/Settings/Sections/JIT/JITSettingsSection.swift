@@ -62,7 +62,7 @@ final class JITSettingsSection: NSObject {
         
         switch Row.allCases[index] {
         case .enableJIT:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = NSLocalizedString("Enable JIT", comment: "")
             cell.selectionStyle = .none
             cell.accessoryView = jitSwitch

@@ -1,8 +1,8 @@
 diff --git a/dom/ipc/BrowserParent.cpp b/dom/ipc/BrowserParent.cpp
-index ca69f14836c5..305bd0ead866 100644
+index 4cb1627212b0..a5b6fd58f121 100644
 --- a/dom/ipc/BrowserParent.cpp
 +++ b/dom/ipc/BrowserParent.cpp
-@@ -139,6 +139,10 @@
+@@ -140,6 +140,10 @@
  #  include "FxRWindowManager.h"
  #endif
  
@@ -13,7 +13,7 @@ index ca69f14836c5..305bd0ead866 100644
  #if defined(XP_WIN) && defined(ACCESSIBILITY)
  #  include "mozilla/a11y/AccessibleWrap.h"
  #  include "mozilla/a11y/Compatibility.h"
-@@ -793,6 +797,21 @@ mozilla::ipc::IPCResult BrowserParent::RecvEnsureLayersConnected(
+@@ -794,6 +798,21 @@ mozilla::ipc::IPCResult BrowserParent::RecvEnsureLayersConnected(
      Maybe<CompositorOptions>* aCompositorOptions) {
    if (mRemoteLayerTreeOwner.IsInitialized()) {
      mRemoteLayerTreeOwner.EnsureLayersConnected(*aCompositorOptions);
@@ -35,7 +35,7 @@ index ca69f14836c5..305bd0ead866 100644
    }
    return IPC_OK();
  }
-@@ -1020,13 +1039,19 @@ void BrowserParent::InitRendering() {
+@@ -1021,13 +1040,19 @@ void BrowserParent::InitRendering() {
          widget->SupportsUnadjustedMovement());
    }
  
@@ -56,7 +56,7 @@ index ca69f14836c5..305bd0ead866 100644
  #endif
  }
  
-@@ -2413,6 +2438,16 @@ mozilla::ipc::IPCResult BrowserParent::RecvSetCursor(
+@@ -2448,6 +2473,16 @@ mozilla::ipc::IPCResult BrowserParent::RecvSetCursor(
    return IPC_OK();
  }
  
@@ -73,7 +73,7 @@ index ca69f14836c5..305bd0ead866 100644
  mozilla::ipc::IPCResult BrowserParent::RecvSetLinkStatus(
      const nsString& aStatus) {
    nsCOMPtr<nsIXULBrowserWindow> xulBrowserWindow = GetXULBrowserWindow();
-@@ -2563,14 +2598,22 @@ mozilla::ipc::IPCResult BrowserParent::RecvNotifyIMEPositionChange(
+@@ -2598,14 +2633,22 @@ mozilla::ipc::IPCResult BrowserParent::RecvNotifyIMEPositionChange(
      const ContentCache& aContentCache,
      const IMENotification& aIMENotification) {
    nsCOMPtr<nsIWidget> widget = GetTextInputHandlingWidget();
@@ -99,7 +99,7 @@ index ca69f14836c5..305bd0ead866 100644
    return IPC_OK();
  }
  
-@@ -3232,18 +3275,31 @@ bool BrowserParent::HandleQueryContentEvent(WidgetQueryContentEvent& aEvent) {
+@@ -3267,18 +3310,31 @@ bool BrowserParent::HandleQueryContentEvent(WidgetQueryContentEvent& aEvent) {
        NS_WARN_IF(aEvent.Failed())) {
      return true;
    }

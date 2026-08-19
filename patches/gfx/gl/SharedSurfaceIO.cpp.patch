@@ -1,16 +1,16 @@
 diff --git a/gfx/gl/SharedSurfaceIO.cpp b/gfx/gl/SharedSurfaceIO.cpp
-index ed26ae7b7ceb..73a0a9486e47 100644
+index 08fb6ffe0f35..38b67ee4af57 100644
 --- a/gfx/gl/SharedSurfaceIO.cpp
 +++ b/gfx/gl/SharedSurfaceIO.cpp
-@@ -7,6 +7,7 @@
- #include "GLContextCGL.h"
+@@ -8,6 +8,7 @@
  #include "MozFramebuffer.h"
+ #include "ScopedGLHelpers.h"
  #include "mozilla/gfx/MacIOSurface.h"
 +#include "mozilla/layers/IOSurfacePort.h"
  #include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
  #include "mozilla/layers/LayersTypes.h"
- #include "ScopedGLHelpers.h"
-@@ -93,8 +94,10 @@ Maybe<layers::SurfaceDescriptor>
+ 
+@@ -95,8 +96,10 @@ Maybe<layers::SurfaceDescriptor>
  SharedSurface_IOSurface::ToSurfaceDescriptor() {
    const bool isOpaque = false;  // RGBA
    return Some(layers::SurfaceDescriptorMacIOSurface(

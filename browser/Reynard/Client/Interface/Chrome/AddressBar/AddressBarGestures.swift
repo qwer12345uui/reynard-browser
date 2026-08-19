@@ -871,7 +871,11 @@ final class AddressBarGestures: NSObject {
                 }
                 
                 if abs(translation.x) > abs(translation.y) {
-                    let newMode: SearchPanMode = (!delegate.isTabOverviewPresented && !delegate.isSearchFocused) ? .horizontalTabs : .blocked
+                    let newMode: SearchPanMode = (
+                        !delegate.isTabOverviewPresented &&
+                        !delegate.isSearchFocused &&
+                        Prefs.AppearanceSettings.swipeAddressBarSidewaysEnabled
+                    ) ? .horizontalTabs : .blocked
                     searchPanMode = newMode
                     if newMode == .horizontalTabs {
                         Haptics.rigid()
@@ -904,7 +908,8 @@ final class AddressBarGestures: NSObject {
               delegate.chromeMode == .phone,
               !delegate.isSearchFocused,
               !delegate.isTabOverviewPresented,
-              !delegate.isTabOverviewTransitionRunning else {
+              !delegate.isTabOverviewTransitionRunning,
+              Prefs.AppearanceSettings.swipeAddressBarUpEnabled else {
             return
         }
         

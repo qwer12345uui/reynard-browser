@@ -85,12 +85,12 @@ final class LanguagesPreferencesViewController: SettingsTableViewController {
         
         switch row {
         case let .language(code):
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = WebsiteLanguageCatalog.title(for: code)
             cell.selectionStyle = .none
             return cell
         case .addLanguage:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = NSLocalizedString("Add Language…", comment: "")
             cell.textLabel?.textColor = tableView.tintColor
             cell.imageView?.image = UIImage(named: "reynard.plus")?.withRenderingMode(.alwaysTemplate)

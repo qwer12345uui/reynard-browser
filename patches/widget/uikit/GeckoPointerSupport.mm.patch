@@ -1,6 +1,6 @@
 diff --git a/widget/uikit/GeckoPointerSupport.mm b/widget/uikit/GeckoPointerSupport.mm
 new file mode 100644
-index 000000000000..3a528e7545a1
+index 000000000000..3ddc17cbaeb0
 --- /dev/null
 +++ b/widget/uikit/GeckoPointerSupport.mm
 @@ -0,0 +1,759 @@
@@ -133,7 +133,6 @@ index 000000000000..3a528e7545a1
 +  CGPoint mScrollLocation;
 +  CGFloat mLastPinchSpan;
 +  BOOL mPointerInside;
-+  BOOL mSecondaryClickHandledAsTextAction;
 +  GeckoEdgeSwipeDirections mEdgeSwipeDirection;
 +}
 +
@@ -193,10 +192,21 @@ index 000000000000..3a528e7545a1
 +    return;
 +  }
 +
++  [self excludeIndirectPointerFromSystemSecondaryClickDriver];
 +  for (UITextInteraction* interaction in textInteractions) {
 +    for (UIGestureRecognizer* gesture in interaction
 +             .gesturesForFailureRequirements) {
 +      [gesture requireGestureRecognizerToFail:mSecondaryClickRecognizer];
++    }
++  }
++}
++
++- (void)excludeIndirectPointerFromSystemSecondaryClickDriver {
++  for (UIGestureRecognizer* gesture in mView.gestureRecognizers) {
++    if ([NSStringFromClass(gesture.class)
++            isEqualToString:@"_UISecondaryClickDriverGestureRecognizer"]) {
++      gesture.allowedTouchTypes =
++          @[ @(UITouchTypeDirect), @(UITouchTypePencil) ];
 +    }
 +  }
 +}
@@ -262,7 +272,16 @@ index 000000000000..3a528e7545a1
 +  contextMenuEvent.mClickCount = clickCount;
 +  contextMenuEvent.mModifiers = modifiers;
 +  contextMenuEvent.mTimeStamp = timestamp;
-+  mGeckoChild->DispatchInputEvent(&contextMenuEvent);
++
++  // Prioritize page's contextmenu -> UIMenuController
++  nsIWidget::ContentAndAPZEventStatus contextMenuStatus =
++      mGeckoChild->DispatchInputEvent(&contextMenuEvent);
++  BOOL insideFocusedEditor = [self isPointInsideFocusedEditor:location];
++  if (contextMenuStatus.mApzStatus != nsEventStatus_eConsumeNoDefault &&
++      contextMenuStatus.mContentStatus != nsEventStatus_eConsumeNoDefault &&
++      insideFocusedEditor) {
++    [mView showEditMenuForSecondaryClick];
++  }
 +}
 +
 +- (void)synchronizePointerButtons:(UIEventButtonMask)buttons
@@ -287,21 +306,6 @@ index 000000000000..3a528e7545a1
 +      mPointerButtons |= buttonMask;
 +    } else {
 +      mPointerButtons &= ~buttonMask;
-+    }
-+    if (button == MouseButton::eSecondary) {
-+      if (pressed) {
-+        mSecondaryClickHandledAsTextAction =
-+            [self isPointInsideFocusedEditor:location];
-+        if (mSecondaryClickHandledAsTextAction) {
-+          [mView showEditMenuForSecondaryClick];
-+        }
-+      }
-+      if (mSecondaryClickHandledAsTextAction) {
-+        if (!pressed) {
-+          mSecondaryClickHandledAsTextAction = NO;
-+        }
-+        continue;
-+      }
 +    }
 +    EventMessage message = pressed ? eMouseDown : eMouseUp;
 +    [self dispatchMouseEvent:message
@@ -658,17 +662,13 @@ index 000000000000..3a528e7545a1
 +  }
 +}
 +
-+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer*)gestureRecognizer {
-+  if (gestureRecognizer != mSecondaryClickRecognizer) {
-+    return YES;
-+  }
-+
-+  return ![self
-+      isPointInsideFocusedEditor:[gestureRecognizer locationInView:mView]];
-+}
-+
 +- (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
 +       shouldReceiveEvent:(UIEvent*)event API_AVAILABLE(ios(13.4)) {
++  if (gestureRecognizer == mSecondaryClickRecognizer) {
++    if (event.buttonMask & UIEventButtonMaskSecondary) {
++      [self excludeIndirectPointerFromSystemSecondaryClickDriver];
++    }
++  }
 +  if (mGeckoChild && gestureRecognizer == mScrollRecognizer &&
 +      event.type == UIEventTypeScroll) {
 +    LayoutDeviceIntPoint point =

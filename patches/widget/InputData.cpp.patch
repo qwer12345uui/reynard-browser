@@ -1,8 +1,8 @@
 diff --git a/widget/InputData.cpp b/widget/InputData.cpp
-index 438bdb9f58df..cc1797cfbe4d 100644
+index 798cb5ecb139..14bceec7de71 100644
 --- a/widget/InputData.cpp
 +++ b/widget/InputData.cpp
-@@ -495,6 +495,7 @@ PanGestureInput::PanGestureInput()
+@@ -496,6 +496,7 @@ PanGestureInput::PanGestureInput()
        mHandledByAPZ(false),
        mOverscrollBehaviorAllowsSwipe(false),
        mSimulateMomentum(false),
@@ -10,7 +10,7 @@ index 438bdb9f58df..cc1797cfbe4d 100644
        mIsNoLineOrPageDelta(true),
        mMayTriggerSwipe(false) {}
  
-@@ -513,6 +514,7 @@ PanGestureInput::PanGestureInput(PanGestureType aType, TimeStamp aTimeStamp,
+@@ -514,6 +515,7 @@ PanGestureInput::PanGestureInput(PanGestureType aType, TimeStamp aTimeStamp,
        mHandledByAPZ(false),
        mOverscrollBehaviorAllowsSwipe(false),
        mSimulateMomentum(false),

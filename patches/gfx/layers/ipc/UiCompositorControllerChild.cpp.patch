@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/ipc/UiCompositorControllerChild.cpp b/gfx/layers/ipc/UiCompositorControllerChild.cpp
-index 332b83cee7f4..28710c3df614 100644
+index abced8a5bd07..29d040ec6dfc 100644
 --- a/gfx/layers/ipc/UiCompositorControllerChild.cpp
 +++ b/gfx/layers/ipc/UiCompositorControllerChild.cpp
 @@ -22,8 +22,10 @@
@@ -14,7 +14,7 @@ index 332b83cee7f4..28710c3df614 100644
    MOZ_CRASH("Platform does not support UiCompositorController");
    return nullptr;
  }
-@@ -179,29 +181,38 @@ bool UiCompositorControllerChild::EnableLayerUpdateNotifications(
+@@ -196,29 +198,38 @@ bool UiCompositorControllerChild::EnableLayerUpdateNotifications(
  void UiCompositorControllerChild::Destroy() {
    MOZ_ASSERT(NS_IsMainThread());
  

@@ -1,8 +1,8 @@
 diff --git a/gfx/ipc/RemoteCompositorSession.cpp b/gfx/ipc/RemoteCompositorSession.cpp
-index 5dbdea7f3eeb..b61b20e8442a 100644
+index f489d0889ed5..1caa2fb77f92 100644
 --- a/gfx/ipc/RemoteCompositorSession.cpp
 +++ b/gfx/ipc/RemoteCompositorSession.cpp
-@@ -11,9 +11,9 @@
+@@ -12,9 +12,9 @@
  #include "mozilla/layers/CompositorBridgeChild.h"
  #include "mozilla/layers/GeckoContentController.h"
  #include "nsIWidget.h"
@@ -14,7 +14,7 @@ index 5dbdea7f3eeb..b61b20e8442a 100644
  
  namespace mozilla {
  namespace layers {
-@@ -37,9 +37,9 @@ RemoteCompositorSession::RemoteCompositorSession(
+@@ -38,9 +38,9 @@ RemoteCompositorSession::RemoteCompositorSession(
  RemoteCompositorSession::~RemoteCompositorSession() {
    // This should have been shutdown first.
    MOZ_ASSERT(!mCompositorBridgeChild);
@@ -26,7 +26,7 @@ index 5dbdea7f3eeb..b61b20e8442a 100644
  }
  
  void RemoteCompositorSession::NotifySessionLost() {
-@@ -85,12 +85,12 @@ void RemoteCompositorSession::Shutdown() {
+@@ -86,12 +86,12 @@ void RemoteCompositorSession::Shutdown() {
    }
    mCompositorWidgetDelegate = nullptr;
    mWidget = nullptr;

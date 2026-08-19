@@ -1,8 +1,8 @@
 diff --git a/gfx/thebes/gfxCoreTextShaper.cpp b/gfx/thebes/gfxCoreTextShaper.cpp
-index 07ff05d9f14b..8f39c67a08cf 100644
+index 9a0fbdf4aee6..1aa674bc738c 100644
 --- a/gfx/thebes/gfxCoreTextShaper.cpp
 +++ b/gfx/thebes/gfxCoreTextShaper.cpp
-@@ -632,8 +632,41 @@ CTFontRef gfxCoreTextShaper::CreateCTFontWithFeatures(
+@@ -633,8 +633,41 @@ CTFontRef gfxCoreTextShaper::CreateCTFontWithFeatures(
    const gfxFontEntry* fe = mFont->GetFontEntry();
    bool isInstalledFont = !fe->IsUserFont() || fe->IsLocalUserFont();
    CGFontRef cgFont = static_cast<gfxMacFont*>(mFont)->GetCGFontRef();

@@ -1,8 +1,8 @@
 diff --git a/gfx/layers/wr/WebRenderBridgeParent.cpp b/gfx/layers/wr/WebRenderBridgeParent.cpp
-index 802cb7cfa8e1..b386e350a777 100644
+index 238baf202d2a..a7115c465b54 100644
 --- a/gfx/layers/wr/WebRenderBridgeParent.cpp
 +++ b/gfx/layers/wr/WebRenderBridgeParent.cpp
-@@ -776,7 +776,8 @@ bool WebRenderBridgeParent::UpdateResources(
+@@ -779,7 +779,8 @@ bool WebRenderBridgeParent::UpdateResources(
  
          wr::Vec<uint8_t> bytes;
          if (reader.Read(op.bytes(), bytes)) {

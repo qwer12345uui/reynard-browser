@@ -93,7 +93,7 @@ final class SearchPreferencesViewController: SettingsTableViewController {
                 return UITableViewCell()
             }
             
-            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .value1, reuseIdentifier: nil)
             cell.textLabel?.text = NSLocalizedString("Search Engine", comment: "")
             cell.detailTextLabel?.text = Prefs.SearchSettings.searchEngine.displayName
             cell.detailTextLabel?.textColor = .secondaryLabel
@@ -116,7 +116,7 @@ final class SearchPreferencesViewController: SettingsTableViewController {
             case .searchOpenedTabs:
                 return switchCell(title: NSLocalizedString("Search Opened Tabs", comment: ""), accessoryView: searchOpenedTabsSwitch)
             case .searchSuggestionProvider:
-                let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+                let cell = SettingsTableViewCell(style: .value1, reuseIdentifier: nil)
                 cell.textLabel?.text = NSLocalizedString("Search Suggestion Provider", comment: "")
                 cell.detailTextLabel?.text = Prefs.SearchSettings.searchSuggestionProvider.name
                 cell.detailTextLabel?.textColor = .secondaryLabel
@@ -188,7 +188,7 @@ final class SearchPreferencesViewController: SettingsTableViewController {
     }
     
     private func switchCell(title: String, accessoryView: UISwitch) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         cell.selectionStyle = .none
         cell.textLabel?.text = title
         cell.accessoryView = accessoryView

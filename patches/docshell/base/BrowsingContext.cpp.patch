@@ -1,8 +1,8 @@
 diff --git a/docshell/base/BrowsingContext.cpp b/docshell/base/BrowsingContext.cpp
-index d7155e79364d..426bf24a93e4 100644
+index 2291d530685c..ca14deef315e 100644
 --- a/docshell/base/BrowsingContext.cpp
 +++ b/docshell/base/BrowsingContext.cpp
-@@ -3679,6 +3679,38 @@ void BrowsingContext::DidSet(FieldIndex<IDX_PlatformOverride>) {
+@@ -3667,6 +3667,54 @@ void BrowsingContext::DidSet(FieldIndex<IDX_PlatformOverride>) {
    });
  }
  
@@ -38,10 +38,26 @@ index d7155e79364d..426bf24a93e4 100644
 +  });
 +}
 +
++void BrowsingContext::SetCustomBuildID(const nsAString& aBuildID,
++                                       ErrorResult& aRv) {
++  Top()->SetBuildIDOverride(aBuildID, aRv);
++}
++
++void BrowsingContext::DidSet(FieldIndex<IDX_BuildIDOverride>) {
++  MOZ_ASSERT(IsTop());
++
++  PreOrderWalk([&](BrowsingContext* aContext) {
++    nsIDocShell* shell = aContext->GetDocShell();
++    if (shell) {
++      shell->ClearCachedBuildID();
++    }
++  });
++}
++
  auto BrowsingContext::LegacyRevertIfNotOwningOrParentProcess(
      ContentParent* aSource) -> CanSetResult {
    if (aSource) {
-@@ -3918,6 +3950,26 @@ auto BrowsingContext::CanSet(FieldIndex<IDX_PlatformOverride>,
+@@ -3906,6 +3954,36 @@ auto BrowsingContext::CanSet(FieldIndex<IDX_PlatformOverride>,
    return LegacyRevertIfNotOwningOrParentProcess(aSource);
  }
  
@@ -58,6 +74,16 @@ index d7155e79364d..426bf24a93e4 100644
 +auto BrowsingContext::CanSet(FieldIndex<IDX_OscpuOverride>,
 +                             const nsString& aOscpu, ContentParent* aSource)
 +    -> CanSetResult {
++  if (!IsTop()) {
++    return CanSetResult::Deny;
++  }
++
++  return LegacyRevertIfNotOwningOrParentProcess(aSource);
++}
++
++auto BrowsingContext::CanSet(FieldIndex<IDX_BuildIDOverride>,
++                             const nsString& aBuildIDOverride,
++                             ContentParent* aSource) -> CanSetResult {
 +  if (!IsTop()) {
 +    return CanSetResult::Deny;
 +  }

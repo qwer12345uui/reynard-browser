@@ -1,8 +1,8 @@
 diff --git a/mobile/shared/modules/geckoview/GeckoViewMediaControl.sys.mjs b/mobile/shared/modules/geckoview/GeckoViewMediaControl.sys.mjs
-index 0079aa60a1e9..dcc95451fd66 100644
+index cb233b0b0908..8f5a258752f6 100644
 --- a/mobile/shared/modules/geckoview/GeckoViewMediaControl.sys.mjs
 +++ b/mobile/shared/modules/geckoview/GeckoViewMediaControl.sys.mjs
-@@ -90,10 +90,10 @@ export class GeckoViewMediaControl extends GeckoViewModule {
+@@ -99,10 +99,10 @@ export class GeckoViewMediaControl extends GeckoViewModule {
          this.controller.prevTrack();
          break;
        case "GeckoView:MediaSession:SeekForward":

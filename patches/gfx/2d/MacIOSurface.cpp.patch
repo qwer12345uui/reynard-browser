@@ -1,17 +1,17 @@
 diff --git a/gfx/2d/MacIOSurface.cpp b/gfx/2d/MacIOSurface.cpp
-index fdc77a279032..4725856454db 100644
+index 54b6e4c593c2..cdada72f290b 100644
 --- a/gfx/2d/MacIOSurface.cpp
 +++ b/gfx/2d/MacIOSurface.cpp
-@@ -11,8 +11,6 @@
- #include "GLConsts.h"
+@@ -13,8 +13,6 @@
  #ifdef XP_MACOSX
  #  include "GLContextCGL.h"
+ #  include "GLContextEGL.h"
 -#else
 -#  include "GLContextEAGL.h"
  #endif
  #include "gfxMacUtils.h"
- #include "nsPrintfCString.h"
-@@ -23,6 +21,14 @@
+ #include "mozilla/Assertions.h"
+@@ -25,6 +23,14 @@
  
  using namespace mozilla;
  
@@ -26,9 +26,9 @@ index fdc77a279032..4725856454db 100644
  MacIOSurface::MacIOSurface(CFTypeRefPtr<IOSurfaceRef> aIOSurfaceRef,
                             gfx::YUVColorSpace aColorSpace,
                             gfx::TransferFunction aTransferFunction,
-@@ -745,7 +751,51 @@ bool MacIOSurface::BindTexImage(mozilla::gl::GLContext* aGL, size_t aPlane,
+@@ -762,7 +768,51 @@ bool MacIOSurface::BindTexImage(mozilla::gl::GLContext* aGL, size_t aPlane,
+       MOZ_CRASH("unimplemented");
    }
-   return !err;
  #else
 -  MOZ_CRASH("unimplemented");
 +  OSType pixelFormat = GetPixelFormat();

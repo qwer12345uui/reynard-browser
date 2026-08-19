@@ -1,5 +1,5 @@
 diff --git a/gfx/2d/2D.h b/gfx/2d/2D.h
-index 787bf60e1490..c431d767fd93 100644
+index fce6c9874187..67a2d2ebe493 100644
 --- a/gfx/2d/2D.h
 +++ b/gfx/2d/2D.h
 @@ -1263,6 +1263,11 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
@@ -27,7 +27,7 @@ index 787bf60e1490..c431d767fd93 100644
    virtual already_AddRefed<ScaledFont> CreateScaledFont(
        Float aGlyphSize, const uint8_t* aInstanceData,
        uint32_t aInstanceDataLength, const FontVariation* aVariations,
-@@ -2256,7 +2267,8 @@ class GFX2D_API Factory {
+@@ -2265,7 +2276,8 @@ class GFX2D_API Factory {
     */
    static already_AddRefed<UnscaledFont> CreateUnscaledFontFromFontDescriptor(
        FontType aType, const uint8_t* aData, uint32_t aDataLength,

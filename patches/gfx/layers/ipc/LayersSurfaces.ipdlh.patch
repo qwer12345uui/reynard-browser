@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/ipc/LayersSurfaces.ipdlh b/gfx/layers/ipc/LayersSurfaces.ipdlh
-index 897b97d1c824..eeb1f6002a85 100644
+index e716f03cd955..ab550b5ee67a 100644
 --- a/gfx/layers/ipc/LayersSurfaces.ipdlh
 +++ b/gfx/layers/ipc/LayersSurfaces.ipdlh
 @@ -31,6 +31,7 @@ using mozilla::layers::RemoteTextureOwnerId from "mozilla/layers/LayersTypes.h";
@@ -10,7 +10,7 @@ index 897b97d1c824..eeb1f6002a85 100644
  using mozilla::wr::ExternalImageSource from "mozilla/webrender/WebRenderTypes.h";
  using mozilla::wr::ExternalImageId from "mozilla/webrender/WebRenderTypes.h";
  using mozilla::layers::SurfaceDescriptorRemoteDecoderId from "mozilla/layers/LayersTypes.h";
-@@ -70,6 +71,7 @@ namespace layers {
+@@ -72,6 +73,7 @@ namespace layers {
  
  [Comparable] struct SurfaceDescriptorMacIOSurface {
    uint32_t surfaceId;

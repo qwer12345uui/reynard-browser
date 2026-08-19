@@ -1,5 +1,5 @@
 diff --git a/widget/InputData.h b/widget/InputData.h
-index 1eea32d9fac1..2243bbcf0eea 100644
+index f6d7713dcc1f..878aef417871 100644
 --- a/widget/InputData.h
 +++ b/widget/InputData.h
 @@ -438,6 +438,9 @@ class PanGestureInput : public InputData {

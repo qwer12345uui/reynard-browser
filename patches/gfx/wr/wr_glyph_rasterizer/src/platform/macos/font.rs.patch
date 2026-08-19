@@ -1,5 +1,5 @@
 diff --git a/gfx/wr/wr_glyph_rasterizer/src/platform/macos/font.rs b/gfx/wr/wr_glyph_rasterizer/src/platform/macos/font.rs
-index fce3e07e5b3c..3238080e579d 100644
+index 3e18b99adaa5..283ae3118a3b 100644
 --- a/gfx/wr/wr_glyph_rasterizer/src/platform/macos/font.rs
 +++ b/gfx/wr/wr_glyph_rasterizer/src/platform/macos/font.rs
 @@ -21,6 +21,10 @@ use core_graphics::geometry::{CG_AFFINE_TRANSFORM_IDENTITY, CGRect};
@@ -202,8 +202,8 @@ index fce3e07e5b3c..3238080e579d 100644
 +        );
      }
  
-     pub fn add_native_font(&mut self, font_key: &FontKey, native_font_handle: NativeFontHandle) {
-@@ -265,34 +406,16 @@ impl FontContext {
+     /// Whether the font described by `template` contains embedded bitmap
+@@ -274,34 +415,16 @@ impl FontContext {
              return;
          }
  
@@ -248,7 +248,7 @@ index fce3e07e5b3c..3238080e579d 100644
          };
  
          // If the NativeFontHandle includes a file path, add this to the descriptor
-@@ -308,8 +431,13 @@ impl FontContext {
+@@ -317,8 +440,13 @@ impl FontContext {
              }
          }
  
@@ -264,7 +264,7 @@ index fce3e07e5b3c..3238080e579d 100644
      }
  
      pub fn delete_font(&mut self, font_key: &FontKey) {
-@@ -335,8 +463,13 @@ impl FontContext {
+@@ -344,8 +472,13 @@ impl FontContext {
              match self.ct_fonts.entry((font_key, FontSize::from_f64_px(size), variations.to_vec())) {
                  Entry::Occupied(entry) => Some((*entry.get()).clone()),
                  Entry::Vacant(entry) => {
@@ -280,7 +280,7 @@ index fce3e07e5b3c..3238080e579d 100644
                      entry.insert(ct_font.clone());
                      Some(ct_font)
                  }
-@@ -897,4 +1030,3 @@ enum GlyphType {
+@@ -906,4 +1039,3 @@ enum GlyphType {
      Vector,
      Bitmap,
  }

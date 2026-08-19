@@ -72,7 +72,7 @@ final class SearchEnginePreferencesViewController: SettingsTableViewController, 
                 return customSearchTemplateCell(for: indexPath)
             }
             
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = engine.displayName
             cell.accessoryType = selectedSearchEngine == engine ? .checkmark : .none
             return cell

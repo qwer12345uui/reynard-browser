@@ -94,19 +94,19 @@ final class PageZoomPreferencesViewController: SettingsTableViewController {
         
         switch row {
         case .defaultZoom:
-            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .value1, reuseIdentifier: nil)
             cell.textLabel?.text = NSLocalizedString("Zoom Level", comment: "")
             configureZoomPickerCell(cell, mode: .defaultZoom)
             return cell
         case .site(let setting):
-            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .value1, reuseIdentifier: nil)
             cell.textLabel?.text = setting.host
             if let pageZoom = setting.pageZoom {
                 configureZoomPickerCell(cell, mode: .site(host: setting.host, pageZoom: pageZoom))
             }
             return cell
         case .reset:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = NSLocalizedString("Reset Page Zoom Settings", comment: "")
             cell.textLabel?.textColor = .systemRed
             cell.textLabel?.textAlignment = .center

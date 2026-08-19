@@ -212,13 +212,13 @@ final class AddonPermissionsPreferencesViewController: SettingsTableViewControll
         
         switch permissionSections[indexPath.section].displayedRows[indexPath.row] {
         case .message(let text):
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.selectionStyle = .none
             cell.textLabel?.text = text
             cell.textLabel?.numberOfLines = 0
             return cell
         case .toggle(let title, let subtitle, let isOn, let isEnabled, _):
-            let cell = UITableViewCell(style: subtitle == nil ? .default : .subtitle, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: subtitle == nil ? .default : .subtitle, reuseIdentifier: nil)
             let toggle = UISwitch()
             toggle.isOn = isOn
             toggle.isEnabled = isEnabled
@@ -233,7 +233,7 @@ final class AddonPermissionsPreferencesViewController: SettingsTableViewControll
             cell.accessoryView = toggle
             return cell
         case .warning(let text):
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.selectionStyle = .none
             cell.textLabel?.text = text
             cell.textLabel?.numberOfLines = 0

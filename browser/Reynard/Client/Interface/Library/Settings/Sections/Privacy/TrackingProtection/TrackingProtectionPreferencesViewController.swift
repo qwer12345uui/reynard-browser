@@ -137,7 +137,7 @@ final class TrackingProtectionPreferencesViewController: SettingsTableViewContro
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath == IndexPath(row: 0, section: 1) {
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = NSLocalizedString("Tell Websites Not to Share & Sell Data", tableName: "SettingsLocalizable", comment: "")
             cell.textLabel?.numberOfLines = 0
             cell.accessoryView = globalPrivacyControlSwitch
@@ -145,7 +145,7 @@ final class TrackingProtectionPreferencesViewController: SettingsTableViewContro
             return cell
         }
         if indexPath.section == 2, exceptions.indices.contains(indexPath.row) {
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = exceptions[indexPath.row].host
             cell.selectionStyle = .none
             return cell
@@ -385,7 +385,7 @@ final class TrackingProtectionPreferencesViewController: SettingsTableViewContro
     }
     
     private func protectionLevelCell(title: String, description: String?, protectionLevel: TrackingProtectionLevel) -> UITableViewCell {
-        let cell = UITableViewCell(style: description == nil ? .default : .subtitle, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: description == nil ? .default : .subtitle, reuseIdentifier: nil)
         cell.textLabel?.text = title
         cell.detailTextLabel?.text = description
         cell.detailTextLabel?.textColor = .secondaryLabel
@@ -395,7 +395,7 @@ final class TrackingProtectionPreferencesViewController: SettingsTableViewContro
     }
     
     private func togglePreferenceCell(title: String, description: String?, isChecked: Bool, isEnabled: Bool) -> UITableViewCell {
-        let cell = UITableViewCell(style: description == nil ? .default : .subtitle, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: description == nil ? .default : .subtitle, reuseIdentifier: nil)
         cell.textLabel?.text = title
         cell.textLabel?.isEnabled = isEnabled
         cell.detailTextLabel?.text = description
@@ -409,7 +409,7 @@ final class TrackingProtectionPreferencesViewController: SettingsTableViewContro
     }
     
     private func customChoiceCell(title: String, selection: String) -> UITableViewCell {
-        let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .value1, reuseIdentifier: nil)
         cell.textLabel?.text = title
         cell.detailTextLabel?.text = selection
         cell.detailTextLabel?.textColor = .secondaryLabel

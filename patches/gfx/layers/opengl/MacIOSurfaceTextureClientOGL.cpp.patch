@@ -1,11 +1,11 @@
 diff --git a/gfx/layers/opengl/MacIOSurfaceTextureClientOGL.cpp b/gfx/layers/opengl/MacIOSurfaceTextureClientOGL.cpp
-index 448673da5f9d..e4f5bfb3d02e 100644
+index b445db44d22e..8c4e1e6bb9e1 100644
 --- a/gfx/layers/opengl/MacIOSurfaceTextureClientOGL.cpp
 +++ b/gfx/layers/opengl/MacIOSurfaceTextureClientOGL.cpp
-@@ -6,12 +6,23 @@
- #include "mozilla/gfx/MacIOSurface.h"
+@@ -7,12 +7,23 @@
  #include "MacIOSurfaceHelpers.h"
  #include "gfxPlatform.h"
+ #include "mozilla/gfx/MacIOSurface.h"
 +#include "mozilla/layers/IOSurfacePort.h"
  
  namespace mozilla {
@@ -26,7 +26,7 @@ index 448673da5f9d..e4f5bfb3d02e 100644
  MacIOSurfaceTextureData::MacIOSurfaceTextureData(MacIOSurface* aSurface,
                                                   BackendType aBackend)
      : mSurface(aSurface), mBackend(aBackend) {
-@@ -51,28 +62,19 @@ MacIOSurfaceTextureData* MacIOSurfaceTextureData::Create(const IntSize& aSize,
+@@ -52,28 +63,19 @@ MacIOSurfaceTextureData* MacIOSurfaceTextureData::Create(const IntSize& aSize,
  }
  
  bool MacIOSurfaceTextureData::Serialize(SurfaceDescriptor& aOutDescriptor) {

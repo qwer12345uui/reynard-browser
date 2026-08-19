@@ -81,6 +81,15 @@
 }
 
 - (BOOL)enableJITForPID:(int32_t)pid hasTXMSupport:(BOOL)hasTXMSupport error:(NSError **)error {
+    // RootHide injection can deny or hook the root-persona helper. The
+    // controller selects JIT-less mode before reaching here; keep this guard
+    // as a cheap race-safe backstop and avoid helper copy/retry work.
+    if (isRootHideInjectionActive()) {
+        logger(@"Skipping ptrace JIT enablement because RootHide injection is active");
+        if (error) *error = MakeError(TSPtraceHelperAttachFailed);
+        return NO;
+    }
+
     // TrollStore or jailbroken devices
     if (getEntitlementValue(@"com.apple.private.security.no-sandbox")) {
         NSString *jitHelper = self.jitHelper;

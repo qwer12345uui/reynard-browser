@@ -1,5 +1,5 @@
 diff --git a/dom/events/ContentEventHandler.cpp b/dom/events/ContentEventHandler.cpp
-index 11b57e330c97..3401c01eaf63 100644
+index 2d722cde8332..999edd43c919 100644
 --- a/dom/events/ContentEventHandler.cpp
 +++ b/dom/events/ContentEventHandler.cpp
 @@ -6,6 +6,7 @@
@@ -10,7 +10,7 @@ index 11b57e330c97..3401c01eaf63 100644
  #include "mozilla/Assertions.h"
  #include "mozilla/CheckedInt.h"
  #include "mozilla/ContentIterator.h"
-@@ -42,6 +43,7 @@
+@@ -43,6 +44,7 @@
  #include "nsPresContext.h"
  #include "nsQueryObject.h"
  #include "nsRange.h"
@@ -18,7 +18,7 @@ index 11b57e330c97..3401c01eaf63 100644
  #include "nsTextFrame.h"
  
  // Work around conflicting define in rpcndr.h
-@@ -424,6 +426,9 @@ Result<nsRange*, nsresult> ContentEventHandler::InitRootContent(
+@@ -426,6 +428,9 @@ Result<nsRange*, nsresult> ContentEventHandler::InitRootContent(
    return rangeInRootElement;
  }
  
@@ -28,7 +28,7 @@ index 11b57e330c97..3401c01eaf63 100644
  nsresult ContentEventHandler::InitCommon(EventMessage aEventMessage,
                                           SelectionType aSelectionType,
                                           bool aRequireFlush) {
-@@ -551,7 +556,8 @@ nsresult ContentEventHandler::Init(WidgetQueryContentEvent* aEvent) {
+@@ -553,7 +558,8 @@ nsresult ContentEventHandler::Init(WidgetQueryContentEvent* aEvent) {
  
    aEvent->mReply->mContentsRoot = mRootElement.get();
    aEvent->mReply->mIsEditableContent =
@@ -38,7 +38,7 @@ index 11b57e330c97..3401c01eaf63 100644
  
    nsRect r;
    nsIFrame* frame = nsCaret::GetGeometry(mSelection, &r);
-@@ -609,6 +615,15 @@ nsresult ContentEventHandler::QueryContentRect(
+@@ -611,6 +617,15 @@ nsresult ContentEventHandler::QueryContentRect(
  
    aEvent->mReply->mRect = LayoutDeviceIntRect::FromAppUnitsToOutside(
        resultRect, presContext->AppUnitsPerDevPixel());
@@ -54,7 +54,7 @@ index 11b57e330c97..3401c01eaf63 100644
    // Returning empty rect may cause native IME confused, let's make sure to
    // return non-empty rect.
    EnsureNonEmptyRect(aEvent->mReply->mRect);
-@@ -616,6 +631,53 @@ nsresult ContentEventHandler::QueryContentRect(
+@@ -618,6 +633,53 @@ nsresult ContentEventHandler::QueryContentRect(
    return NS_OK;
  }
  
@@ -108,7 +108,7 @@ index 11b57e330c97..3401c01eaf63 100644
  // Editor places a padding <br> element under its root content if the editor
  // doesn't have any text. This happens even for single line editors.
  // When we get text content and when we change the selection,
-@@ -2379,6 +2441,48 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
+@@ -2510,6 +2572,48 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
    }
    DOMRangeAndAdjustedOffsetInFlattenedText domRangeAndAdjustedOffset =
        domRangeAndAdjustedOffsetOrError.unwrap();
@@ -157,8 +157,8 @@ index 11b57e330c97..3401c01eaf63 100644
    nsString string;
    if (NS_WARN_IF(NS_FAILED(
            GenerateFlatTextContent(domRangeAndAdjustedOffset.mRange, string)))) {
-@@ -2698,6 +2802,76 @@ nsresult ContentEventHandler::OnQueryEditorRect(
-     return rv;
+@@ -2843,6 +2947,76 @@ nsresult ContentEventHandler::OnQueryEditorRect(
+     }
    }
  
 +  if (nsTextControlFrame* textControlFrame =

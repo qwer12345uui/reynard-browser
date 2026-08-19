@@ -179,7 +179,7 @@ final class NewTabPreferencesViewController: SettingsTableViewController, UIText
     }
     
     private func checkmarkCell(for row: Row) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         cell.textLabel?.text = row.title
         cell.accessoryType = Prefs.NewTabSettings.newTabDisplayOption == row.newTabDisplayOption ? .checkmark : .none
         return cell

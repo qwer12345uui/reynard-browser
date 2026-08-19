@@ -100,7 +100,7 @@ final class AboutSettingsSection {
     }
     
     private func valueCell(title: String, value: String) -> UITableViewCell {
-        let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .value1, reuseIdentifier: nil)
         cell.textLabel?.text = title
         cell.detailTextLabel?.text = value
         cell.detailTextLabel?.textColor = .secondaryLabel
@@ -110,7 +110,7 @@ final class AboutSettingsSection {
     }
     
     private func linkCell(title: String) -> UITableViewCell {
-        let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .value1, reuseIdentifier: nil)
         cell.textLabel?.text = title
         cell.textLabel?.textColor = .systemBlue
         cell.accessoryType = .disclosureIndicator

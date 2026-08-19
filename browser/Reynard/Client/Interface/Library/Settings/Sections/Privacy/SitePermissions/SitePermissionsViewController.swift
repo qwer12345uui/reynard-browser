@@ -172,7 +172,7 @@ final class SitePermissionsViewController: SettingsTableViewController {
             case .disabledPermissions:
                 return disabledPermissionMessageCell()
             case .openSettings:
-                let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+                let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
                 cell.textLabel?.text = NSLocalizedString("Open Settings", comment: "")
                 cell.textLabel?.textColor = view.tintColor
                 cell.accessoryType = .none
@@ -183,7 +183,7 @@ final class SitePermissionsViewController: SettingsTableViewController {
                 return UITableViewCell()
             }
             
-            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .value1, reuseIdentifier: nil)
             cell.textLabel?.text = row.title
             cell.detailTextLabel?.text = SiteSettingsUtils.actionTitle(
                 for: SiteSettingsUtils.defaultAction(for: row.permission),
@@ -207,7 +207,7 @@ final class SitePermissionsViewController: SettingsTableViewController {
             guard WebsiteActionRow.allCases.indices.contains(indexPath.row) else {
                 return UITableViewCell()
             }
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             switch WebsiteActionRow.allCases[indexPath.row] {
             case .resetPermissions:
                 cell.textLabel?.text = NSLocalizedString("Reset Permissions for All Websites", comment: "")
@@ -266,7 +266,7 @@ final class SitePermissionsViewController: SettingsTableViewController {
     }
     
     private func disabledPermissionMessageCell() -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         cell.textLabel?.text = SiteSettingsUtils.disabledPermissionMessage()
         cell.textLabel?.textColor = .secondaryLabel
         cell.textLabel?.numberOfLines = 0

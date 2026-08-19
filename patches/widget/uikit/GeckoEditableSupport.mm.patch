@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoEditableSupport.mm b/widget/uikit/GeckoEditableSupport.mm
 new file mode 100644
-index 000000000000..24eeaa8bd3a6
+index 000000000000..58e0c7ed35bd
 --- /dev/null
 +++ b/widget/uikit/GeckoEditableSupport.mm
-@@ -0,0 +1,4250 @@
+@@ -0,0 +1,4276 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -32,6 +32,11 @@ index 000000000000..24eeaa8bd3a6
 +using namespace mozilla;
 +using namespace mozilla::widget;
 +using mozilla::widget::UIKitUtils;
++
++@interface UIKeyboardImpl : NSObject
+++ (instancetype)sharedInstance;
++- (BOOL)isInHardwareKeyboardMode;
++@end
 +
 +@class UITextInputArrowKeyHistory;
 +
@@ -455,6 +460,7 @@ index 000000000000..24eeaa8bd3a6
 +- (NSRange)deleteBackwardRangeWithHandler:(widget::TextInputHandler*)aHandler;
 +- (void)configureTextInteractionForTouchInput:(UITextInteraction*)aInteraction;
 +- (void)updateTextInteractions;
++- (void)updateInputAssistantItem;
 +- (void)scheduleResponderBlur;
 +- (void)cancelResponderBlur;
 +- (void)applyResponderBlur;
@@ -1945,6 +1951,8 @@ index 000000000000..24eeaa8bd3a6
 +// Toggle between editable and non-editable UITextInteraction
 +// based on the current input context so native selection handles appear.
 +- (void)updateTextInteractions {
++  [self updateInputAssistantItem];
++
 +  if (mEditable.mSelectionDisplayInteraction != nil) {
 +    [self updateModernTextInteractions];
 +    return;
@@ -2406,7 +2414,25 @@ index 000000000000..24eeaa8bd3a6
 +  return self;
 +}
 +
++- (void)updateInputAssistantItem {
++  Class keyboardClass = NSClassFromString(@"UIKeyboardImpl");
++  MOZ_RELEASE_ASSERT(keyboardClass);
++  UIKeyboardImpl* keyboard = [keyboardClass sharedInstance];
++  MOZ_RELEASE_ASSERT(keyboard);
++
++  const bool softwareKeyboardInactive =
++      mGeckoChild && (mGeckoChild->IsVirtualKeyboardDisabled() ||
++                      mGeckoChild->IsSoftwareKeyboardSuppressed());
++  NSArray* buttonGroups =
++      ([keyboard isInHardwareKeyboardMode] || softwareKeyboardInactive) ? @[]
++                                                                        : nil;
++  self.inputAssistantItem.leadingBarButtonGroups = buttonGroups;
++  self.inputAssistantItem.trailingBarButtonGroups = buttonGroups;
++}
++
 +- (UIView*)inputView {
++  [self updateInputAssistantItem];
++
 +  if (mGeckoChild && (mGeckoChild->IsVirtualKeyboardDisabled() ||
 +                      mGeckoChild->IsSoftwareKeyboardSuppressed())) {
 +    static UIView* sHiddenInputView = nil;

@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/ipc/UiCompositorControllerParent.cpp b/gfx/layers/ipc/UiCompositorControllerParent.cpp
-index 0c5fdc90676c..776908ebfbe8 100644
+index 7e63b2afb0f0..5c0a931a266c 100644
 --- a/gfx/layers/ipc/UiCompositorControllerParent.cpp
 +++ b/gfx/layers/ipc/UiCompositorControllerParent.cpp
 @@ -114,14 +114,14 @@ mozilla::ipc::IPCResult UiCompositorControllerParent::RecvMaxToolbarHeight(

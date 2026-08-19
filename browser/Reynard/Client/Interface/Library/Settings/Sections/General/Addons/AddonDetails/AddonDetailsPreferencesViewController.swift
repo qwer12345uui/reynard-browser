@@ -364,7 +364,7 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
     // MARK: - Cells
     
     private func statusMessageCell() -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         cell.selectionStyle = .none
         cell.textLabel?.numberOfLines = 0
         
@@ -381,7 +381,7 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
             return UITableViewCell()
         }
         
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         cell.textLabel?.numberOfLines = 0
         
         switch displayedActionRows[indexPath.row] {
@@ -415,7 +415,7 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
             return UITableViewCell()
         }
         
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         cell.textLabel?.numberOfLines = 0
         cell.textLabel?.textColor = addon == nil || isUpdatingAddon ? .secondaryLabel : view.tintColor
         cell.accessoryType = .disclosureIndicator

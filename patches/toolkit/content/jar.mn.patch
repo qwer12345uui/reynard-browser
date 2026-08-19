@@ -1,5 +1,5 @@
 diff --git a/toolkit/content/jar.mn b/toolkit/content/jar.mn
-index 27c97a516690..0ed60c38c31c 100644
+index 79b6ee4c8eec..9d46c2762bc4 100644
 --- a/toolkit/content/jar.mn
 +++ b/toolkit/content/jar.mn
 @@ -52,9 +52,7 @@ toolkit.jar:

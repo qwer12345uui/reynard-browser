@@ -27,14 +27,14 @@ enum SettingsViewUtils {
     // MARK: - Cells
     
     static func disclosureCell(title: String) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         cell.textLabel?.text = title
         cell.accessoryType = .disclosureIndicator
         return cell
     }
     
     static func actionCell(title: String, tintColor: UIColor?) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         cell.textLabel?.text = title
         cell.textLabel?.textColor = tintColor
         return cell

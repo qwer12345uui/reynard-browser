@@ -1,5 +1,5 @@
 diff --git a/layout/base/PresShell.cpp b/layout/base/PresShell.cpp
-index 5b52c35994ce..20af49957bf3 100644
+index 71c88b23f55f..c2a09688415c 100644
 --- a/layout/base/PresShell.cpp
 +++ b/layout/base/PresShell.cpp
 @@ -47,6 +47,7 @@
@@ -10,7 +10,7 @@ index 5b52c35994ce..20af49957bf3 100644
  #include "mozilla/MemoryReporting.h"
  #include "mozilla/MouseEvents.h"
  #include "mozilla/PerfStats.h"
-@@ -5657,7 +5658,32 @@ nscolor PresShell::GetDefaultBackgroundColorToDraw() const {
+@@ -5662,7 +5663,32 @@ nscolor PresShell::GetDefaultBackgroundColorToDraw() const {
  }
  
  void PresShell::UpdateCanvasBackground() {

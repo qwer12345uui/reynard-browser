@@ -1,8 +1,8 @@
 diff --git a/widget/uikit/nsAppShell.mm b/widget/uikit/nsAppShell.mm
-index 4441c8faf625..71ebdb57108a 100644
+index 13436918ecd2..5ec8f93a37d6 100644
 --- a/widget/uikit/nsAppShell.mm
 +++ b/widget/uikit/nsAppShell.mm
-@@ -3,10 +3,15 @@
+@@ -3,17 +3,24 @@
   * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
  #import <UIKit/UIApplication.h>
@@ -12,28 +12,22 @@ index 4441c8faf625..71ebdb57108a 100644
  #import <UIKit/UIScreen.h>
  #import <UIKit/UIWindow.h>
  
+ #include "HeadlessScreenHelper.h"
+ #include "ScreenHelperUIKit.h"
+ #include "gfxPlatform.h"
 +#include "mozilla/AvailableMemoryWatcher.h"
  #include "mozilla/Components.h"
+ #include "mozilla/Hal.h"
 +#include "mozilla/MemoryPressureLevelIOS.h"
  #include "mozilla/Services.h"
  #include "mozilla/dom/Document.h"
- #include "nsIObserverService.h"
-@@ -22,12 +27,13 @@
- #include "nsIRollupListener.h"
- #include "nsIWidget.h"
- #include "nsThreadUtils.h"
--#include "nsMemoryPressure.h"
- #include "nsServiceManagerUtils.h"
++#include "mozilla/ipc/GeckoChildProcessHost.h"
  #include "mozilla/widget/EventDispatcher.h"
 +#include "mozilla/widget/GeckoViewSupport.h"
  #include "mozilla/widget/ScreenManager.h"
- #include "ScreenHelperUIKit.h"
- #include "mozilla/Hal.h"
-+#include "mozilla/ipc/GeckoChildProcessHost.h"
- #include "HeadlessScreenHelper.h"
- #include "nsWindow.h"
- #include "nsXREDirProvider.h"
-@@ -42,25 +48,150 @@
+ #include "nsAppRunner.h"
+ #include "nsAppShell.h"
+@@ -42,25 +49,150 @@
    fprintf(stderr, "\n")
  
  static void ApplicationWillTerminate(bool aCallExit);
@@ -185,7 +179,7 @@ index 4441c8faf625..71ebdb57108a 100644
  - (void)applicationWillTerminate:(UIApplication*)application {
    ALOG("[AppShellDelegate applicationWillTerminate:]");
    ApplicationWillTerminate(/* aCallExit */ false);
-@@ -68,15 +199,129 @@ - (void)applicationWillTerminate:(UIApplication*)application {
+@@ -68,15 +200,129 @@ - (void)applicationWillTerminate:(UIApplication*)application {
  
  - (void)applicationDidBecomeActive:(UIApplication*)application {
    ALOG("[AppShellDelegate applicationDidBecomeActive:]");
@@ -316,7 +310,7 @@ index 4441c8faf625..71ebdb57108a 100644
  }
  @end
  
-@@ -281,7 +526,12 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+@@ -281,7 +527,12 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
    ALOG("nsAppShell::Run");
  
    nsresult rv = NS_OK;
@@ -330,7 +324,7 @@ index 4441c8faf625..71ebdb57108a 100644
      char argv[1][4] = {"app"};
      UIApplicationMain(1, (char**)argv, nil, @"AppShellDelegate");
      // UIApplicationMain doesn't exit. :-(
-@@ -298,7 +548,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+@@ -298,7 +549,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
  
    mTerminated = true;
  
@@ -342,7 +336,7 @@ index 4441c8faf625..71ebdb57108a 100644
      // Dispatch a native event to the main queue to terminate. XPCOM doesn't
      // like being shut down from within an XPCOM runnable, so we cannot use
      // `NS_DispatchToMainThread` here.
-@@ -318,6 +571,11 @@ static void ApplicationWillTerminate(bool aCallExit) {
+@@ -318,6 +572,11 @@ static void ApplicationWillTerminate(bool aCallExit) {
      return;
    }
  
@@ -354,7 +348,7 @@ index 4441c8faf625..71ebdb57108a 100644
    // Perform the steps which would normally happen after nsAppShell::Run, such
    // as `~ScopedXPCOMStartup`, as UIApplicationMain will never shutdown.
    if (nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service()) {
-@@ -331,12 +589,19 @@ static void ApplicationWillTerminate(bool aCallExit) {
+@@ -331,12 +590,19 @@ static void ApplicationWillTerminate(bool aCallExit) {
  
    gDirServiceProvider->DoShutdown();
  

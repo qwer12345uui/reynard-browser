@@ -1,5 +1,5 @@
 diff --git a/dom/ipc/BrowserChild.cpp b/dom/ipc/BrowserChild.cpp
-index f70a01005083..0ccc657c2bf4 100644
+index 58037fdbb308..786cc6066e64 100644
 --- a/dom/ipc/BrowserChild.cpp
 +++ b/dom/ipc/BrowserChild.cpp
 @@ -230,6 +230,13 @@ PresShell* BrowserChild::GetTopLevelPresShell() const {

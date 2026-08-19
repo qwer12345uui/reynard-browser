@@ -1,23 +1,23 @@
 diff --git a/dom/events/EventListenerManager.cpp b/dom/events/EventListenerManager.cpp
-index e0781cf61903..c52dd7b67b1c 100644
+index d46c8df95cf1..8b4c587b6508 100644
 --- a/dom/events/EventListenerManager.cpp
 +++ b/dom/events/EventListenerManager.cpp
-@@ -719,11 +719,13 @@ void EventListenerManager::EnableDevice(nsAtom* aTypeAtom) {
+@@ -701,8 +701,13 @@ void EventListenerManager::EnableDevice(nsAtom* aTypeAtom) {
    }
  
    if (aTypeAtom == nsGkAtoms::ondeviceorientation) {
 -#ifdef MOZ_WIDGET_ANDROID
 +#if defined(MOZ_WIDGET_ANDROID)
-     // Falls back to SENSOR_ROTATION_VECTOR and SENSOR_ORIENTATION if
-     // unavailable on device.
++    // Falls back to SENSOR_ROTATION_VECTOR and SENSOR_ORIENTATION if
++    // unavailable on device.
      window->EnableDeviceSensor(SENSOR_GAME_ROTATION_VECTOR);
-     window->EnableDeviceSensor(SENSOR_ROTATION_VECTOR);
++    window->EnableDeviceSensor(SENSOR_ROTATION_VECTOR);
 +#elif defined(MOZ_WIDGET_UIKIT)
 +    window->EnableDeviceSensor(SENSOR_ROTATION_VECTOR);
  #else
      window->EnableDeviceSensor(SENSOR_ORIENTATION);
  #endif
-@@ -731,9 +733,11 @@ void EventListenerManager::EnableDevice(nsAtom* aTypeAtom) {
+@@ -710,9 +715,11 @@ void EventListenerManager::EnableDevice(nsAtom* aTypeAtom) {
    }
  
    if (aTypeAtom == nsGkAtoms::ondeviceorientationabsolute) {
@@ -30,7 +30,7 @@ index e0781cf61903..c52dd7b67b1c 100644
  #else
      window->EnableDeviceSensor(SENSOR_ORIENTATION);
  #endif
-@@ -774,20 +778,25 @@ void EventListenerManager::DisableDevice(nsAtom* aTypeAtom) {
+@@ -753,19 +760,25 @@ void EventListenerManager::DisableDevice(nsAtom* aTypeAtom) {
    }
  
    if (aTypeAtom == nsGkAtoms::ondeviceorientation) {
@@ -38,8 +38,8 @@ index e0781cf61903..c52dd7b67b1c 100644
 +#if defined(MOZ_WIDGET_ANDROID)
      // Disable all potential fallback sensors.
      window->DisableDeviceSensor(SENSOR_GAME_ROTATION_VECTOR);
-     window->DisableDeviceSensor(SENSOR_ROTATION_VECTOR);
 -#endif
++    window->DisableDeviceSensor(SENSOR_ROTATION_VECTOR);
      window->DisableDeviceSensor(SENSOR_ORIENTATION);
 +#elif defined(MOZ_WIDGET_UIKIT)
 +    window->DisableDeviceSensor(SENSOR_ROTATION_VECTOR);

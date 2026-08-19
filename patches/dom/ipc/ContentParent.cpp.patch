@@ -1,8 +1,8 @@
 diff --git a/dom/ipc/ContentParent.cpp b/dom/ipc/ContentParent.cpp
-index 2ee13e7e51c7..b918e3c11cd9 100644
+index 8262327fe93b..156ec235de06 100644
 --- a/dom/ipc/ContentParent.cpp
 +++ b/dom/ipc/ContentParent.cpp
-@@ -3007,14 +3007,15 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
+@@ -3035,14 +3035,15 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
    Endpoint<PVRManagerChild> vrBridge;
    Endpoint<PRemoteMediaManagerChild> videoManager;
    AutoTArray<uint32_t, 4> namespaces;
@@ -20,7 +20,7 @@ index 2ee13e7e51c7..b918e3c11cd9 100644
    } else {
      // This can fail if we've already started shutting down the compositor
      // thread. See Bug 1562763 comment 8. On Android this can fail we are are
-@@ -3193,16 +3194,17 @@ void ContentParent::OnCompositorUnexpectedShutdown() {
+@@ -3221,16 +3222,17 @@ void ContentParent::OnCompositorUnexpectedShutdown() {
    Endpoint<PVRManagerChild> vrBridge;
    Endpoint<PRemoteMediaManagerChild> videoManager;
    AutoTArray<uint32_t, 4> namespaces;
@@ -40,7 +40,7 @@ index 2ee13e7e51c7..b918e3c11cd9 100644
  }
  
  void ContentParent::OnCompositorDeviceReset() {
-@@ -7985,6 +7987,17 @@ IPCResult ContentParent::RecvKillGPUProcess() {
+@@ -8030,6 +8032,17 @@ IPCResult ContentParent::RecvKillGPUProcess() {
  }
  #endif
  

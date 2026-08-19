@@ -156,7 +156,7 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
     }
     
     private func categoryCell(for category: BrowsingDataCategory) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         cell.textLabel?.text = category.title
         browsingDataCategorySwitches[category]?.isOn = category.isSelected
         cell.accessoryView = browsingDataCategorySwitches[category]
@@ -165,7 +165,7 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
     }
     
     private func clearActionCell() -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
         cell.textLabel?.text = NSLocalizedString("Clear Browsing Data", comment: "")
         cell.textLabel?.textColor = .systemRed
         cell.textLabel?.textAlignment = .center

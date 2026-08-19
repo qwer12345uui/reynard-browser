@@ -1,5 +1,5 @@
 diff --git a/gfx/2d/moz.build b/gfx/2d/moz.build
-index eb15561c25e2..efbb8a7816ff 100644
+index d89cbdf3d268..81cdbbceb22e 100644
 --- a/gfx/2d/moz.build
 +++ b/gfx/2d/moz.build
 @@ -75,6 +75,10 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("cocoa", "uikit"):

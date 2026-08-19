@@ -224,19 +224,19 @@ final class HomepageSectionPreferencesViewController: SettingsTableViewControlle
         
         switch rows[indexPath.row] {
         case .showSection:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = preference.switchTitle
             cell.selectionStyle = .none
             cell.accessoryView = sectionSwitch
             return cell
         case .showInPrivateBrowsing:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = NSLocalizedString("Show in Private Browsing", comment: "")
             cell.selectionStyle = .none
             cell.accessoryView = privateBrowsingSwitch
             return cell
         case .count:
-            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .value1, reuseIdentifier: nil)
             cell.textLabel?.text = preference.countTitle
             configureCountPickerCell(cell)
             return cell

@@ -1,5 +1,5 @@
 diff --git a/mobile/shared/actors/SelectionActionDelegateChild.sys.mjs b/mobile/shared/actors/SelectionActionDelegateChild.sys.mjs
-index b4fed0d010c5..d212957e949d 100644
+index 6d21d73630db..6274b9d008db 100644
 --- a/mobile/shared/actors/SelectionActionDelegateChild.sys.mjs
 +++ b/mobile/shared/actors/SelectionActionDelegateChild.sys.mjs
 @@ -2,6 +2,7 @@
@@ -10,7 +10,7 @@ index b4fed0d010c5..d212957e949d 100644
  import { GeckoViewActorChild } from "resource://gre/modules/GeckoViewActorChild.sys.mjs";
  
  const MAGNIFIER_PREF = "layout.accessiblecaret.magnifier.enabled";
-@@ -312,6 +313,17 @@ export class SelectionActionDelegateChild extends GeckoViewActorChild {
+@@ -309,6 +310,17 @@ export class SelectionActionDelegateChild extends GeckoViewActorChild {
  
      debug`handleEvent: ${reason}`;
  

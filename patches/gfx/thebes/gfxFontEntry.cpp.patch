@@ -1,8 +1,8 @@
 diff --git a/gfx/thebes/gfxFontEntry.cpp b/gfx/thebes/gfxFontEntry.cpp
-index a634bb49e37d..e90bca229d93 100644
+index ff5b3496ed31..1a9c8c410699 100644
 --- a/gfx/thebes/gfxFontEntry.cpp
 +++ b/gfx/thebes/gfxFontEntry.cpp
-@@ -1652,13 +1652,36 @@ void gfxFontFamily::FindFontForChar(GlobalFontMatch* aMatchData) {
+@@ -1648,13 +1648,36 @@ void gfxFontFamily::FindFontForChar(GlobalFontMatch* aMatchData) {
    gfxFontEntry* fe = nullptr;
    float distance = INFINITY;
  
@@ -41,7 +41,7 @@ index a634bb49e37d..e90bca229d93 100644
        aMatchData->mCount++;
  
        LogModule* log = gfxPlatform::GetLog(eGfxLog_textrun);
-@@ -1675,13 +1698,14 @@ void gfxFontFamily::FindFontForChar(GlobalFontMatch* aMatchData) {
+@@ -1671,13 +1694,14 @@ void gfxFontFamily::FindFontForChar(GlobalFontMatch* aMatchData) {
        fe = e;
        distance = WeightStyleStretchDistance(fe, aMatchData->mStyle);
        if (aMatchData->mPresentation != FontPresentation::Any) {
@@ -60,7 +60,7 @@ index a634bb49e37d..e90bca229d93 100644
            distance += kPresentationMismatch;
          }
        }
-@@ -1717,26 +1741,50 @@ void gfxFontFamily::FindFontForChar(GlobalFontMatch* aMatchData) {
+@@ -1713,26 +1737,50 @@ void gfxFontFamily::FindFontForChar(GlobalFontMatch* aMatchData) {
  }
  
  void gfxFontFamily::SearchAllFontsForChar(GlobalFontMatch* aMatchData) {

@@ -1,8 +1,8 @@
 diff --git a/gfx/thebes/CoreTextFontList.h b/gfx/thebes/CoreTextFontList.h
-index 6a2489dc12b3..3598a4f737de 100644
+index bf819d37f486..c3eee54d6021 100644
 --- a/gfx/thebes/CoreTextFontList.h
 +++ b/gfx/thebes/CoreTextFontList.h
-@@ -32,6 +32,11 @@ class CTFontEntry final : public gfxFontEntry {
+@@ -30,6 +30,11 @@ class CTFontEntry final : public gfxFontEntry {
    CTFontEntry(const nsACString& aPostscriptName, WeightRange aWeight,
                bool aIsStandardFace = false, double aSizeHint = 0.0);
  
@@ -14,7 +14,7 @@ index 6a2489dc12b3..3598a4f737de 100644
    // for use with data fonts
    CTFontEntry(const nsACString& aPostscriptName, CGFontRef aFontRef,
                WeightRange aWeight, StretchRange aStretch,
-@@ -82,10 +87,22 @@ class CTFontEntry final : public gfxFontEntry {
+@@ -80,10 +85,22 @@ class CTFontEntry final : public gfxFontEntry {
  
   protected:
    // Protected destructor, to discourage deletion outside of Release():
@@ -38,7 +38,7 @@ index 6a2489dc12b3..3598a4f737de 100644
    bool HasFontTable(uint32_t aTableTag) override;
  
    static void DestroyBlobFunc(void* aUserData);
-@@ -93,6 +110,11 @@ class CTFontEntry final : public gfxFontEntry {
+@@ -91,6 +108,11 @@ class CTFontEntry final : public gfxFontEntry {
    FontTableCache* GetFontTableCache(bool aCreate) override { return nullptr; }
  
    CGFontRef mFontRef MOZ_GUARDED_BY(mLock);  // owning reference
@@ -50,7 +50,7 @@ index 6a2489dc12b3..3598a4f737de 100644
  
    const double mSizeHint;
  
-@@ -128,13 +150,15 @@ class CTFontFamily : public gfxFontFamily {
+@@ -126,13 +148,15 @@ class CTFontFamily : public gfxFontFamily {
    CTFontFamily(const nsACString& aName, FontVisibility aVisibility)
        : gfxFontFamily(aName, aVisibility) {}
  
@@ -69,7 +69,7 @@ index 6a2489dc12b3..3598a4f737de 100644
    }
  
    virtual ~CTFontFamily() = default;
-@@ -150,7 +174,9 @@ class CTFontFamily : public gfxFontFamily {
+@@ -148,7 +172,9 @@ class CTFontFamily : public gfxFontFamily {
    // If non-null, this is a family representing the system UI font, and should
    // use the given CTFontRef as the basis for initialization as the normal
    // font-manager APIs based on family name won't handle it.

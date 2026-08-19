@@ -1,5 +1,5 @@
 diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
-index adfe90e07214..d949e7b8dc12 100644
+index 6b9d0039181a..d974ca4f1e5d 100644
 --- a/layout/base/nsPresContext.cpp
 +++ b/layout/base/nsPresContext.cpp
 @@ -714,7 +714,7 @@ void nsPresContext::Init(nsDeviceContext* aDeviceContext) {

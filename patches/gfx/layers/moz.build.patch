@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/moz.build b/gfx/layers/moz.build
-index dcee9ad9e38a..f681304fe7ea 100644
+index 5c22be217f56..5cb1bced6c3a 100644
 --- a/gfx/layers/moz.build
 +++ b/gfx/layers/moz.build
 @@ -280,6 +280,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("cocoa", "uikit"):

@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/apz/src/AsyncPanZoomController.h b/gfx/layers/apz/src/AsyncPanZoomController.h
-index 5fef4afaa99c..656105cb6e47 100644
+index 6801a0eee4af..69721e941dc5 100644
 --- a/gfx/layers/apz/src/AsyncPanZoomController.h
 +++ b/gfx/layers/apz/src/AsyncPanZoomController.h
 @@ -1944,6 +1944,7 @@ class AsyncPanZoomController {

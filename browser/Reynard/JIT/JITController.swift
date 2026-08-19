@@ -21,6 +21,9 @@ final class JITController {
     private var pendingFailureAction: (() -> Void)?
     private let preflightTimeoutSeconds: Int = 5
     private let failurePresentationRetryLimit = 12
+    // RootHide loads its injector before the app launches. Cache the result so
+    // every child-process callback takes the same fast, non-ptrace path.
+    private let isRootHideEnvironment = isRootHideInjectionActive()
     
     private init() {}
     
@@ -31,6 +34,7 @@ final class JITController {
     
     func startBackgroundAudioIfNeeded() {
         guard !usePtraceJIT(),
+              !isRootHideEnvironment,
               Prefs.JITSettings.isJITEnabled,
               hasTXMSupport(),
               !hasHandledFailure,
@@ -42,7 +46,7 @@ final class JITController {
     }
     
     func start() {
-        if isRootHideInjectionActive() {
+        if isRootHideEnvironment {
             NSLog("RootHide injection detected; starting in JIT-less mode to avoid ptrace helper conflicts.")
             activateJITLessMode()
             return
@@ -149,6 +153,14 @@ final class JITController {
     
     func childProcessDidStart(pid: Int32, processType: String) {
         guard pid > 0 else {
+            return
+        }
+
+        // This also covers a child-process notification racing with start().
+        // Do not spawn or retry the root-persona ptrace helper under RootHide.
+        if isRootHideEnvironment {
+            activateJITLessMode()
+            ReportJITStatusForChild(pid, false, newJITRuntimeInfo())
             return
         }
         
@@ -390,7 +402,9 @@ final class JITController {
     }
     
     @objc private func handleJITDisconnectNotification(_ notification: Notification) {
-        guard Prefs.JITSettings.isJITEnabled, !isJITLessModeActive else {
+        guard Prefs.JITSettings.isJITEnabled,
+              !isRootHideEnvironment,
+              !isJITLessModeActive else {
             return
         }
         
