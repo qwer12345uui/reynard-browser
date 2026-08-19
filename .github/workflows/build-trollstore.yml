@@ -126,6 +126,7 @@ jobs:
         run: |
           set +e
           TOOLCHAIN_DIR="$RUNNER_TEMP/reynard-toolchain"
+          LINKER_LOG="$GITHUB_WORKSPACE/linker-diagnostics.log"
           REAL_LD="$(xcrun --find ld)"
           APPLE_CLANG="$(xcrun --find clang)"
           APPLE_CLANGXX="$(xcrun --find clang++)"
@@ -135,6 +136,8 @@ jobs:
           test -x "$APPLE_CLANGXX"
           test -d "$MACOS_SDK"
           mkdir -p "$TOOLCHAIN_DIR"
+          : > "$LINKER_LOG"
+          export REYNARD_LINKER_LOG="$LINKER_LOG"
           cat > "$TOOLCHAIN_DIR/ld64.lld" <<EOF
           #!/bin/bash
           for arg in "\$@"; do
@@ -143,7 +146,13 @@ jobs:
               exit 0
             fi
           done
-          exec "$REAL_LD" "\$@"
+          {
+            printf '\n--- ld invocation ---\n'
+            printf '%q ' "\$0" "\$@"
+            printf '\n--- ld output ---\n'
+          } >> "\$REYNARD_LINKER_LOG"
+          "$REAL_LD" "\$@" 2>&1 | tee -a "\$REYNARD_LINKER_LOG"
+          exit "\${PIPESTATUS[0]}"
           EOF
           chmod +x "$TOOLCHAIN_DIR/ld64.lld"
           export PATH="$TOOLCHAIN_DIR:$PATH"
@@ -180,6 +189,7 @@ jobs:
           path: |
             patch-apply.log
             gecko-build.log
+            linker-diagnostics.log
           if-no-files-found: ignore
           retention-days: 7
 
