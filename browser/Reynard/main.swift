@@ -17,16 +17,20 @@ private func configureRootHideRuntimePolicy() {
 
     // RootHide injects into every NSExtension-based Gecko helper. Keeping
     // speculative or idle content processes alive in that environment causes
-    // duplicate injected helpers and unnecessary wakeups. Queue these prefs
+    // duplicate injected helpers and unnecessary wakeups. Disable the
+    // forkserver and Fission preallocation cache too, while leaving Fission
+    // enabled so site isolation behavior is not weakened. Queue these prefs
     // before GeckoRuntime.main so the first child-process launch sees them.
     GeckoRuntime.setDefaultPrefs([
         "dom.ipc.processCount": 1,
         "dom.ipc.processPrelaunch.enabled": false,
+        "dom.ipc.processPrelaunch.fission.number": 0,
+        "dom.ipc.forkserver.enable": false,
         "dom.ipc.keepProcessesAlive.web": 0,
         "dom.ipc.keepProcessesAlive.file": 0,
         "dom.ipc.keepProcessesAlive.privilegedabout": 0
     ])
-    NSLog("RootHide injection detected; disabled Gecko helper prelaunch and idle process retention.")
+    NSLog("RootHide injection detected; disabled Gecko helper forkserver, prelaunch, and idle process retention.")
 }
 
 @available(iOS, introduced: 13.0, obsoleted: 14.0)
