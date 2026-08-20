@@ -1,22 +1,38 @@
 #!/bin/sh
-
 set -euo pipefail
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 ROOT_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)"
 FIREFOX_DIR="$ROOT_DIR/engine/firefox"
-
 TARGET="aarch64-apple-ios"
+MOZCONFIG_PATH="$FIREFOX_DIR/.mozconfig"
+MOZCONFIG_BACKUP="$FIREFOX_DIR/.mozconfig.reynard-backup"
+HAD_MOZCONFIG=0
+
+restore_mozconfig() {
+	if [ -f "$MOZCONFIG_BACKUP" ]; then
+		rm -f "$MOZCONFIG_PATH"
+		mv "$MOZCONFIG_BACKUP" "$MOZCONFIG_PATH"
+	elif [ "$HAD_MOZCONFIG" -eq 0 ]; then
+		rm -f "$MOZCONFIG_PATH"
+	fi
+}
 
 cd "$ROOT_DIR"
-
 if [ ! -d "$FIREFOX_DIR" ]; then
 	echo "Missing firefox source at $FIREFOX_DIR"
 	echo "Add the submodule, then run tools/development/update-gecko.sh."
 	exit 1
 fi
 
-mv "$FIREFOX_DIR/.mozconfig" "$FIREFOX_DIR/.mozconfig.bak"
+# Fresh Firefox release trees do not necessarily ship a .mozconfig. Preserve an
+# existing developer file when present, and always restore the tree on success
+# or failure so local and CI invocations are both repeatable.
+if [ -f "$MOZCONFIG_PATH" ]; then
+	mv "$MOZCONFIG_PATH" "$MOZCONFIG_BACKUP"
+	HAD_MOZCONFIG=1
+fi
+trap restore_mozconfig EXIT HUP INT TERM
 
 {
 	echo "ac_add_options --enable-application=mobile/ios"
@@ -29,10 +45,13 @@ mv "$FIREFOX_DIR/.mozconfig" "$FIREFOX_DIR/.mozconfig.bak"
 	echo "ac_add_options --enable-lto"
 	echo "ac_add_options --disable-debug"
 	echo "ac_add_options --disable-tests"
+	# The hosted macOS toolchain does not provide the WASM sandbox libraries
+	# required by Firefox's desktop configuration.
+	echo "ac_add_options --without-wasm-sandboxed-libraries"
 	if [ "${1:-}" = "--disable-jemalloc" ]; then
 		echo "ac_add_options --disable-jemalloc"
 	fi
-} > "$FIREFOX_DIR/.mozconfig"
+} > "$MOZCONFIG_PATH"
 
 if ! rustup target list | grep -q "^$TARGET (installed)"; then
 	rustup target add "$TARGET"
@@ -40,6 +59,3 @@ fi
 
 cd "$FIREFOX_DIR"
 ./mach build
-
-rm "$FIREFOX_DIR/.mozconfig"
-mv "$FIREFOX_DIR/.mozconfig.bak" "$FIREFOX_DIR/.mozconfig"
