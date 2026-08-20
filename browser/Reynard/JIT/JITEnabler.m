@@ -18,6 +18,7 @@
 @property(nonatomic, assign) DeviceProvider *sharedProvider;
 @property(nonatomic, strong) dispatch_queue_t providerQueue;
 @property(nonatomic, assign) BOOL didEnsureDDIMounted;
+@property(nonatomic, assign) BOOL isRootHideEnvironment;
 @property(nonatomic, copy) NSString *jitHelper;
 
 - (DeviceProvider *)getProvider:(NSError **)error;
@@ -40,6 +41,14 @@
     self = [super init];
     if (self) {
         _sharedProvider = NULL;
+        _isRootHideEnvironment = isRootHideInjectionActive();
+        if (_isRootHideEnvironment) {
+            // RootHide always uses JIT-less mode. Avoid bundle scans and a
+            // dormant serial queue that can be touched by injected helpers.
+            logger(@"RootHide injection detected; JIT enabler initialized in no-helper mode");
+            return self;
+        }
+
         _providerQueue = dispatch_queue_create("com.minh-ton.Reynard.JITEnabler.ProviderQueue", DISPATCH_QUEUE_SERIAL);
         _didEnsureDDIMounted = NO;
         [self resolveJITHelper];
@@ -84,7 +93,7 @@
     // RootHide injection can deny or hook the root-persona helper. The
     // controller selects JIT-less mode before reaching here; keep this guard
     // as a cheap race-safe backstop and avoid helper copy/retry work.
-    if (isRootHideInjectionActive()) {
+    if (self.isRootHideEnvironment) {
         logger(@"Skipping ptrace JIT enablement because RootHide injection is active");
         if (error) *error = MakeError(TSPtraceHelperAttachFailed);
         return NO;

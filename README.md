@@ -10,7 +10,7 @@ This project is mainly for users on older iOS versions who are stuck with an out
 
 ## Installation
 
-The latest builds are available for download on the [Releases](https://github.com/minh-ton/reynard-browser/releases) page. Please note that this project is still in an early experimental state, so expect bugs and missing features.
+The latest builds are uploaded only as [GitHub Actions artifacts](https://github.com/qwer12345uui/reynard-browser/actions/workflows/build-trollstore.yml). Open the latest successful **Build iOS packages** run and download the `Reynard-iOS-packages-<commit>` artifact. This fork does not publish new GitHub Releases. Please note that this project is still in an early experimental state, so expect bugs and missing features.
 
 ### TrollStore (iOS 14 - 16.6.1, 17.0)
 
@@ -24,7 +24,7 @@ For the best experience, I'd recommend sideloading Reynard via [TrollStore](http
 
 You should use [AltStore](https://altstore.io/) or [SideStore](https://sidestore.io/) to sideload the `Reynard.ipa` build when TrollStore is not available, especially on newer iOS versions. Please note that you must select the **Keep App Extensions** option during installation, as Reynard relies on its extensions to function and will not work without them. 
 
-You can also [click here](https://stikstore.app/altdirect/?url=https://github.com/minh-ton/reynard-browser/releases/download/0.0.1-a1/source.json&exclude=livecontainer,stikstore,trollapps,feather) to add the AltSource for Reynard to AltStore or SideStore.
+This fork does not publish an AltSource or GitHub Release. Download `Reynard.ipa` from the latest successful **Build iOS packages** artifact and import it into AltStore or SideStore manually.
 
 > [!IMPORTANT]
 > - **LiveContainer is not supported** due to its own limitations.

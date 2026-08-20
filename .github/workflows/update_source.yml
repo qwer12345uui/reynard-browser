@@ -1,41 +1,44 @@
-name: Update Source
+name: Refresh source metadata
 
+# This workflow is deliberately manual and never creates, edits, or publishes a
+# GitHub Release. Generated metadata is available only as an Actions artifact.
 on:
-  release:
-    types: [published]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: reynard-source-metadata-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  update-source:
+  refresh-source-metadata:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Check out source
+        uses: actions/checkout@v5
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+          cache: pip
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
 
-    - name: Update JSON source
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        python .github/update_source.py
-    
-    - name: Update apps.json in Release 1.0
-      uses: softprops/action-gh-release@v3
-      with:
-        tag_name: "0.0.1-a1"
-        files: |
-          .github/source.json
-        token: ${{ secrets.UPDATE_SOURCE_TOKEN }}
+      - name: Regenerate source metadata
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python .github/update_source.py
+
+      - name: Upload source metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Reynard-source-metadata-${{ github.sha }}
+          path: .github/source.json
+          if-no-files-found: error
+          retention-days: 30

@@ -1,11 +1,8 @@
-name: Build TrollStore package
+name: Build iOS packages
 
-# Build trigger: manual dispatch, or pushes that touch build inputs.
-# Cache layer 1 is the long-lived Gecko engine artifact, keyed solely by
-# Firefox revision, Gecko patches and engine build scripts. Cache layer 2 is
-# application-layer Rust/Cargo output, keyed separately in the package job.
-# UI, settings and Swift-only changes therefore reuse the engine unchanged;
-# a full Gecko rebuild runs only when its own inputs change.
+# The compiled Gecko engine and the application dependency tree have deliberately
+# separate reuse boundaries. UI/source-only pushes restore the immutable Gecko
+# product and rebuild only the application package.
 on:
   workflow_dispatch:
     inputs:
@@ -26,119 +23,114 @@ permissions:
   actions: read
   contents: read
 
+# Do not cancel an in-progress Gecko compilation when a later commit arrives.
+# A completed engine product can be reused by queued source-only package builds.
 concurrency:
-  group: reynard-trollstore-build
-  cancel-in-progress: true
+  group: reynard-ios-package-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  # Layer 1: compiled Gecko engine. This must remain isolated from app/UI code.
   gecko:
+    name: Prepare reusable Gecko engine
     runs-on: macos-26
     timeout-minutes: 360
     outputs:
       key: ${{ steps.key.outputs.value }}
     steps:
-      - name: Check out latest source
-        uses: actions/checkout@v4
+      - name: Check out source
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           submodules: false
 
-      - name: Compute Gecko input key
+      - name: Compute Gecko product key
         id: key
         env:
           GECKO_HASH: ${{ hashFiles('engine/release.txt', 'patches/**/*.patch', 'tools/development/build-gecko.sh', 'tools/development/apply-patches.sh', 'tools/development/update-gecko.sh') }}
-          GECKO_BUILD_VARIANT: libhooker-compat
-        run: echo "value=$GECKO_HASH-$GECKO_BUILD_VARIANT" >> "$GITHUB_OUTPUT"
-
-      - name: Check for reusable Gecko build
-        id: probe
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GECKO_BUILD_VARIANT: ios-arm64-roothide-no-jemalloc-v2
         run: |
-          if [ "${{ inputs.rebuild_gecko }}" = "true" ]; then
-            echo "Forced rebuild requested."
+          echo "value=${{ runner.os }}-${{ runner.arch }}-${GECKO_HASH}-${GECKO_BUILD_VARIANT}" >> "$GITHUB_OUTPUT"
+
+      # Layer 1: retain the complete, validated Gecko product as a long-lived
+      # immutable Actions artifact. This is intentionally not a short-lived
+      # dependency cache: a full engine build is expensive and must survive
+      # ordinary app/UI commits for as long as the repository allows.
+      - name: Look up reusable Gecko product
+        id: gecko-product
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: reynard-gecko-engine-${{ steps.key.outputs.value }}
+          FORCE_REBUILD: ${{ inputs.rebuild_gecko }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$FORCE_REBUILD" = "true" ]; then
+            echo "A fresh Gecko build was requested."
             echo "found=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          NAME="reynard-gecko-engine-${{ steps.key.outputs.value }}"
-          FOUND=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$NAME&per_page=100" \
-            --jq '[.artifacts[] | select(.expired == false)] | length')
-          echo "Reusable artifacts named $NAME: $FOUND"
-          if [ "$FOUND" -gt 0 ]; then
+
+          count="$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$ARTIFACT_NAME&per_page=100" \
+            --jq '[.artifacts[] | select(.expired == false)] | length')"
+          echo "Reusable artifacts named $ARTIFACT_NAME: $count"
+          if [ "$count" -gt 0 ]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           else
             echo "found=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Verify Xcode and iOS SDK
-        if: steps.probe.outputs.found != 'true'
+        if: steps.gecko-product.outputs.found != 'true'
         run: |
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
 
-      - name: Install build dependencies
-        if: steps.probe.outputs.found != 'true'
+      - name: Install Gecko build dependencies
+        if: steps.gecko-product.outputs.found != 'true'
         run: |
           brew update
           brew install ldid cbindgen
           rustup target add aarch64-apple-ios
 
-      - name: Sync Gecko source
-        if: steps.probe.outputs.found != 'true'
+      - name: Synchronize Gecko source
+        if: steps.gecko-product.outputs.found != 'true'
         run: ./tools/development/update-gecko.sh
 
       - name: Apply Reynard patches
-        if: steps.probe.outputs.found != 'true'
+        if: steps.gecko-product.outputs.found != 'true'
         shell: bash
         run: |
           set +e
           ./tools/development/apply-patches.sh </dev/null 2>&1 | tee patch-apply.log
-          STATUS=${PIPESTATUS[0]}
-          if [ "$STATUS" -ne 0 ]; then
-            MESSAGE="$(tail -n 40 patch-apply.log | cut -c1-400)"
-            MESSAGE="${MESSAGE//'%'/'%25'}"
-            MESSAGE="${MESSAGE//$'\n'/'%0A'}"
-            MESSAGE="${MESSAGE//$'\r'/'%0D'}"
-            echo "::error title=Gecko patch diagnostics::$MESSAGE"
-            exit "$STATUS"
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            message="$(tail -n 40 patch-apply.log | cut -c1-400)"
+            message="${message//'%'/'%25'}"
+            message="${message//$'\n'/'%0A'}"
+            message="${message//$'\r'/'%0D'}"
+            echo "::error title=Gecko patch diagnostics::$message"
+            exit "$status"
           fi
 
-      - name: Prepare Gecko build configuration
-        if: steps.probe.outputs.found != 'true'
-        shell: bash
-        run: |
-          test -f engine/firefox/.mozconfig || touch engine/firefox/.mozconfig
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('tools/development/build-gecko.sh')
-          text = path.read_text()
-          needle = '\techo "ac_add_options --disable-tests"\n'
-          replacement = needle + '\techo "ac_add_options --without-wasm-sandboxed-libraries"\n'
-          if needle not in text:
-              raise SystemExit('Could not patch build-gecko.sh')
-          path.write_text(text.replace(needle, replacement, 1))
-          PY
-
       - name: Build Gecko engine
-        if: steps.probe.outputs.found != 'true'
+        if: steps.gecko-product.outputs.found != 'true'
         shell: bash
         run: |
           set +e
-          TOOLCHAIN_DIR="$RUNNER_TEMP/reynard-toolchain"
-          LINKER_LOG="$GITHUB_WORKSPACE/linker-diagnostics.log"
-          REAL_LD="$(xcrun --find ld)"
-          APPLE_CLANG="$(xcrun --find clang)"
-          APPLE_CLANGXX="$(xcrun --find clang++)"
-          MACOS_SDK="$(find "$(xcode-select -p)/Platforms/MacOSX.platform/Developer/SDKs" -maxdepth 1 -type d -name 'MacOSX*.sdk' | sort -V | tail -n 1)"
-          test -x "$REAL_LD"
-          test -x "$APPLE_CLANG"
-          test -x "$APPLE_CLANGXX"
-          test -d "$MACOS_SDK"
-          mkdir -p "$TOOLCHAIN_DIR"
-          : > "$LINKER_LOG"
-          export REYNARD_LINKER_LOG="$LINKER_LOG"
-          cat > "$TOOLCHAIN_DIR/ld64.lld" <<EOF
+          toolchain_dir="$RUNNER_TEMP/reynard-toolchain"
+          linker_log="$GITHUB_WORKSPACE/linker-diagnostics.log"
+          real_ld="$(xcrun --find ld)"
+          apple_clang="$(xcrun --find clang)"
+          apple_clangxx="$(xcrun --find clang++)"
+          macos_sdk="$(find "$(xcode-select -p)/Platforms/MacOSX.platform/Developer/SDKs" -maxdepth 1 -type d -name 'MacOSX*.sdk' | sort -V | tail -n 1)"
+          test -x "$real_ld"
+          test -x "$apple_clang"
+          test -x "$apple_clangxx"
+          test -d "$macos_sdk"
+          mkdir -p "$toolchain_dir"
+          : > "$linker_log"
+          export REYNARD_LINKER_LOG="$linker_log"
+          cat > "$toolchain_dir/ld64.lld" <<EOF
           #!/bin/bash
           for arg in "\$@"; do
             if [ "\$arg" = "--version" ]; then
@@ -151,37 +143,36 @@ jobs:
             printf '%q ' "\$0" "\$@"
             printf '\n--- ld output ---\n'
           } >> "\$REYNARD_LINKER_LOG"
-          "$REAL_LD" "\$@" 2>&1 | tee -a "\$REYNARD_LINKER_LOG"
+          "$real_ld" "\$@" 2>&1 | tee -a "\$REYNARD_LINKER_LOG"
           exit "\${PIPESTATUS[0]}"
           EOF
-          chmod +x "$TOOLCHAIN_DIR/ld64.lld"
-          export PATH="$TOOLCHAIN_DIR:$PATH"
-          export CC="$APPLE_CLANG -B$TOOLCHAIN_DIR"
-          export CXX="$APPLE_CLANGXX -B$TOOLCHAIN_DIR"
-          export SDKROOT="$MACOS_SDK"
-          # RootHide tweak injection commonly relies on libhooker. Build Gecko
-          # without jemalloc to avoid allocator-hook conflicts, high CPU and
-          # renderer/network stalls in injected processes.
+          chmod +x "$toolchain_dir/ld64.lld"
+          export PATH="$toolchain_dir:$PATH"
+          export CC="$apple_clang -B$toolchain_dir"
+          export CXX="$apple_clangxx -B$toolchain_dir"
+          export SDKROOT="$macos_sdk"
+          # RootHide injection commonly uses libhooker. Avoid jemalloc so its
+          # allocator hooks do not cause helper-process CPU spikes or stalls.
           ./tools/development/build-gecko.sh --disable-jemalloc 2>&1 | tee gecko-build.log
-          STATUS=${PIPESTATUS[0]}
-          if [ "$STATUS" -ne 0 ]; then
-            FAILED_LINE="$(grep -n -m1 'failed to run custom build command' gecko-build.log | cut -d: -f1)"
-            if [ -n "$FAILED_LINE" ]; then
-              START=$((FAILED_LINE > 5 ? FAILED_LINE - 5 : 1))
-              END=$((FAILED_LINE + 45))
-              MESSAGE="$(sed -n "${START},${END}p" gecko-build.log)"
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            failed_line="$(grep -n -m1 'failed to run custom build command' gecko-build.log | cut -d: -f1)"
+            if [ -n "$failed_line" ]; then
+              start=$((failed_line > 5 ? failed_line - 5 : 1))
+              end=$((failed_line + 45))
+              message="$(sed -n "${start},${end}p" gecko-build.log)"
             else
-              MESSAGE="$(grep -nE 'fatal error:|(^|[^[:alpha:]])error(\[[^]]+\]|:)|Undefined symbols|undefined reference|ld:' gecko-build.log | tail -n 30)"
+              message="$(grep -nE 'fatal error:|(^|[^[:alpha:]])error(\[[^]]+\]|:)|Undefined symbols|undefined reference|ld:' gecko-build.log | tail -n 30)"
             fi
-            if [ -z "$MESSAGE" ]; then MESSAGE="$(tail -n 30 gecko-build.log)"; fi
-            MESSAGE="${MESSAGE//'%'/'%25'}"
-            MESSAGE="${MESSAGE//$'\n'/'%0A'}"
-            MESSAGE="${MESSAGE//$'\r'/'%0D'}"
-            echo "::error file=.github/workflows/build-trollstore.yml,title=Gecko compiler diagnostics::$MESSAGE"
-            exit "$STATUS"
+            if [ -z "$message" ]; then message="$(tail -n 30 gecko-build.log)"; fi
+            message="${message//'%'/'%25'}"
+            message="${message//$'\n'/'%0A'}"
+            message="${message//$'\r'/'%0D'}"
+            echo "::error file=.github/workflows/build-trollstore.yml,title=Gecko compiler diagnostics::$message"
+            exit "$status"
           fi
 
-      - name: Upload Gecko build log on failure
+      - name: Upload Gecko diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -191,10 +182,10 @@ jobs:
             gecko-build.log
             linker-diagnostics.log
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 14
 
-      - name: Upload Gecko build products
-        if: steps.probe.outputs.found != 'true'
+      - name: Upload reusable Gecko product
+        if: steps.gecko-product.outputs.found != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: reynard-gecko-engine-${{ steps.key.outputs.value }}
@@ -202,59 +193,58 @@ jobs:
             engine/firefox/obj-aarch64-apple-ios/dist
             engine/firefox/toolkit/mozapps/extensions/default-theme
           if-no-files-found: error
-          # Keep the exact compiled Gecko product for the longest Actions
-          # artifact lifetime so routine upstream/app merges package directly.
           retention-days: 90
 
   package:
+    name: Build verified IPA artifacts
     runs-on: macos-26
-    timeout-minutes: 90
+    timeout-minutes: 100
     needs: gecko
     steps:
-      - name: Check out latest source
-        uses: actions/checkout@v4
+      - name: Check out source and submodules
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          # The app dependency cache key includes idevice's Cargo files.
           submodules: recursive
 
-      # Layer 2: application dependency cache. It is intentionally separate
-      # from Gecko so Swift/UI changes never invalidate engine products.
-      - name: Restore app dependency cache
+      # Layer 2: package-time Rust registry, git sources and idevice output.
+      # This key is independent of Gecko so UI and Swift-only changes reuse it.
+      - name: Restore application dependency cache
         id: app-dependencies
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           key: reynard-app-deps-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/development/build-idevice.sh', 'support/idevice/Cargo.lock', 'support/idevice/ffi/Cargo.toml') }}
+          restore-keys: |
+            reynard-app-deps-${{ runner.os }}-${{ runner.arch }}-
           path: |
+            ~/.cargo/registry
+            ~/.cargo/git
             support/idevice/target
             browser/Reynard/JIT/RPPairing/libidevice_ffi.a
 
-      - name: Restore Gecko build products
-        id: restore
+      - name: Restore reusable Gecko product
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GECKO_KEY: ${{ needs.gecko.outputs.key }}
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: reynard-gecko-engine-${{ needs.gecko.outputs.key }}
         shell: bash
         run: |
-          set -e
-          NAME="reynard-gecko-engine-$GECKO_KEY"
-          ARTIFACT_ID=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$NAME&per_page=100" \
-            --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id')
-          if [ -z "$ARTIFACT_ID" ] || [ "$ARTIFACT_ID" = "null" ]; then
-            echo "::error title=Missing Gecko artifact::No usable artifact named $NAME was found."
+          set -euo pipefail
+          artifact_id="$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$ARTIFACT_NAME&per_page=100" \
+            --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id')"
+          if [ -z "$artifact_id" ] || [ "$artifact_id" = "null" ]; then
+            echo "::error title=Missing Gecko product::No reusable artifact named $ARTIFACT_NAME was found."
             exit 1
           fi
-          echo "Downloading Gecko build products from artifact $ARTIFACT_ID"
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > gecko-dist.zip
-          rm -rf "$RUNNER_TEMP/gecko-dist"
-          mkdir -p "$RUNNER_TEMP/gecko-dist"
-          unzip -q gecko-dist.zip -d "$RUNNER_TEMP/gecko-dist"
+          echo "Downloading reusable Gecko product $artifact_id"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > gecko-product.zip
+          rm -rf "$RUNNER_TEMP/reynard-gecko-product"
+          mkdir -p "$RUNNER_TEMP/reynard-gecko-product"
+          unzip -q gecko-product.zip -d "$RUNNER_TEMP/reynard-gecko-product"
           mkdir -p engine/firefox/toolkit/mozapps/extensions
-          cp -R "$RUNNER_TEMP/gecko-dist/obj-aarch64-apple-ios" engine/firefox/
-          cp -R "$RUNNER_TEMP/gecko-dist/toolkit/mozapps/extensions/default-theme" engine/firefox/toolkit/mozapps/extensions/
+          cp -R "$RUNNER_TEMP/reynard-gecko-product/obj-aarch64-apple-ios" engine/firefox/
+          cp -R "$RUNNER_TEMP/reynard-gecko-product/toolkit/mozapps/extensions/default-theme" engine/firefox/toolkit/mozapps/extensions/
           test -d engine/firefox/obj-aarch64-apple-ios/dist/bin
           test -d engine/firefox/toolkit/mozapps/extensions/default-theme
-          echo "Gecko build products restored."
 
       - name: Install packaging dependencies
         run: |
@@ -265,8 +255,16 @@ jobs:
       - name: Build idevice dependency
         run: ./tools/development/build-idevice.sh
 
-      # The IPA itself is deliberately not cached: every commit gets a fresh,
-      # verified package while the engine and reusable app dependencies remain cached.
+      - name: Save application dependency cache
+        if: steps.app-dependencies.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.app-dependencies.outputs.cache-primary-key }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            support/idevice/target
+            browser/Reynard/JIT/RPPairing/libidevice_ffi.a
 
       - name: Prepare unsigned build
         run: |
@@ -282,64 +280,79 @@ jobs:
               print('::warning title=Unsigned build patch::Embed Process Extensions phase not found; project left unchanged.')
           PY
 
-      - name: Archive Reynard app
+      - name: Build unsigned Reynard app
         shell: bash
         run: |
           set +e
           sh ./tools/release/build-app.sh 2>&1 | tee archive.log
-          STATUS=${PIPESTATUS[0]}
-          if [ "$STATUS" -ne 0 ]; then
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
             {
               grep -nE 'error: |Command .* failed|BUILD FAILED|ValidateEmbeddedBinary|PhaseScriptExecution|CodeSign' archive.log | head -n 40
               echo '--- log tail ---'
               tail -n 20 archive.log
             } | cut -c1-400 > diagnostics.txt
-            MESSAGE="$(cat diagnostics.txt)"
-            MESSAGE="${MESSAGE//'%'/'%25'}"
-            MESSAGE="${MESSAGE//$'\n'/'%0A'}"
-            MESSAGE="${MESSAGE//$'\r'/'%0D'}"
-            echo "::error title=Archive diagnostics::$MESSAGE"
-            exit "$STATUS"
+            message="$(cat diagnostics.txt)"
+            message="${message//'%'/'%25'}"
+            message="${message//$'\n'/'%0A'}"
+            message="${message//$'\r'/'%0D'}"
+            echo "::error title=Archive diagnostics::$message"
+            exit "$status"
           fi
 
-      - name: Package TrollStore build
+      - name: Package standard, TrollStore, and RootHide IPA files
         shell: bash
         run: |
           set +e
-          sh ./tools/release/create-ipa.sh --trollstore 2>&1 | tee package.log
-          STATUS=${PIPESTATUS[0]}
-          if [ "$STATUS" -ne 0 ]; then
-            MESSAGE="$(tail -n 50 package.log | cut -c1-400)"
-            MESSAGE="${MESSAGE//'%'/'%25'}"
-            MESSAGE="${MESSAGE//$'\n'/'%0A'}"
-            MESSAGE="${MESSAGE//$'\r'/'%0D'}"
-            echo "::error title=Packaging diagnostics::$MESSAGE"
-            exit "$STATUS"
+          sh ./tools/release/create-ipa.sh 2>&1 | tee package-standard.log
+          standard_status=${PIPESTATUS[0]}
+          sh ./tools/release/create-ipa.sh --trollstore 2>&1 | tee package-trollstore.log
+          trollstore_status=${PIPESTATUS[0]}
+          sh ./tools/release/create-ipa.sh --jailbroken 2>&1 | tee package-jailbroken.log
+          jailbroken_status=${PIPESTATUS[0]}
+          if [ "$standard_status" -ne 0 ] || [ "$trollstore_status" -ne 0 ] || [ "$jailbroken_status" -ne 0 ]; then
+            cat package-standard.log package-trollstore.log package-jailbroken.log | tail -n 120 | cut -c1-400 > diagnostics.txt
+            message="$(cat diagnostics.txt)"
+            message="${message//'%'/'%25'}"
+            message="${message//$'\n'/'%0A'}"
+            message="${message//$'\r'/'%0D'}"
+            echo "::error title=IPA packaging diagnostics::$message"
+            exit 1
           fi
 
-      - name: Verify package
+      - name: Verify IPA artifacts
         run: |
-          test -s dist/Reynard-TrollStore.tipa
-          shasum -a 256 dist/Reynard-TrollStore.tipa | tee dist/Reynard-TrollStore.tipa.sha256
-          unzip -t dist/Reynard-TrollStore.tipa
+          set -euo pipefail
+          for package in dist/Reynard.ipa dist/Reynard-TrollStore.tipa dist/Reynard-Jailbroken.ipa; do
+            test -s "$package"
+            unzip -t "$package"
+            shasum -a 256 "$package" | tee "$package.sha256"
+          done
 
-      - name: Upload verified TrollStore artifact
+      - name: Upload verified IPA artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Reynard-TrollStore-${{ github.sha }}
+          name: Reynard-iOS-packages-${{ github.sha }}
           path: |
+            dist/Reynard.ipa
+            dist/Reynard.ipa.sha256
             dist/Reynard-TrollStore.tipa
             dist/Reynard-TrollStore.tipa.sha256
+            dist/Reynard-Jailbroken.ipa
+            dist/Reynard-Jailbroken.ipa.sha256
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
 
-      - name: Upload build log on failure
+      - name: Upload package diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: package-logs-${{ github.sha }}
           path: |
             archive.log
-            package.log
+            package-standard.log
+            package-trollstore.log
+            package-jailbroken.log
+            diagnostics.txt
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 14

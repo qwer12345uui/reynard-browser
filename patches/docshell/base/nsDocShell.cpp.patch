@@ -2,41 +2,7 @@ diff --git a/docshell/base/nsDocShell.cpp b/docshell/base/nsDocShell.cpp
 index adeae302088a..0077db877ef7 100644
 --- a/docshell/base/nsDocShell.cpp
 +++ b/docshell/base/nsDocShell.cpp
-@@ -2335,6 +2335,34 @@ nsDocShell::ClearCachedUserAgent() {
-   return NS_OK;
- }
- 
-+NS_IMETHODIMP
-+nsDocShell::ClearCachedAppVersion() {
-+  nsCOMPtr<nsPIDOMWindowInner> win =
-+      mScriptGlobal ? mScriptGlobal->GetCurrentInnerWindow() : nullptr;
-+  if (win) {
-+    Navigator* navigator = win->Navigator();
-+    if (navigator) {
-+      navigator->ClearAppVersionCache();
-+    }
-+  }
-+
-+  return NS_OK;
-+}
-+
-+NS_IMETHODIMP
-+nsDocShell::ClearCachedOscpu() {
-+  nsCOMPtr<nsPIDOMWindowInner> win =
-+      mScriptGlobal ? mScriptGlobal->GetCurrentInnerWindow() : nullptr;
-+  if (win) {
-+    Navigator* navigator = win->Navigator();
-+    if (navigator) {
-+      navigator->ClearOscpuCache();
-+    }
-+  }
-+
-+  return NS_OK;
-+}
-+
- /* virtual */
- int32_t nsDocShell::ItemType() { return mItemType; }
- 
+
 @@ -5638,24 +5680,36 @@ nsDocShell::OnLocationChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
    return NS_OK;
  }
