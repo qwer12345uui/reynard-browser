@@ -141,6 +141,16 @@ final class AddressBar: UIView {
         view.layer.cornerCurve = .continuous
         view.layer.cornerRadius = UX.addressBarBackgroundCornerRadius
         view.clipsToBounds = true
+        return view
+    }()
+    
+    private let addressBarBorder: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .clear
+        view.isUserInteractionEnabled = false
+        view.layer.cornerCurve = .continuous
+        view.layer.cornerRadius = UX.addressBarBackgroundCornerRadius
         view.layer.borderWidth = UX.borderWidth
         return view
     }()
@@ -545,7 +555,7 @@ final class AddressBar: UIView {
     }
 
     private func updateBorderColor() {
-        addressBarContent.layer.borderColor = UIColor.separator.withAlphaComponent(0.2).cgColor
+        addressBarBorder.layer.borderColor = UIColor.separator.withAlphaComponent(0.2).cgColor
     }
 
     private func configureHierarchy() {
@@ -559,6 +569,7 @@ final class AddressBar: UIView {
         addressBarContent.addSubview(addressLabel)
         addressBarContent.addSubview(autocompleteLabel)
         addressBarContent.addSubview(progressView)
+        addressBarContent.addSubview(addressBarBorder)
     }
 
     private func configureConstraints() {
@@ -582,6 +593,11 @@ final class AddressBar: UIView {
             addressBarContent.trailingAnchor.constraint(equalTo: addressBarBackground.trailingAnchor),
             addressBarContent.topAnchor.constraint(equalTo: addressBarBackground.topAnchor),
             addressBarContent.bottomAnchor.constraint(equalTo: addressBarBackground.bottomAnchor),
+
+            addressBarBorder.leadingAnchor.constraint(equalTo: addressBarContent.leadingAnchor),
+            addressBarBorder.trailingAnchor.constraint(equalTo: addressBarContent.trailingAnchor),
+            addressBarBorder.topAnchor.constraint(equalTo: addressBarContent.topAnchor),
+            addressBarBorder.bottomAnchor.constraint(equalTo: addressBarContent.bottomAnchor),
 
             dismissButton.trailingAnchor.constraint(equalTo: trailingAnchor),
             dismissButton.centerYAnchor.constraint(equalTo: addressBarBackground.centerYAnchor),

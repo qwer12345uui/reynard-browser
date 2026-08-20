@@ -711,14 +711,15 @@ extension TabBarCollection: UICollectionViewDataSource {
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let tabBarCell = dequeueReusableCell(
+            withReuseIdentifier: TabBarCell.reuseIdentifier,
+            for: indexPath
+        ) as! TabBarCell
+        
         guard let tabBar,
               let tabs = tabBar.dataSource?.tabs,
-              tabs.indices.contains(indexPath.item),
-              let tabBarCell = dequeueReusableCell(
-                withReuseIdentifier: TabBarCell.reuseIdentifier,
-                for: indexPath
-              ) as? TabBarCell else {
-            return UICollectionViewCell()
+              tabs.indices.contains(indexPath.item) else {
+            return tabBarCell
         }
         
         configure(tabBarCell, at: indexPath)

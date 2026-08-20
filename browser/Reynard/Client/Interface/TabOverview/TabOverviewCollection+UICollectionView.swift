@@ -27,13 +27,14 @@ extension TabOverviewCollection: UICollectionViewDataSource, UICollectionViewDel
             return insertionPlaceholderCell(in: collectionView, at: indexPath)
         }
         
+        let tabCard = collectionView.dequeueReusableCell(
+            withReuseIdentifier: TabOverviewCard.reuseIdentifier,
+            for: indexPath
+        ) as! TabOverviewCard
+        
         guard let tabMode = tabMode(for: collectionView),
-              tabs(for: tabMode).indices.contains(indexPath.item),
-              let tabCard = collectionView.dequeueReusableCell(
-                withReuseIdentifier: TabOverviewCard.reuseIdentifier,
-                for: indexPath
-              ) as? TabOverviewCard else {
-            return UICollectionViewCell()
+              tabs(for: tabMode).indices.contains(indexPath.item) else {
+            return tabCard
         }
         
         tabCard.isHidden = false

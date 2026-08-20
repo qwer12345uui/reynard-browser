@@ -1,8 +1,8 @@
 diff --git a/toolkit/xre/IOSBootstrap.mm b/toolkit/xre/IOSBootstrap.mm
-index 264320aed775..6552f255e4cc 100644
+index 264320aed775..d2a65793d098 100644
 --- a/toolkit/xre/IOSBootstrap.mm
 +++ b/toolkit/xre/IOSBootstrap.mm
-@@ -8,13 +8,24 @@
+@@ -8,13 +8,25 @@
  #include "mozilla/Bootstrap.h"
  #include "mozilla/DarwinObjectPtr.h"
  #include "mozilla/GeckoArgs.h"
@@ -15,6 +15,7 @@ index 264320aed775..6552f255e4cc 100644
 +#include "js/Initialization.h"
 +#include <poll.h>
 +#include <pthread.h>
++#include <stdlib.h>
 +#include <stdio.h>
  
  #include "application.ini.h"
@@ -27,11 +28,14 @@ index 264320aed775..6552f255e4cc 100644
  static id<SwiftGeckoViewRuntime> gRuntime;
  
  id<SwiftGeckoViewRuntime> mozilla::widget::GetSwiftRuntime() {
-@@ -22,11 +33,77 @@
+@@ -22,11 +34,97 @@
  }
  
  static id<GeckoProcessExtension> gCurrentProcessExtension;
 +static int gJITReadySignalFd = -1;
++static int64_t gDocumentsSandboxExtension = -1;
++
++extern "C" int64_t sandbox_extension_consume(const char* extensionToken);
  
  id<GeckoProcessExtension> mozilla::widget::GetCurrentProcessExtension() {
    return gCurrentProcessExtension;
@@ -77,6 +81,23 @@ index 264320aed775..6552f255e4cc 100644
 +  return finish(status.enabled);
 +}
 +
++// This is actually for content process to access the Documents
++// directory for e.g. opening downloaded files.
++// https://github.com/WebKit/WebKit/blob/main/Source/WTF/wtf/spi/darwin/SandboxSPI.h
++// https://github.com/WebKit/WebKit/blob/main/Source/WebKit/Shared/Cocoa/SandboxExtensionCocoa.mm
++static void ConsumeDocumentsSandboxExtension() {
++  if (!XRE_IsContentProcess()) {
++    return;
++  }
++
++  if (gDocumentsSandboxExtension == -1) {
++    const char* extensionToken = getenv("MOZ_DOCUMENTS_SANDBOX_EXTENSION");
++    if (extensionToken && *extensionToken) {
++      gDocumentsSandboxExtension = sandbox_extension_consume(extensionToken);
++    }
++  }
++}
++
 +void mozilla::widget::NotifyChildProcessStarted(int32_t aPid,
 +                                                const char* aProcessType) {
 +  // Forward child process launch notifications to the Swift host so
@@ -105,7 +126,7 @@ index 264320aed775..6552f255e4cc 100644
  int MainProcessInit(int aArgc, char** aArgv,
                      id<SwiftGeckoViewRuntime> aRuntime) {
    auto bootstrap = mozilla::GetBootstrap();
-@@ -85,6 +162,11 @@ void ChildProcessInit(xpc_connection_t aXpcConnection,
+@@ -85,6 +183,11 @@ void ChildProcessInit(xpc_connection_t aXpcConnection,
    xpc_connection_activate(aXpcConnection);
  }
  
@@ -117,7 +138,16 @@ index 264320aed775..6552f255e4cc 100644
  static int ChildProcessInitImpl(int aArgc, char** aArgv) {
    auto bootstrap = mozilla::GetBootstrap();
    if (bootstrap.isErr()) {
-@@ -111,12 +193,76 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
+@@ -102,6 +205,8 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
+   // done later in common code.
+   mozilla::SetGeckoProcessType(aArgv[aArgc - 1]);
+ 
++  ConsumeDocumentsSandboxExtension();
++
+   XREChildData childData;
+ 
+   mozilla::SetGeckoChildID(aArgv[aArgc - 2]);
+@@ -111,12 +216,76 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
        /* aRandomizeSmall */ !XRE_IsContentProcess());
  #endif
  
@@ -194,7 +224,7 @@ index 264320aed775..6552f255e4cc 100644
  void HandleBootstrapMessage(xpc_object_t aEvent) {
    // Set up stdout and stderr if they were provided.
    int fd = xpc_dictionary_dup_fd(aEvent, "stdout");
-@@ -132,6 +278,11 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
+@@ -132,6 +301,11 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
      close(fd);
    }
  
@@ -206,7 +236,7 @@ index 264320aed775..6552f255e4cc 100644
    // Immediately send a reply with our pid
    auto reply = mozilla::AdoptDarwinObject(xpc_dictionary_create_reply(aEvent));
    xpc_dictionary_set_int64(reply.get(), "pid", getpid());
-@@ -198,6 +349,18 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
+@@ -198,6 +372,18 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
    }
    argv[argc] = nullptr;
  
