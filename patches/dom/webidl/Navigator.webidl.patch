@@ -7,7 +7,7 @@ index d586dc5e4388..9138d90f6b0e 100644
    [Constant, Cached]
    readonly attribute DOMString appName; // constant "Netscape"
 -  [Constant, Cached, Throws, NeedsCallerType]
-+  [Pure, Cached, Throws, NeedsCallerType]
++  [Pure, Throws, NeedsCallerType]
    readonly attribute DOMString appVersion;
    [Pure, Cached, Throws, NeedsCallerType]
    readonly attribute DOMString platform;
@@ -16,7 +16,13 @@ index d586dc5e4388..9138d90f6b0e 100644
  
  partial interface Navigator {
 -  [Throws, Constant, Cached, NeedsCallerType]
-+  [Throws, Pure, Cached, NeedsCallerType]
++  [Throws, Pure, NeedsCallerType]
    readonly attribute DOMString oscpu;
    // WebKit/Blink support this; Trident/Presto do not.
    readonly attribute DOMString vendor;
+@@ -186,4 +186,4 @@ partial interface Navigator {
+   // WebKit/Blink/Trident/Presto support this.
+   readonly attribute boolean cookieEnabled;
+-  [Throws, Constant, Cached, NeedsCallerType]
++  [Throws, Pure, NeedsCallerType]
+   readonly attribute DOMString buildID;

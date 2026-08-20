@@ -62,21 +62,6 @@ index b83896074f5a..092e7ff6caee 100644
    if (aCallerType != CallerType::System) {
      // If fingerprinting resistance is on, we will spoof this value. See
      // nsRFPService.h for details about spoofed values.
-@@ -2027,6 +2066,14 @@ void Navigator::ClearPlatformCache() {
-   Navigator_Binding::ClearCachedPlatformValue(this);
- }
- 
-+void Navigator::ClearAppVersionCache() {
-+  Navigator_Binding::ClearCachedAppVersionValue(this);
-+}
-+
-+void Navigator::ClearOscpuCache() {
-+  Navigator_Binding::ClearCachedOscpuValue(this);
-+}
-+
- void Navigator::ClearLanguageCache() {
-   Navigator_Binding::ClearCachedLanguageValue(this);
-   Navigator_Binding::ClearCachedLanguagesValue(this);
 @@ -2056,6 +2107,8 @@ nsresult Navigator::GetPlatform(nsAString& aPlatform, Document* aCallerDoc,
  #elif defined(XP_MACOSX)
    // Always return "MacIntel", even on ARM64 macOS like Safari does.
