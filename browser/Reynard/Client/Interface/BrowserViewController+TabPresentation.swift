@@ -23,6 +23,7 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
     }
     
     func selectTab(at index: Int, mode: TabMode) {
+        browserChrome.dismissActionBar(animated: false)
         toolbarController.reset()
         if mode == tabManager.selectedTabMode,
            index != tabManager.selectedTabIndex {

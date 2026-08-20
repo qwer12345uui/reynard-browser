@@ -159,10 +159,6 @@ final class ActionBar: UIView {
         pageZoomActionBar.isHidden = item != .pageZoom
     }
     
-    func setTopBorderVisible(_ visible: Bool) {
-        topBorderView.isHidden = !visible
-    }
-    
     func prepareForDismissal() {
         guard item == .findInPage, !hasPreparedFindInPageDismissal else {
             return

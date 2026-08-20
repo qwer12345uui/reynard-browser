@@ -17,7 +17,6 @@ final class ToolbarController {
         case searchOverlay
         case tabOverview
         case viewPresentation
-        case actionBarPopover
         case addonPopover
     }
     

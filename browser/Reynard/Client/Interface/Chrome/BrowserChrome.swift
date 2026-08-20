@@ -72,7 +72,6 @@ final class BrowserChrome: UIView {
     var onFindInPage: ((_ query: String?, _ backwards: Bool) async -> (current: Int, total: Int)?)?
     var onClearFindInPage: (() -> Void)?
     var onFindInPageVisibilityChanged: ((Bool) -> Void)?
-    var onPresentActionBarPopover: ((ActionBarPopover) -> Void)?
     
     let addressBar: AddressBar = {
         let view = AddressBar()
@@ -102,10 +101,7 @@ final class BrowserChrome: UIView {
     private var actionBarTopConstraint: NSLayoutConstraint?
     private var actionBarBottomConstraint: NSLayoutConstraint?
     private var actionBarKeyboardBottomConstraint: NSLayoutConstraint?
-    private var actionBarHorizontalConstraints: [NSLayoutConstraint] = []
     private var actionBarDockOffset: CGFloat = 0
-    private var actionBarPopover: ActionBarPopover?
-    private var isDismissingActionBarPopover = false
     
     private var state: State?
     
@@ -178,10 +174,6 @@ final class BrowserChrome: UIView {
     // MARK: - Layout
     
     func apply(state: State) {
-        let previousMode = self.state?.mode
-        if previousMode == .pad, state.mode != .pad, actionBarPopover != nil {
-            dismissActionBar(animated: false)
-        }
         self.state = state
         addressBar.updateLayout(position: state.position, chromeMode: state.mode)
         attachAddressBar(for: state.mode)
@@ -194,9 +186,6 @@ final class BrowserChrome: UIView {
         actionBar.isUserInteractionEnabled = canUseActionBar
         if !canUseActionBar {
             dismissActionBar(animated: false)
-        }
-        if previousMode != .pad, state.mode == .pad, !actionBar.isHidden {
-            presentActionBarPopover()
         }
         
         let topState: TopToolbar.LayoutState
@@ -230,10 +219,6 @@ final class BrowserChrome: UIView {
     }
     
     func dockActionBar(offset: CGFloat) {
-        guard state?.mode != .pad else {
-            return
-        }
-        
         actionBarDockOffset = offset
         if offset == 0 {
             actionBarKeyboardBottomConstraint?.isActive = false
@@ -273,10 +258,6 @@ final class BrowserChrome: UIView {
         if wasShowingFindInPage != actionBar.isShowingFindInPage {
             onFindInPageVisibilityChanged?(actionBar.isShowingFindInPage)
         }
-        if state?.mode == .pad {
-            presentActionBarPopover()
-            return
-        }
         showActionBar(animated: animated)
     }
     
@@ -289,24 +270,9 @@ final class BrowserChrome: UIView {
         
         let finish = {
             self.actionBar.setItem(nil)
-            self.actionBar.alpha = 0
             if wasShowingFindInPage {
                 self.onFindInPageVisibilityChanged?(false)
             }
-        }
-        
-        if let actionBarPopover {
-            isDismissingActionBarPopover = true
-            actionBarPopover.dismiss(animated: animated) { [weak self, weak actionBarPopover] in
-                guard let self,
-                      self.actionBarPopover === actionBarPopover else {
-                    return
-                }
-                self.actionBarPopover = nil
-                self.isDismissingActionBarPopover = false
-                finish()
-            }
-            return
         }
         
         guard animated else {
@@ -657,18 +623,18 @@ final class BrowserChrome: UIView {
         topToolbar.setContentAlpha(topContentAlpha)
         bottomToolbar.transform = CGAffineTransform(translationX: 0, y: bottomOffset)
         bottomToolbar.setContentAlpha(bottomContentAlpha)
-        actionBar.transform = state?.mode == .pad || actionBarKeyboardBottomConstraint != nil
-        ? .identity
-        : CGAffineTransform(translationX: 0, y: bottomOffset)
+        actionBar.transform = actionBarKeyboardBottomConstraint == nil
+        ? CGAffineTransform(translationX: 0, y: bottomOffset)
+        : .identity
     }
     
     func setChromeTransition(topAlpha: CGFloat, bottomAlpha: CGFloat, bottomTranslationY: CGFloat = 0) {
         topToolbar.alpha = topAlpha
         bottomToolbar.alpha = bottomAlpha
         bottomToolbar.transform = CGAffineTransform(translationX: 0, y: bottomTranslationY)
-        actionBar.transform = state?.mode == .pad || actionBarKeyboardBottomConstraint != nil
-        ? .identity
-        : CGAffineTransform(translationX: 0, y: bottomTranslationY)
+        actionBar.transform = actionBarKeyboardBottomConstraint == nil
+        ? CGAffineTransform(translationX: 0, y: bottomTranslationY)
+        : .identity
     }
     
     func setBottomToolbarHidden(_ hidden: Bool) {
@@ -696,6 +662,7 @@ final class BrowserChrome: UIView {
         addSubview(bottomToolbar)
         addSubview(overlayDismissView)
         addSubview(overlayContentView)
+        addSubview(actionBar)
     }
     
     private func configureConstraints() {
@@ -721,6 +688,9 @@ final class BrowserChrome: UIView {
             
             overlayWidthConstraint,
             overlayHeightConstraint,
+            
+            actionBar.leadingAnchor.constraint(equalTo: leadingAnchor),
+            actionBar.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
         topToolbar.extendBackground(to: tabBar.bottomAnchor)
         bottomToolbar.configureTopAnchor(to: safeAreaLayoutGuide.bottomAnchor)
@@ -753,42 +723,30 @@ final class BrowserChrome: UIView {
     }
     
     private func attachActionBar(for mode: BrowserChromeMode) {
-        NSLayoutConstraint.deactivate(actionBarHorizontalConstraints)
         NSLayoutConstraint.deactivate([
             actionBarTopConstraint,
             actionBarBottomConstraint,
             actionBarKeyboardBottomConstraint,
         ].compactMap { $0 })
         actionBarKeyboardBottomConstraint = nil
-        
-        guard mode != .pad else {
-            if actionBar.superview === self {
-                actionBar.removeFromSuperview()
-            }
-            actionBarDockOffset = 0
-            actionBar.transform = .identity
-            return
+        switch mode {
+        case .pad:
+            let constraint = actionBar.bottomAnchor.constraint(
+                equalTo: bottomAnchor,
+                constant: -UX.actionBarSpacing
+            )
+            constraint.isActive = true
+            actionBarBottomConstraint = constraint
+            actionBarTopConstraint = nil
+        case .phone, .compact:
+            let constraint = actionBar.bottomAnchor.constraint(
+                equalTo: bottomToolbar.topAnchor,
+                constant: -UX.actionBarSpacing
+            )
+            constraint.isActive = true
+            actionBarBottomConstraint = constraint
+            actionBarTopConstraint = nil
         }
-        
-        if actionBar.superview !== self {
-            actionBarPopover?.removeActionBar()
-            actionBar.removeFromSuperview()
-            addSubview(actionBar)
-        }
-        if actionBarHorizontalConstraints.isEmpty {
-            actionBarHorizontalConstraints = [
-                actionBar.leadingAnchor.constraint(equalTo: leadingAnchor),
-                actionBar.trailingAnchor.constraint(equalTo: trailingAnchor),
-            ]
-        }
-        NSLayoutConstraint.activate(actionBarHorizontalConstraints)
-        let constraint = actionBar.bottomAnchor.constraint(
-            equalTo: bottomToolbar.topAnchor,
-            constant: -UX.actionBarSpacing
-        )
-        constraint.isActive = true
-        actionBarBottomConstraint = constraint
-        actionBarTopConstraint = nil
         
         if actionBarDockOffset != 0 {
             actionBarBottomConstraint?.isActive = false
@@ -814,39 +772,6 @@ final class BrowserChrome: UIView {
         UIView.animate(withDuration: UX.actionBarAnimationDuration, animations: animations)
     }
     
-    private func presentActionBarPopover() {
-        guard actionBarPopover == nil else {
-            return
-        }
-        
-        actionBar.alpha = 1
-        let popover = ActionBarPopover(actionBar: actionBar)
-        popover.onDismiss = { [weak self, weak popover] in
-            guard let self, let popover else {
-                return
-            }
-            self.actionBarPopoverDidDismiss(popover)
-        }
-        actionBarPopover = popover
-        onPresentActionBarPopover?(popover)
-    }
-    
-    private func actionBarPopoverDidDismiss(_ popover: ActionBarPopover) {
-        guard actionBarPopover === popover,
-              !isDismissingActionBarPopover else {
-            return
-        }
-        
-        actionBarPopover = nil
-        actionBar.prepareForDismissal()
-        let wasShowingFindInPage = actionBar.isShowingFindInPage
-        actionBar.setItem(nil)
-        actionBar.alpha = 0
-        if wasShowingFindInPage {
-            onFindInPageVisibilityChanged?(false)
-        }
-    }
-    
     private func resolvedTopState(for state: State) -> TopToolbar.LayoutState {
         switch state.mode {
         case .phone: return .hidden
@@ -868,5 +793,4 @@ final class BrowserChrome: UIView {
             }
         }
     }
-    
 }

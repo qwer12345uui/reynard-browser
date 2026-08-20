@@ -10,8 +10,8 @@ import UIKit
 final class FindInPageActionBar: UIView, UITextFieldDelegate {
     private enum UX {
         static let backgroundHeight: CGFloat = 62
-        static let searchBarLeadingInset: CGFloat = 12
-        static let searchBarMaximumWidth: CGFloat = 640
+        static let contentLeadingInset: CGFloat = 12
+        static let contentMaximumWidth: CGFloat = 650
         static let searchBarToControlsSpacing: CGFloat = 12
         static let controlsHeight: CGFloat = 38
         static let searchContentInset: CGFloat = 12
@@ -39,6 +39,12 @@ final class FindInPageActionBar: UIView, UITextFieldDelegate {
         let view = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
         view.translatesAutoresizingMaskIntoConstraints = false
         view.contentView.backgroundColor = UIColor.systemBackground.withAlphaComponent(UX.backgroundAlpha)
+        return view
+    }()
+    
+    private let searchContentView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
     
@@ -132,6 +138,9 @@ final class FindInPageActionBar: UIView, UITextFieldDelegate {
     }()
     
     private var requestID = 0
+    private var searchContentViewCenterConstraint: NSLayoutConstraint!
+    private var searchContentViewLeadingConstraint: NSLayoutConstraint!
+    private var searchContentViewTrailingConstraint: NSLayoutConstraint!
     
     // MARK: - Lifecycle
     
@@ -156,6 +165,7 @@ final class FindInPageActionBar: UIView, UITextFieldDelegate {
     
     override func layoutSubviews() {
         super.layoutSubviews()
+        updateSearchContentLayout()
         [searchBarShadowView, controlsShadowView].forEach { view in
             view.layer.shadowPath = UIBezierPath(
                 roundedRect: view.bounds,
@@ -266,11 +276,12 @@ final class FindInPageActionBar: UIView, UITextFieldDelegate {
     
     private func configureHierarchy() {
         addSubview(backgroundView)
-        addSubview(searchBarShadowView)
+        addSubview(searchContentView)
+        searchContentView.addSubview(searchBarShadowView)
         searchBarShadowView.addSubview(searchBarBackground)
         searchBarBackground.contentView.addSubview(searchField)
         searchBarBackground.contentView.addSubview(resultLabel)
-        addSubview(controlsShadowView)
+        searchContentView.addSubview(controlsShadowView)
         controlsShadowView.addSubview(controlsBackground)
         [previousMatchButton, separator, nextMatchButton].forEach {
             controlsBackground.contentView.addSubview($0)
@@ -278,10 +289,19 @@ final class FindInPageActionBar: UIView, UITextFieldDelegate {
     }
     
     private func configureConstraints() {
-        let preferredSearchBarWidth = searchBarShadowView.widthAnchor.constraint(
-            equalToConstant: UX.searchBarMaximumWidth
+        let preferredContentWidth = searchContentView.widthAnchor.constraint(
+            equalToConstant: UX.contentMaximumWidth
         )
-        preferredSearchBarWidth.priority = .defaultHigh
+        preferredContentWidth.priority = .defaultHigh
+        searchContentViewCenterConstraint = searchContentView.centerXAnchor.constraint(equalTo: centerXAnchor)
+        searchContentViewLeadingConstraint = searchContentView.leadingAnchor.constraint(
+            equalTo: leadingAnchor,
+            constant: UX.contentLeadingInset
+        )
+        searchContentViewTrailingConstraint = searchContentView.trailingAnchor.constraint(
+            equalTo: trailingAnchor,
+            constant: -UX.contentTrailingInset
+        )
         
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: UX.backgroundHeight),
@@ -291,12 +311,25 @@ final class FindInPageActionBar: UIView, UITextFieldDelegate {
             backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor),
             backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor),
             
-            searchBarShadowView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: UX.searchBarLeadingInset),
-            searchBarShadowView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            searchContentViewCenterConstraint,
+            searchContentView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            searchContentView.leadingAnchor.constraint(
+                greaterThanOrEqualTo: leadingAnchor,
+                constant: UX.contentLeadingInset
+            ),
+            searchContentView.trailingAnchor.constraint(
+                lessThanOrEqualTo: trailingAnchor,
+                constant: -UX.contentTrailingInset
+            ),
+            searchContentView.widthAnchor.constraint(lessThanOrEqualToConstant: UX.contentMaximumWidth),
+            preferredContentWidth,
+            searchContentView.heightAnchor.constraint(equalToConstant: UX.controlsHeight),
+            
+            searchBarShadowView.leadingAnchor.constraint(equalTo: searchContentView.leadingAnchor),
+            searchBarShadowView.centerYAnchor.constraint(equalTo: searchContentView.centerYAnchor),
             searchBarShadowView.heightAnchor.constraint(equalToConstant: UX.controlsHeight),
-            preferredSearchBarWidth,
             searchBarShadowView.trailingAnchor.constraint(
-                lessThanOrEqualTo: controlsShadowView.leadingAnchor,
+                equalTo: controlsShadowView.leadingAnchor,
                 constant: -UX.searchBarToControlsSpacing
             ),
             
@@ -320,11 +353,8 @@ final class FindInPageActionBar: UIView, UITextFieldDelegate {
             resultLabel.centerYAnchor.constraint(equalTo: searchBarBackground.contentView.centerYAnchor),
             resultLabel.widthAnchor.constraint(equalToConstant: UX.resultLabelWidth),
             
-            controlsShadowView.trailingAnchor.constraint(
-                equalTo: trailingAnchor,
-                constant: -UX.contentTrailingInset
-            ),
-            controlsShadowView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            controlsShadowView.trailingAnchor.constraint(equalTo: searchContentView.trailingAnchor),
+            controlsShadowView.centerYAnchor.constraint(equalTo: searchContentView.centerYAnchor),
             controlsShadowView.widthAnchor.constraint(equalToConstant: UX.controlsWidth),
             controlsShadowView.heightAnchor.constraint(equalToConstant: UX.controlsHeight),
             
@@ -349,6 +379,18 @@ final class FindInPageActionBar: UIView, UITextFieldDelegate {
             nextMatchButton.bottomAnchor.constraint(equalTo: controlsBackground.contentView.bottomAnchor),
             nextMatchButton.widthAnchor.constraint(equalToConstant: UX.controlButtonWidth),
         ])
+    }
+    
+    private func updateSearchContentLayout() {
+        let availableWidth = bounds.width - UX.contentLeadingInset - UX.contentTrailingInset
+        let shouldCenter = availableWidth >= UX.contentMaximumWidth
+        guard searchContentViewCenterConstraint.isActive != shouldCenter else {
+            return
+        }
+        
+        searchContentViewCenterConstraint.isActive = shouldCenter
+        searchContentViewLeadingConstraint.isActive = !shouldCenter
+        searchContentViewTrailingConstraint.isActive = !shouldCenter
     }
     
     private func setResultText(_ text: String?) {

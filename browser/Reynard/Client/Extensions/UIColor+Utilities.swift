@@ -1,5 +1,5 @@
 //
-//  UIColor+Hex.swift
+//  UIColor+Utilities.swift
 //  Reynard
 //
 //  Created by Minh Ton on 16/6/26.
@@ -41,5 +41,31 @@ extension UIColor {
             Int((green * 255).rounded()),
             Int((blue * 255).rounded())
         )
+    }
+    
+    func isLightColor(in traitCollection: UITraitCollection) -> Bool {
+        let resolvedColor = resolvedColor(with: traitCollection)
+        var whiteComponent: CGFloat = 0
+        var alphaComponent: CGFloat = 0
+        if resolvedColor.getWhite(&whiteComponent, alpha: &alphaComponent) {
+            return whiteComponent > 0.5
+        }
+        
+        var redComponent: CGFloat = 0
+        var greenComponent: CGFloat = 0
+        var blueComponent: CGFloat = 0
+        guard resolvedColor.getRed(
+            &redComponent,
+            green: &greenComponent,
+            blue: &blueComponent,
+            alpha: &alphaComponent
+        ) else {
+            return false
+        }
+        
+        let perceivedBrightness = 0.299 * redComponent
+        + 0.587 * greenComponent
+        + 0.114 * blueComponent
+        return perceivedBrightness > 0.5
     }
 }
