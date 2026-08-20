@@ -1,6 +1,0 @@
-diff --git a/docshell/base/nsIDocShell.idl b/docshell/base/nsIDocShell.idl
-index db0721841de3..a7422cdd537e 100644
---- a/docshell/base/nsIDocShell.idl
-+++ b/docshell/base/nsIDocShell.idl
-   readonly attribute boolean restoringDocument;
- 
