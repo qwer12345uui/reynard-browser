@@ -23,6 +23,8 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         static let phoneSearchFocusedBottomInset: CGFloat = 94
         static let focusedInputBottomClearance: CGFloat = 12
         static let focusedInputOffsetThreshold: CGFloat = 0.5
+        static let fallbackFocusedInputBottomRatio: CGFloat = 1
+        static let focusedInputMetricRefreshDelay: UInt64 = 300_000_000
         static let historyPreviewParallaxRatio: CGFloat = 0.33
         static let historyTransitionOverlayMaximumAlpha: CGFloat = 0.12
         static let historyTransitionProjectionDuration: CGFloat = 0.2
@@ -415,22 +417,52 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         
         focusedInputTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            let bottomRatio = await session.focusedInputBottomRatio()
-            guard !Task.isCancelled else { return }
+            let initialBottomRatio = await session.focusedInputBottomRatio()
+            guard !Task.isCancelled, self.session === session else { return }
             
-            inputBottomRatio = bottomRatio
-            superview?.layoutIfNeeded()
-            let newOffset = calculateFocusedInputOffset(keyboardFrame: keyboardFrame)
-            guard abs(newOffset - focusedInputOffset) > UX.focusedInputOffsetThreshold else {
-                return
-            }
+            // Gecko can temporarily return no metrics while the native keyboard is
+            // taking over first responder status. Move the content by the keyboard
+            // overlap immediately in that case, then replace the fallback with a
+            // post-animation measurement as soon as the visual viewport settles.
+            self.applyFocusedInputRelocation(
+                bottomRatio: initialBottomRatio,
+                keyboardFrame: keyboardFrame,
+                animationDuration: animationDuration,
+                animationOptions: animationOptions
+            )
+
+            try? await Task.sleep(nanoseconds: UX.focusedInputMetricRefreshDelay)
+            guard !Task.isCancelled, self.session === session else { return }
+            let settledBottomRatio = await session.focusedInputBottomRatio()
+            guard !Task.isCancelled, self.session === session else { return }
             
-            focusedInputOffset = newOffset
-            updateLayoutOffsets()
-            animateLayout(duration: animationDuration, options: animationOptions)
+            self.applyFocusedInputRelocation(
+                bottomRatio: settledBottomRatio ?? initialBottomRatio,
+                keyboardFrame: keyboardFrame,
+                animationDuration: animationDuration,
+                animationOptions: animationOptions
+            )
         }
     }
     
+    private func applyFocusedInputRelocation(
+        bottomRatio: CGFloat?,
+        keyboardFrame: CGRect,
+        animationDuration: TimeInterval,
+        animationOptions: UIView.AnimationOptions
+    ) {
+        inputBottomRatio = bottomRatio ?? UX.fallbackFocusedInputBottomRatio
+        superview?.layoutIfNeeded()
+        let newOffset = calculateFocusedInputOffset(keyboardFrame: keyboardFrame)
+        guard abs(newOffset - focusedInputOffset) > UX.focusedInputOffsetThreshold else {
+            return
+        }
+
+        focusedInputOffset = newOffset
+        updateLayoutOffsets()
+        animateLayout(duration: animationDuration, options: animationOptions)
+    }
+
     private func calculateFocusedInputOffset(keyboardFrame: CGRect) -> CGFloat {
         guard let inputBottomRatio else { return 0 }
         
