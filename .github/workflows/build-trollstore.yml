@@ -1,4 +1,4 @@
-name: Build iOS packages
+name: Build RootHide IPA
 
 # The compiled Gecko engine and the application dependency tree have deliberately
 # separate reuse boundaries. UI/source-only pushes restore the immutable Gecko
@@ -300,44 +300,35 @@ jobs:
             exit "$status"
           fi
 
-      - name: Package standard, TrollStore, and RootHide IPA files
+      - name: Package RootHide IPA
         shell: bash
         run: |
           set +e
-          sh ./tools/release/create-ipa.sh 2>&1 | tee package-standard.log
-          standard_status=${PIPESTATUS[0]}
-          sh ./tools/release/create-ipa.sh --trollstore 2>&1 | tee package-trollstore.log
-          trollstore_status=${PIPESTATUS[0]}
-          sh ./tools/release/create-ipa.sh --jailbroken 2>&1 | tee package-jailbroken.log
-          jailbroken_status=${PIPESTATUS[0]}
-          if [ "$standard_status" -ne 0 ] || [ "$trollstore_status" -ne 0 ] || [ "$jailbroken_status" -ne 0 ]; then
-            cat package-standard.log package-trollstore.log package-jailbroken.log | tail -n 120 | cut -c1-400 > diagnostics.txt
+          sh ./tools/release/create-ipa.sh --jailbroken 2>&1 | tee package-roothide.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            tail -n 120 package-roothide.log | cut -c1-400 > diagnostics.txt
             message="$(cat diagnostics.txt)"
             message="${message//'%'/'%25'}"
             message="${message//$'\n'/'%0A'}"
             message="${message//$'\r'/'%0D'}"
-            echo "::error title=IPA packaging diagnostics::$message"
-            exit 1
+            echo "::error title=RootHide IPA packaging diagnostics::$message"
+            exit "$status"
           fi
 
-      - name: Verify IPA artifacts
+      - name: Verify RootHide IPA artifact
         run: |
           set -euo pipefail
-          for package in dist/Reynard.ipa dist/Reynard-TrollStore.tipa dist/Reynard-Jailbroken.ipa; do
-            test -s "$package"
-            unzip -t "$package"
-            shasum -a 256 "$package" | tee "$package.sha256"
-          done
+          package="dist/Reynard-Jailbroken.ipa"
+          test -s "$package"
+          unzip -t "$package"
+          shasum -a 256 "$package" | tee "$package.sha256"
 
-      - name: Upload verified IPA artifacts
+      - name: Upload verified RootHide IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Reynard-iOS-packages-${{ github.sha }}
+          name: Reynard-RootHide-IPA-${{ github.sha }}
           path: |
-            dist/Reynard.ipa
-            dist/Reynard.ipa.sha256
-            dist/Reynard-TrollStore.tipa
-            dist/Reynard-TrollStore.tipa.sha256
             dist/Reynard-Jailbroken.ipa
             dist/Reynard-Jailbroken.ipa.sha256
           if-no-files-found: error
@@ -350,9 +341,7 @@ jobs:
           name: package-logs-${{ github.sha }}
           path: |
             archive.log
-            package-standard.log
-            package-trollstore.log
-            package-jailbroken.log
+            package-roothide.log
             diagnostics.txt
           if-no-files-found: ignore
           retention-days: 14
