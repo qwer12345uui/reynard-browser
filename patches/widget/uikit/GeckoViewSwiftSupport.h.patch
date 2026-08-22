@@ -1,12 +1,13 @@
 diff --git a/widget/uikit/GeckoViewSwiftSupport.h b/widget/uikit/GeckoViewSwiftSupport.h
-index e68fca9134c0..dabe93138c31 100644
+index e68fca9134c0..adf825968062 100644
 --- a/widget/uikit/GeckoViewSwiftSupport.h
 +++ b/widget/uikit/GeckoViewSwiftSupport.h
-@@ -18,14 +18,66 @@
+@@ -17,15 +17,71 @@
+ #  define MOZ_END_EXTERN_C
  #endif
  
- #import <Foundation/Foundation.h>
 +#import <AVFoundation/AVSampleBufferDisplayLayer.h>
+ #import <Foundation/Foundation.h>
  #import <UIKit/UIKit.h>
  #import <xpc/xpc.h>
  
@@ -48,6 +49,10 @@ index e68fca9134c0..dabe93138c31 100644
 +       scrollableEdges:(GeckoScrollableEdges)scrollableEdges
 +        overscrollAxes:(GeckoOverscrollAxes)overscrollAxes;
 +- (void)touchSequenceDidEnd:(uint64_t)sequenceId;
++- (void)trackpadScrollDidBegin:(CGPoint)delta;
++- (void)trackpadScrollDidUpdate:(CGPoint)delta;
++- (void)trackpadScrollDidEnd;
++- (void)trackpadScrollDidCancel;
 +- (void)compositorScrollPositionDidChange:(double)scrollY zoom:(double)zoom;
 +- (GeckoEdgeSwipeDirections)allowedEdgeSwipeDirections;
 +- (void)edgeSwipeDidStart:(GeckoEdgeSwipeDirections)direction;
@@ -69,7 +74,7 @@ index e68fca9134c0..dabe93138c31 100644
  @end
  
  @protocol GeckoProcessExtension <NSObject>
-@@ -55,8 +107,24 @@
+@@ -55,8 +111,24 @@
  @end
  
  @protocol GeckoViewWindow <NSObject>

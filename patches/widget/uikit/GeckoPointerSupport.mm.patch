@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoPointerSupport.mm b/widget/uikit/GeckoPointerSupport.mm
 new file mode 100644
-index 000000000000..3ddc17cbaeb0
+index 000000000000..e2eb2b66a809
 --- /dev/null
 +++ b/widget/uikit/GeckoPointerSupport.mm
-@@ -0,0 +1,759 @@
+@@ -0,0 +1,789 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -18,9 +18,9 @@ index 000000000000..3ddc17cbaeb0
 +#include "GeckoEditableSupport.h"
 +#include "GeckoKeyboardSupport.h"
 +#include "InputData.h"
++#include "TextInputHandler.h"
 +#include "nsGkAtoms.h"
 +#include "nsWindow.h"
-+#include "TextInputHandler.h"
 +
 +#include "mozilla/MiscEvents.h"
 +#include "mozilla/MouseEvents.h"
@@ -48,14 +48,17 @@ index 000000000000..3ddc17cbaeb0
 +
 +@interface GeckoScrollGestureRecognizer : UIPanGestureRecognizer
 +- (NSTimeInterval)scrollTimestamp;
++- (BOOL)isContinuousScroll API_AVAILABLE(ios(13.4));
 +@end
 +
 +@implementation GeckoScrollGestureRecognizer {
 +  NSTimeInterval mScrollTimestamp;
++  BOOL mIsContinuousScroll;
 +}
 +
 +- (void)_scrollingChangedWithEvent:(UIEvent*)event API_AVAILABLE(ios(13.4)) {
 +  mScrollTimestamp = event.timestamp;
++  mIsContinuousScroll = [event _scrollType] == UIScrollTypeContinuous;
 +  [self _setiOSMacUseNonacceleratedDelta:[event _scrollType] ==
 +                                         UIScrollTypeContinuous];
 +  [super _scrollingChangedWithEvent:event];
@@ -63,6 +66,10 @@ index 000000000000..3ddc17cbaeb0
 +
 +- (NSTimeInterval)scrollTimestamp {
 +  return mScrollTimestamp;
++}
++
++- (BOOL)isContinuousScroll {
++  return mIsContinuousScroll;
 +}
 +
 +@end
@@ -535,6 +542,29 @@ index 000000000000..3ddc17cbaeb0
 +  panEvent.mSimulateMomentum = true;
 +  panEvent.mAllowFlingAcceleration = false;
 +  mGeckoChild->DispatchPanGestureInput(panEvent);
++
++  if ([(GeckoScrollGestureRecognizer*)sender isContinuousScroll]) {
++    switch (sender.state) {
++      case UIGestureRecognizerStateBegan:
++        [mInteractionDelegate trackpadScrollDidBegin:displacement];
++        break;
++      case UIGestureRecognizerStateChanged:
++        [mInteractionDelegate trackpadScrollDidUpdate:displacement];
++        break;
++      case UIGestureRecognizerStateEnded:
++        if (!CGPointEqualToPoint(displacement, CGPointZero)) {
++          [mInteractionDelegate trackpadScrollDidUpdate:displacement];
++        }
++        [mInteractionDelegate trackpadScrollDidEnd];
++        break;
++      case UIGestureRecognizerStateCancelled:
++        [mInteractionDelegate trackpadScrollDidCancel];
++        break;
++      default:
++        break;
++    }
++  }
++
 +  [sender setTranslation:CGPointZero inView:mView];
 +}
 +

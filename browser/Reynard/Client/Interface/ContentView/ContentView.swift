@@ -72,7 +72,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     private var dynamicToolbarMaxHeight: CGFloat = 0
     private var contentBottomOffset: CGFloat = 0
     private var toolbarTopOffset: CGFloat = 0
-    private var maxTopToolbarOffset: CGFloat = 0
+    private var webContentBottomOffset: CGFloat = 0
     private var focusedInputTask: Task<Void, Never>?
     private var inputBottomRatio: CGFloat?
     private var isSystemTextInputActive = false
@@ -281,16 +281,16 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         return previousSize != size
     }
     
-    func setToolbarLimits(maxHeight: CGFloat, topOffset: CGFloat) {
+    func setToolbarLimits(maxHeight: CGFloat, webContentBottomOffset: CGFloat) {
         if maxHeight != dynamicToolbarMaxHeight {
             dynamicToolbarMaxHeight = maxHeight
             session?.setDynamicToolbarMaxHeight(maxHeight)
         }
         
-        guard abs(topOffset - maxTopToolbarOffset) > 0.5 else {
+        guard abs(webContentBottomOffset - self.webContentBottomOffset) > 0.5 else {
             return
         }
-        maxTopToolbarOffset = topOffset
+        self.webContentBottomOffset = webContentBottomOffset
         updateContentBottomInset()
     }
     
@@ -396,7 +396,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     }
     
     private func updateContentBottomInset() {
-        webContentBottomConstraint?.constant = maxTopToolbarOffset - focusedInputOffset
+        webContentBottomConstraint?.constant = webContentBottomOffset - focusedInputOffset
     }
     
     // MARK: - Focused Input Relocation

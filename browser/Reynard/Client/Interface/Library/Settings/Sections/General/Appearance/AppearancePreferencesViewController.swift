@@ -253,12 +253,12 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
             return [.BrowserChromePosition, .showFullWebsiteAddress]
         case .gestures:
             var rows: [Row] = [.pullToRefresh, .scrollToHideToolbar]
-            if position == .bottom {
-                rows.append(.swipeAddressBarSideways)
-                if UIDevice.current.userInterfaceIdiom != .pad {
-                    rows.append(.swipeAddressBarUp)
-                }
+            guard position == .bottom,
+                  UIDevice.current.userInterfaceIdiom == .phone else {
+                return rows
             }
+            rows.append(.swipeAddressBarSideways)
+            rows.append(.swipeAddressBarUp)
             return rows
         case .tabs:
             if UIDevice.current.userInterfaceIdiom == .pad {

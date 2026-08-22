@@ -8,6 +8,23 @@ TARGET="aarch64-apple-ios"
 MOZCONFIG_PATH="$FIREFOX_DIR/.mozconfig"
 MOZCONFIG_BACKUP="$FIREFOX_DIR/.mozconfig.reynard-backup"
 HAD_MOZCONFIG=0
+USE_SCCACHE=false
+AUTO_CLOBBER=false
+DISABLE_JEMALLOC=false
+
+for arg in "$@"; do
+	case "$arg" in
+		--use-sccache)
+			USE_SCCACHE=true
+			;;
+		--auto-clobber)
+			AUTO_CLOBBER=true
+			;;
+		--disable-jemalloc)
+			DISABLE_JEMALLOC=true
+			;;
+	esac
+done
 
 restore_mozconfig() {
 	if [ -f "$MOZCONFIG_BACKUP" ]; then
@@ -48,8 +65,15 @@ trap restore_mozconfig EXIT HUP INT TERM
 	# The hosted macOS toolchain does not provide the WASM sandbox libraries
 	# required by Firefox's desktop configuration.
 	echo "ac_add_options --without-wasm-sandboxed-libraries"
-	if [ "${1:-}" = "--disable-jemalloc" ]; then
+	echo "ac_add_options --enable-bootstrap"
+	if [ "$USE_SCCACHE" = true ]; then
+		echo "ac_add_options --with-ccache=sccache"
+	fi
+	if [ "$DISABLE_JEMALLOC" = true ]; then
 		echo "ac_add_options --disable-jemalloc"
+	fi
+	if [ "$AUTO_CLOBBER" = true ]; then
+		echo "mk_add_options AUTOCLOBBER=1"
 	fi
 } > "$MOZCONFIG_PATH"
 

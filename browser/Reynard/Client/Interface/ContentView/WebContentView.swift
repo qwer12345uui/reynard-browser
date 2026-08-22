@@ -36,6 +36,7 @@ final class WebContentView: UIView, UIScrollViewDelegate {
     private var pullToRefreshRecognizer: PullToRefreshGestureRecognizer?
     private var isSystemTextInputActive = false
     private var lastScrollState: (position: CGFloat, zoomScale: CGFloat)?
+    private var currentScrollY: CGFloat = 0
     private var pageBackgroundTopConstraint: NSLayoutConstraint?
     
     private let webView = GeckoView()
@@ -75,7 +76,7 @@ final class WebContentView: UIView, UIScrollViewDelegate {
         )
         scrollToTopTriggerView.contentOffset.y = UX.scrollToTopTriggerOffset
     }
-
+    
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         guard previousTraitCollection?.hasDifferentColorAppearance(comparedTo: traitCollection) == true else {
@@ -194,6 +195,7 @@ final class WebContentView: UIView, UIScrollViewDelegate {
             return
         }
         lastScrollState = nil
+        currentScrollY = 0
         refreshingSession = nil
         pullToRefreshRecognizer?.cancelPull()
         webView.session = tab?.session
@@ -418,7 +420,7 @@ final class WebContentView: UIView, UIScrollViewDelegate {
         refreshIndicator.layer.beginTime = 0
         isTrackingPullProgress = false
     }
-
+    
     private func updateRefreshIndicatorTint() {
         guard let pageBackgroundColor = pageBackgroundView.backgroundColor else {
             return
@@ -448,7 +450,27 @@ extension WebContentView: GeckoViewInteractionDelegate {
     
     func touchSequenceDidEnd(_ sequenceID: UInt64) {}
     
+    func trackpadScrollDidBegin(_ delta: CGPoint) {
+        guard currentScrollY <= 0.5 else {
+            return
+        }
+        pullToRefreshRecognizer?.beginTrackpadScroll(delta)
+    }
+    
+    func trackpadScrollDidUpdate(_ delta: CGPoint) {
+        pullToRefreshRecognizer?.updateTrackpadScroll(delta)
+    }
+    
+    func trackpadScrollDidEnd() {
+        pullToRefreshRecognizer?.endTrackpadScroll()
+    }
+    
+    func trackpadScrollDidCancel() {
+        pullToRefreshRecognizer?.cancelTrackpadScroll()
+    }
+    
     func compositorScrollPositionDidChange(_ scrollY: Double, zoom: Double) {
+        currentScrollY = CGFloat(scrollY)
         let currentState = (position: CGFloat(scrollY), zoomScale: CGFloat(zoom))
         defer {
             lastScrollState = currentState
@@ -505,6 +527,7 @@ private final class PullToRefreshGestureRecognizer: UIGestureRecognizer {
     private var previousTap: (position: CGPoint, endTimestamp: TimeInterval)?
     private var hasTriggeredThresholdFeedback = false
     private var isAwaitingRefreshCompletion = false
+    private var isTrackingTrackpadScroll = false
     var pullDistance: CGFloat {
         return touchPosition.y - touchOrigin.y
     }
@@ -531,6 +554,7 @@ private final class PullToRefreshGestureRecognizer: UIGestureRecognizer {
         activeInputSequenceID = nil
         isPullApproved = false
         hasTriggeredThresholdFeedback = false
+        isTrackingTrackpadScroll = false
         
         if let previousTap {
             let interval = touch.timestamp - previousTap.endTimestamp
@@ -604,6 +628,54 @@ private final class PullToRefreshGestureRecognizer: UIGestureRecognizer {
         updatePullRecognition()
     }
     
+    func beginTrackpadScroll(_ delta: CGPoint) {
+        guard !isAwaitingRefreshCompletion, state == .possible else {
+            return
+        }
+        touchOrigin = .zero
+        touchPosition = delta
+        activeInputSequenceID = nil
+        isPullApproved = true
+        previousTap = nil
+        hasTriggeredThresholdFeedback = false
+        isTrackingTrackpadScroll = true
+        updatePullRecognition()
+    }
+    
+    func updateTrackpadScroll(_ delta: CGPoint) {
+        guard isTrackingTrackpadScroll else {
+            return
+        }
+        touchPosition.x += delta.x
+        touchPosition.y += delta.y
+        updatePullRecognition()
+    }
+    
+    func endTrackpadScroll() {
+        guard isTrackingTrackpadScroll else {
+            return
+        }
+        isTrackingTrackpadScroll = false
+        if isRecognizing {
+            isAwaitingRefreshCompletion = progress >= 1
+            state = .ended
+        } else {
+            state = .failed
+        }
+    }
+    
+    func cancelTrackpadScroll() {
+        guard isTrackingTrackpadScroll else {
+            return
+        }
+        isTrackingTrackpadScroll = false
+        if isRecognizing {
+            state = .cancelled
+        } else {
+            state = .failed
+        }
+    }
+    
     func completeRefresh() {
         isAwaitingRefreshCompletion = false
     }
@@ -613,6 +685,7 @@ private final class PullToRefreshGestureRecognizer: UIGestureRecognizer {
         activeInputSequenceID = nil
         isPullApproved = false
         isAwaitingRefreshCompletion = false
+        isTrackingTrackpadScroll = false
         if isRecognizing {
             state = .cancelled
         } else if state == .possible {
