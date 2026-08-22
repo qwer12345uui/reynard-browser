@@ -82,4 +82,40 @@ if ! rustup target list | grep -q "^$TARGET (installed)"; then
 fi
 
 cd "$FIREFOX_DIR"
-./mach build
+BUILD_LOG="$(mktemp "${TMPDIR:-/tmp}/reynard-gecko-build.XXXXXX")"
+
+run_gecko_build() {
+	set +e
+	./mach build > "$BUILD_LOG" 2>&1
+	status=$?
+	set -e
+	cat "$BUILD_LOG"
+	return "$status"
+}
+
+if ! run_gecko_build; then
+	# A failed or interrupted archive update can leave one JS unified object with
+	# an invalid archive record. Rebuild only that member and libjs_static.a; all
+	# other successfully compiled Gecko objects remain reusable.
+	corrupt_object="$(sed -n "s/.*libjs_static\\.a: '\\([^']*\\.o\\)'.*Invalid record.*/\\1/p" "$BUILD_LOG" | tail -n 1)"
+	if [ -z "$corrupt_object" ]; then
+		rm -f "$BUILD_LOG"
+		exit 1
+	fi
+
+	obj_dir="$(find "$FIREFOX_DIR" -maxdepth 1 -type d -name 'obj-*' -print -quit)"
+	if [ -z "$obj_dir" ]; then
+		rm -f "$BUILD_LOG"
+		exit 1
+	fi
+
+	echo "Recovering corrupted JS archive member: $corrupt_object"
+	find "$obj_dir" -type f -name "$corrupt_object" -delete
+	find "$obj_dir/js/src" -type f -name 'libjs_static.a' -delete
+	if ! run_gecko_build; then
+		rm -f "$BUILD_LOG"
+		exit 1
+	fi
+fi
+
+rm -f "$BUILD_LOG"
