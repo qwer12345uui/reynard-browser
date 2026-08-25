@@ -93,28 +93,45 @@ run_gecko_build() {
 	return "$status"
 }
 
-if ! run_gecko_build; then
-	# A failed or interrupted archive update can leave one JS unified object with
-	# an invalid archive record. Rebuild only that member and libjs_static.a; all
-	# other successfully compiled Gecko objects remain reusable.
-	corrupt_object="$(sed -n "s/.*libjs_static\\.a: '\\([^']*\\.o\\)'.*Invalid record.*/\\1/p" "$BUILD_LOG" | tail -n 1)"
-	if [ -z "$corrupt_object" ]; then
-		rm -f "$BUILD_LOG"
-		exit 1
+archive_member_from_log() {
+	sed -n "s/.*libjs_static\\.a: '\\([^']*\\.o\\)'.*Invalid record.*/\\1/p" "$BUILD_LOG" | tail -n 1
+}
+
+obj_dir="$(find "$FIREFOX_DIR" -maxdepth 1 -type d -name 'obj-*' -print -quit)"
+
+recover_archive_member() {
+	corrupt_object="$1"
+	if [ -z "$obj_dir" ] || [ ! -d "$obj_dir/js/src" ]; then
+		echo "Cannot recover Gecko archive: JS object directory is unavailable." >&2
+		return 1
 	fi
 
-	obj_dir="$(find "$FIREFOX_DIR" -maxdepth 1 -type d -name 'obj-*' -print -quit)"
-	if [ -z "$obj_dir" ]; then
-		rm -f "$BUILD_LOG"
-		exit 1
-	fi
-
+	# A failed archive update can retain a stale dependency file alongside the
+	# invalid member. Remove both the member and libjs_static.a so make is forced
+	# to recreate the object before rebuilding the archive.
 	echo "Recovering corrupted JS archive member: $corrupt_object"
-	find "$obj_dir" -type f -name "$corrupt_object" -delete
-	find "$obj_dir/js/src" -type f -name 'libjs_static.a' -delete
-	if ! run_gecko_build; then
-		rm -f "$BUILD_LOG"
-		exit 1
+	find "$obj_dir" -type f \( -name "$corrupt_object" -o -name "${corrupt_object%.o}.d" \) -delete
+	find "$obj_dir/js/src" -type f \( -name 'libjs_static.a' -o -name 'libjs_static.a.*' \) -delete
+}
+
+if ! run_gecko_build; then
+	corrupt_object="$(archive_member_from_log)"
+	if [ -z "$corrupt_object" ] || ! recover_archive_member "$corrupt_object" || ! run_gecko_build; then
+		# The first recovery can still reuse an invalid generated make dependency.
+		# In that case, discard only the JS sub-tree rather than the complete Gecko
+		# product. This preserves all non-JS compilation work and avoids a full
+		# multi-hour rebuild on transient llvm-ar archive corruption.
+		corrupt_object="$(archive_member_from_log)"
+		if [ -z "$corrupt_object" ] || [ -z "$obj_dir" ] || [ ! -d "$obj_dir/js/src" ]; then
+			rm -f "$BUILD_LOG"
+			exit 1
+		fi
+		echo "Archive member recovery was insufficient; rebuilding only $obj_dir/js/src."
+		rm -rf "$obj_dir/js/src"
+		if ! run_gecko_build; then
+			rm -f "$BUILD_LOG"
+			exit 1
+		fi
 	fi
 fi
 
