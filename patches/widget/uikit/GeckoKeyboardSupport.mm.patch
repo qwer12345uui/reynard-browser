@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoKeyboardSupport.mm b/widget/uikit/GeckoKeyboardSupport.mm
 new file mode 100644
-index 000000000000..9c70f01e6fae
+index 000000000000..5a024cb02fd1
 --- /dev/null
 +++ b/widget/uikit/GeckoKeyboardSupport.mm
-@@ -0,0 +1,862 @@
+@@ -0,0 +1,865 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -649,6 +649,9 @@ index 000000000000..9c70f01e6fae
 +  mCurrentModifiers = eventModifiers | (mCurrentModifiers &
 +                                        (MODIFIER_SHIFT | MODIFIER_CAPSLOCK));
 +  if (aEvent.type == WebEventKeyUp) {
++    if (ComputeSpecialKeyNameIndex(aEvent.keyCode) == KEY_NAME_INDEX_Shift) {
++      mCurrentModifiers &= ~MODIFIER_SHIFT;
++    }
 +    if (mRepeatingEvent && mRepeatingEvent.keyCode == aEvent.keyCode) {
 +      StopKeyRepeat();
 +    }

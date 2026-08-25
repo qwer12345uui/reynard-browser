@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoEditableSupport.mm b/widget/uikit/GeckoEditableSupport.mm
 new file mode 100644
-index 000000000000..58e0c7ed35bd
+index 000000000000..0342c6bb08fc
 --- /dev/null
 +++ b/widget/uikit/GeckoEditableSupport.mm
-@@ -0,0 +1,4276 @@
+@@ -0,0 +1,4285 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -602,6 +602,10 @@ index 000000000000..58e0c7ed35bd
 +  Class textInputTraitsClass = NSClassFromString(@"UITextInputTraits");
 +  MOZ_RELEASE_ASSERT(textInputTraitsClass);
 +  mEditable.mTextInputTraits = [[textInputTraitsClass alloc] init];
++  mEditable.mLeadingInputAssistantButtonGroups =
++      [self.inputAssistantItem.leadingBarButtonGroups copy];
++  mEditable.mTrailingInputAssistantButtonGroups =
++      [self.inputAssistantItem.trailingBarButtonGroups copy];
 +  mEditable.mSeenHardwareKeyDownInNonEditableContent = NO;
 +  mEditable.mTextInputDelegate = nil;
 +  mEditable.mCredentialDelegate = nil;
@@ -640,6 +644,10 @@ index 000000000000..58e0c7ed35bd
 +  mEditable.mTokenizer = nil;
 +  [mEditable.mTextInputTraits release];
 +  mEditable.mTextInputTraits = nil;
++  [mEditable.mLeadingInputAssistantButtonGroups release];
++  mEditable.mLeadingInputAssistantButtonGroups = nil;
++  [mEditable.mTrailingInputAssistantButtonGroups release];
++  mEditable.mTrailingInputAssistantButtonGroups = nil;
 +  [mEditable.mMarkedTextStyle release];
 +  mEditable.mMarkedTextStyle = nil;
 +  [mEditable.mEditableTextInteraction release];
@@ -2423,11 +2431,12 @@ index 000000000000..58e0c7ed35bd
 +  const bool softwareKeyboardInactive =
 +      mGeckoChild && (mGeckoChild->IsVirtualKeyboardDisabled() ||
 +                      mGeckoChild->IsSoftwareKeyboardSuppressed());
-+  NSArray* buttonGroups =
-+      ([keyboard isInHardwareKeyboardMode] || softwareKeyboardInactive) ? @[]
-+                                                                        : nil;
-+  self.inputAssistantItem.leadingBarButtonGroups = buttonGroups;
-+  self.inputAssistantItem.trailingBarButtonGroups = buttonGroups;
++  const bool shouldHide =
++      [keyboard isInHardwareKeyboardMode] || softwareKeyboardInactive;
++  self.inputAssistantItem.leadingBarButtonGroups =
++      shouldHide ? @[] : mEditable.mLeadingInputAssistantButtonGroups;
++  self.inputAssistantItem.trailingBarButtonGroups =
++      shouldHide ? @[] : mEditable.mTrailingInputAssistantButtonGroups;
 +}
 +
 +- (UIView*)inputView {

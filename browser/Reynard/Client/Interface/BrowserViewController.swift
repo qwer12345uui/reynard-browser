@@ -238,7 +238,8 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         super.viewDidLayoutSubviews()
         toolbarController.updateLayout(
             chromeMode: browserLayout.chromeMode,
-            isToolbarEnabled: !isShowingFullscreenMedia
+            isToolbarEnabled: !isShowingFullscreenMedia,
+            extendsContentBehindToolbar: tabManager.selectedTab.map(homepageOverlayCoordinator.needsHomepageThumbnail(for:)) ?? false
         )
         homepageOverlayCoordinator.updateVisibleContentInsets()
         invalidateNavigationThumbnailsIfNeeded()

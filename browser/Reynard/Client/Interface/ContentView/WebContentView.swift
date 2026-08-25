@@ -38,6 +38,7 @@ final class WebContentView: UIView, UIScrollViewDelegate {
     private var lastScrollState: (position: CGFloat, zoomScale: CGFloat)?
     private var currentScrollY: CGFloat = 0
     private var pageBackgroundTopConstraint: NSLayoutConstraint?
+    private var pageBackgroundBottomConstraint: NSLayoutConstraint?
     
     private let webView = GeckoView()
     private let pageBackgroundView = UIView()
@@ -118,8 +119,10 @@ final class WebContentView: UIView, UIScrollViewDelegate {
     
     private func configureConstraints() {
         let topConstraint = pageBackgroundView.topAnchor.constraint(equalTo: topAnchor)
-        topConstraint.isActive = true
+        let bottomConstraint = pageBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        NSLayoutConstraint.activate([topConstraint, bottomConstraint])
         pageBackgroundTopConstraint = topConstraint
+        pageBackgroundBottomConstraint = bottomConstraint
         
         NSLayoutConstraint.activate([
             scrollToTopTriggerView.topAnchor.constraint(equalTo: topAnchor),
@@ -129,7 +132,6 @@ final class WebContentView: UIView, UIScrollViewDelegate {
             
             pageBackgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
             pageBackgroundView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            pageBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor),
             
             webView.topAnchor.constraint(equalTo: topAnchor),
             webView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -160,11 +162,17 @@ final class WebContentView: UIView, UIScrollViewDelegate {
         ])
     }
     
-    func extendPageBackground(to topAnchor: NSLayoutYAxisAnchor) {
+    func extendPageBackground(
+        from topAnchor: NSLayoutYAxisAnchor,
+        to bottomAnchor: NSLayoutYAxisAnchor
+    ) {
         pageBackgroundTopConstraint?.isActive = false
-        let constraint = pageBackgroundView.topAnchor.constraint(equalTo: topAnchor)
-        constraint.isActive = true
-        pageBackgroundTopConstraint = constraint
+        pageBackgroundBottomConstraint?.isActive = false
+        let topConstraint = pageBackgroundView.topAnchor.constraint(equalTo: topAnchor)
+        let bottomConstraint = pageBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        NSLayoutConstraint.activate([topConstraint, bottomConstraint])
+        pageBackgroundTopConstraint = topConstraint
+        pageBackgroundBottomConstraint = bottomConstraint
     }
     
     func setVisibility(_ visibility: VisibilityState) {
