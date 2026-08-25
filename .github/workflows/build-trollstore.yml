@@ -284,7 +284,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          sh ./tools/release/build-app.sh 2>&1 | tee archive.log
+          sh ./tools/release/build-app.sh --no-signing 2>&1 | tee archive.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             {
