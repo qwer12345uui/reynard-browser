@@ -97,10 +97,11 @@ archive_member_from_log() {
 	sed -n "s/.*libjs_static\\.a: '\\([^']*\\.o\\)'.*Invalid record.*/\\1/p" "$BUILD_LOG" | tail -n 1
 }
 
-obj_dir="$(find "$FIREFOX_DIR" -maxdepth 1 -type d -name 'obj-*' -print -quit)"
-
 recover_archive_member() {
 	corrupt_object="$1"
+	# The object directory is created by the first mach invocation, so discover it
+	# only after the failure that requires recovery.
+	obj_dir="$(find "$FIREFOX_DIR" -maxdepth 1 -type d -name 'obj-*' -print -quit)"
 	if [ -z "$obj_dir" ] || [ ! -d "$obj_dir/js/src" ]; then
 		echo "Cannot recover Gecko archive: JS object directory is unavailable." >&2
 		return 1
@@ -122,6 +123,7 @@ if ! run_gecko_build; then
 		# product. This preserves all non-JS compilation work and avoids a full
 		# multi-hour rebuild on transient llvm-ar archive corruption.
 		corrupt_object="$(archive_member_from_log)"
+		obj_dir="$(find "$FIREFOX_DIR" -maxdepth 1 -type d -name 'obj-*' -print -quit)"
 		if [ -z "$corrupt_object" ] || [ -z "$obj_dir" ] || [ ! -d "$obj_dir/js/src" ]; then
 			rm -f "$BUILD_LOG"
 			exit 1
