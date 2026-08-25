@@ -81,12 +81,20 @@ if ! rustup target list | grep -q "^$TARGET (installed)"; then
 	rustup target add "$TARGET"
 fi
 
+# Mozilla's downloaded LLVM toolchain can select llvm-ar/llvm-ranlib. On
+# macOS ARM these tools can produce an invalid Mach-O archive index; use the
+# matching Xcode archive tools while keeping Apple Clang as the compiler.
+APPLE_AR="$(xcrun --find ar)"
+APPLE_RANLIB="$(xcrun --find ranlib)"
+test -x "$APPLE_AR"
+test -x "$APPLE_RANLIB"
+
 cd "$FIREFOX_DIR"
 BUILD_LOG="$(mktemp "${TMPDIR:-/tmp}/reynard-gecko-build.XXXXXX")"
 
 run_gecko_build() {
 	set +e
-	./mach build > "$BUILD_LOG" 2>&1
+	AR="$APPLE_AR" RANLIB="$APPLE_RANLIB" ./mach build > "$BUILD_LOG" 2>&1
 	status=$?
 	set -e
 	cat "$BUILD_LOG"
