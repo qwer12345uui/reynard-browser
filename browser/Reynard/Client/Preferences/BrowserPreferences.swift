@@ -1423,7 +1423,8 @@ key("CompatibilitySettings", "customBuildID"): "",
         }
     }
 
-{
+    // MARK: - DNS over HTTPS
+    struct DNSOverHTTPSPreferences {
         static var protectionLevel: DNSOverHTTPSProtectionLevel {
             get {
                 let rawValue = prefs.integer(forSetting: "DNSOverHTTPS", key: "protectionLevel")
@@ -1468,7 +1469,8 @@ key("CompatibilitySettings", "customBuildID"): "",
         }
     }
 
-{
+    // MARK: - Developer
+    struct DeveloperSettings {
         static var remoteDebuggingEnabled: Bool {
             get {
                 return prefs.bool(forSetting: "DeveloperSettings", key: "remoteDebuggingEnabled")

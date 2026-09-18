@@ -57,7 +57,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         removeBackgroundBlurIfNeeded()
         browserViewController.startScreenOrientationHandling()
         browserViewController.sessionManager.setApplicationForeground(true)
-        DownloadStore.shared.applicationDidBecomeActive()
         browserViewController.sessionManager.applicationDidBecomeActive()
         browserViewController.tabManager.applicationDidBecomeActive()
         browserViewController.handleClipboardURLIfNeeded()
@@ -93,7 +92,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     func sceneDidEnterBackground(_ scene: UIScene) {
-        DownloadStore.shared.applicationDidEnterBackground()
         (window?.rootViewController as? BrowserViewController)?
             .sessionManager.setApplicationForeground(false)
     }
