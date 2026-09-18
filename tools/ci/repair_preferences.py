@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
-"""Repair BrowserPreferences.swift after the upstream preference merge.
+"""Repair browser sources that the upstream merge leaves half reconciled.
 
-The merge script that reconciles this fork with upstream can drop the declaration
-line of a nested preferences container, leaving a bare "{" at column zero. Swift
-cannot parse that, so the entire archive step fails with a dozen unrelated
-looking errors. This script puts the declarations back and carries the
-user-agent override preferences that UserAgentPolicy reads.
+Two kinds of damage show up after tools/ci/sync_roothide.py merges upstream:
 
-It is deliberately idempotent and anchor based:
+1. The preference merge can drop the declaration line of a nested preferences
+   container, leaving a bare "{" at column zero. Swift cannot parse that, so the
+   archive step fails with a dozen unrelated looking errors.
 
-* it no-ops and exits 0 when every piece is already in place, so it can stay in
-  the pipeline permanently;
-* it exits 1 and prints the missing anchor when upstream renames something, so
+2. SceneDelegate carries RootHide lifecycle optimisations that call download
+   store entry points upstream deleted during its downloads rewrite. The fork
+   keeps its own SceneDelegate (the merge only takes upstream on conflict), so
+   those calls go stale at exactly the commits where everything else moves on.
+
+Every repair is idempotent and anchor based, so this can stay in the pipeline:
+
+* it no-ops and exits 0 when everything is already in place;
+* it exits 1 and names the missing anchor when upstream renames something, so
   the failure surfaces here instead of twenty minutes into an Xcode archive.
 """
 
@@ -21,6 +25,7 @@ import sys
 from pathlib import Path
 
 PREFERENCES = Path("browser/Reynard/Client/Preferences/BrowserPreferences.swift")
+SCENE_DELEGATE = Path("browser/Reynard/SceneDelegate.swift")
 
 # container declaration -> the first member that identifies it
 DECLARATIONS = (
@@ -42,6 +47,14 @@ ACCESSOR_ANCHOR = """        static var useAndroidUserAgent: Bool {
             }
         }
 """
+
+# Download store entry points removed by upstream's downloads rewrite. Every
+# other call in this file still exists upstream, including
+# setApplicationForeground(_:), so only these two lines are dropped.
+REMOVED_SCENE_CALLS = (
+    "        DownloadStore.shared.applicationDidBecomeActive()\n",
+    "        DownloadStore.shared.applicationDidEnterBackground()\n",
+)
 
 
 def restore_declarations(text: str, applied: list) -> str:
@@ -103,22 +116,39 @@ def add_override_preferences(text: str, applied: list) -> str:
     return head + ACCESSOR_ANCHOR + block + tail
 
 
-def main() -> int:
+def repair_preferences(applied: list) -> None:
     if not PREFERENCES.is_file():
         print("BrowserPreferences.swift not found; nothing to repair.")
-        return 0
-
-    original = PREFERENCES.read_text()
-    applied = []
-    text = restore_declarations(original, applied)
+        return
+    text = PREFERENCES.read_text()
+    text = restore_declarations(text, applied)
     text = add_override_preferences(text, applied)
+    PREFERENCES.write_text(text)
+
+
+def repair_scene_delegate(applied: list) -> None:
+    if not SCENE_DELEGATE.is_file():
+        print("SceneDelegate.swift not found; nothing to repair.")
+        return
+    text = SCENE_DELEGATE.read_text()
+    for line in REMOVED_SCENE_CALLS:
+        if line not in text:
+            continue
+        text = text.replace(line, "", 1)
+        applied.append("dropped removed SceneDelegate call %s" % line.strip())
+    SCENE_DELEGATE.write_text(text)
+
+
+def main() -> int:
+    applied: list = []
+    repair_preferences(applied)
+    repair_scene_delegate(applied)
 
     if not applied:
-        print("BrowserPreferences.swift already healthy; nothing to do.")
+        print("Browser sources already healthy; nothing to do.")
         return 0
 
-    PREFERENCES.write_text(text)
-    print("Repaired BrowserPreferences.swift:")
+    print("Repaired browser sources after the upstream merge:")
     for item in applied:
         print("  - %s" % item)
     return 0
