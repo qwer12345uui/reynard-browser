@@ -17,12 +17,18 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# The preference merge is large enough to live in its own module next to this
+# script, so it can be reviewed on its own.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from prefs_merge import merge_preferences
+
 # Files that must keep the fork's local version instead of upstream's.
 # main.swift carries the RootHide runtime policy hook, which upstream does not
 # have; it is restored here and then adapted by fix_main_swift().
 KEEP_LOCAL = [
     "browser/Helper/Helper.swift",
     "browser/Reynard/main.swift",
+    "browser/Reynard/Client/Preferences/BrowserPreferences.swift",
     "README.md",
 ]
 
@@ -96,10 +102,12 @@ def replace_once(path, old, new, what):
     print("  applied: %s" % what)
 
 
-def merge_upstream():
+def ensure_upstream_remote():
     sh("git remote add upstream https://github.com/minh-ton/reynard-browser.git || true")
     sh("git fetch upstream main --no-tags")
 
+
+def merge_upstream():
     result = subprocess.run(
         "git merge -X theirs --no-edit upstream/main",
         shell=True, cwd=ROOT, capture_output=True, text=True,
@@ -154,35 +162,6 @@ def fix_main_swift():
         print("  main.swift: removed obsolete UserDataMigration call")
     if "configureRootHideRuntimePolicy()" not in text:
         raise SystemExit("main.swift lost configureRootHideRuntimePolicy()")
-
-
-def merge_preferences(pre_merge_sha):
-    """Keep local settings and add upstream-only preference entries."""
-    path = "browser/Reynard/Client/Preferences/BrowserPreferences.swift"
-    local = sh("git show %s:%s" % (pre_merge_sha, path))
-    upstream = read(path)
-
-    def entries(text, marker):
-        return [line for line in text.split("\n") if marker in line]
-
-    # The upstream reader-mode settings are the only additions this fork needs
-    # to take from upstream's version of this file.
-    additions = [
-        line for line in entries(upstream, "readerView")
-        if line not in local
-    ]
-    if not additions:
-        return
-
-    write(path, local)
-    text = read(path)
-    anchor = 'key("BrowsingSettings", "hidesChromeOnScroll"): true,'
-    if anchor not in text:
-        raise SystemExit("preference anchor missing after restore")
-    block = "\n".join(additions)
-    write(path, text.replace(anchor, anchor + "\n" + block, 1))
-    print("  BrowserPreferences: kept local settings, added %d upstream entries"
-          % len(additions))
 
 
 def merge_localizations(pre_merge_sha):
@@ -516,6 +495,7 @@ def apply_offline_pref():
 
 def main():
     os.chdir(ROOT)
+    ensure_upstream_remote()
     pre_merge_sha = sh("git rev-parse HEAD")
     print("pre-merge HEAD: %s" % pre_merge_sha)
 
@@ -538,7 +518,7 @@ def main():
     force_upstream_files()
     restore_local(pre_merge_sha)
     fix_main_swift()
-    merge_preferences(pre_merge_sha)
+    merge_preferences()
     merge_localizations(pre_merge_sha)
     fix_toolbar_controller()
 
