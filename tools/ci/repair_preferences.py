@@ -8,9 +8,10 @@ Two kinds of damage show up after tools/ci/sync_roothide.py merges upstream:
    archive step fails with a dozen unrelated looking errors.
 
 2. SceneDelegate carries RootHide lifecycle optimisations that call download
-   store entry points upstream deleted during its downloads rewrite. The fork
-   keeps its own SceneDelegate (the merge only takes upstream on conflict), so
-   those calls go stale at exactly the commits where everything else moves on.
+   store entry points upstream deleted during its downloads rewrite, plus other
+   entry points that move whenever upstream rewrites a subsystem. The fork keeps
+   its own SceneDelegate, so those calls go stale at exactly the commits where
+   everything else moves on.
 
 Every repair is idempotent and anchor based, so this can stay in the pipeline:
 
@@ -21,6 +22,7 @@ Every repair is idempotent and anchor based, so this can stay in the pipeline:
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -55,6 +57,27 @@ REMOVED_SCENE_CALLS = (
     "        DownloadStore.shared.applicationDidBecomeActive()\n",
     "        DownloadStore.shared.applicationDidEnterBackground()\n",
 )
+
+# RootHide lifecycle optimisations this fork owns. They live in files the
+# upstream alignment can legitimately replace, so a call is dropped when the
+# symbol it needs is no longer in the tree. Dropping a call here degrades a
+# RootHide optimisation; leaving it breaks the archive build entirely.
+CONDITIONAL_SCENE_CALLS = (
+    ("        browserViewController.handleClipboardURLIfNeeded()\n", "func handleClipboardURLIfNeeded", "browser/Reynard/Client/Interface"),
+    ("            .tabManager.trimMemory()\n", "func trimMemory", "browser/Reynard/Client/TabManagement"),
+    ("        browserViewController.tabManager.applicationWillResignActive()\n", "func applicationWillResignActive", "browser/Reynard/Client/TabManagement"),
+)
+
+
+def symbol_defined(name, root):
+    for directory, _, names in os.walk(root):
+        for file_name in names:
+            if not file_name.endswith(".swift"):
+                continue
+            text = open(os.path.join(directory, file_name), encoding="utf-8", errors="ignore").read()
+            if name in text:
+                return True
+    return False
 
 
 def restore_declarations(text: str, applied: list) -> str:
@@ -136,6 +159,12 @@ def repair_scene_delegate(applied: list) -> None:
             continue
         text = text.replace(line, "", 1)
         applied.append("dropped removed SceneDelegate call %s" % line.strip())
+
+    for line, symbol, root in CONDITIONAL_SCENE_CALLS:
+        if line not in text or symbol_defined(symbol, root):
+            continue
+        text = text.replace(line, "", 1)
+        applied.append("dropped SceneDelegate call %s (%s is gone)" % (line.strip(), symbol))
     SCENE_DELEGATE.write_text(text)
 
 
