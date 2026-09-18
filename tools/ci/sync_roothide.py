@@ -29,6 +29,10 @@ KEEP_LOCAL = [
     "browser/Helper/Helper.swift",
     "browser/Reynard/main.swift",
     "browser/Reynard/Client/Preferences/BrowserPreferences.swift",
+    # The fork's Gecko build wrapper restores .mozconfig and recovers from
+    # invalid Mach-O archives. Upstream's version has neither, and the trap
+    # left behind without its function fails the build step.
+    "tools/development/build-gecko.sh",
     "README.md",
 ]
 
@@ -231,7 +235,7 @@ static bool IsRootHideInjectionActive() {
   static bool sActive = [] {
     uint32_t imageCount = _dyld_image_count();
     for (uint32_t index = 0; index < imageCount; index++) {
-      const char* imagePath = _dyld_get_image_name(index);
+      const char* imagePath = _dyld_image_name(index);
       if (imagePath && strstr(imagePath, "/usr/lib/roothideinit.dylib")) {
         return true;
       }
