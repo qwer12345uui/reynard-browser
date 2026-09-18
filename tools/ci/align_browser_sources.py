@@ -31,13 +31,17 @@ FORK_OWNED = (
     "browser/Helper/Helper.swift",
     "browser/Reynard/main.swift",
     "browser/Reynard/Client/Preferences/BrowserPreferences.swift",
-    # These three still declare symbols the fork's sources call:
+    # These still declare or define symbols the fork's sources call:
     # the preference change notifications posted by BrowserPreferences,
     # isHelperFailure(error:) used by JITController, and
     # IsTSPtraceHelperError used by JITEnabler.m.
     "browser/Reynard/Client/Extensions/Notifications.swift",
     "browser/Reynard/JIT/JITEnabler.h",
     "browser/Reynard/JIT/JITErrors.h",
+    # JITErrors.m carries the IsTSPtraceHelperError definition. Upstream has
+    # no such function, so taking its version silently leaves a declaration
+    # with no definition and the link step fails with an undefined symbol.
+    "browser/Reynard/JIT/JITErrors.m",
 )
 
 # Markers that identify a fork-side change as RootHide work worth keeping.
@@ -51,6 +55,10 @@ GUARD = (
     "jitcontroller",
     "network.manage-offline-status",
     "isroothideinjectionactive",
+    # Fork-only JIT helper symbols. They do not mention RootHide by name, so
+    # without these the guard lets an upstream overwrite delete them.
+    "tsptrace",
+    "ptrace",
 )
 
 

@@ -130,3 +130,22 @@ NSError *MakeError(ErrorCode code) {
         ErrorCategory: @(ErrorGroupForCode(code)),
     }];
 }
+
+// Fork-only: ptrace_jit failures need to be recognised as TrollStore style
+// helper errors so the JIT controller can fall back. Upstream has no such
+// helper, and taking its JITErrors.m verbatim drops this definition while
+// JITEnabler.m keeps calling it, which breaks the link step.
+BOOL IsTSPtraceHelperError(NSError *error) {
+    if (error == nil || ![error.domain isEqualToString:ErrorDomain]) {
+        return NO;
+    }
+
+    switch ((ErrorCode)error.code) {
+        case TSPtraceHelperMissing:
+        case TSPtraceHelperAttachFailed:
+        case TSPtraceHelperTerminated:
+            return YES;
+        default:
+            return NO;
+    }
+}
