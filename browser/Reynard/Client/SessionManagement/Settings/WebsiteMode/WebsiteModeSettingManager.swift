@@ -38,6 +38,7 @@ final class WebsiteModeSettingManager {
             platformOverride: userAgent.platformOverride,
             appVersionOverride: userAgent.appVersionOverride,
             oscpuOverride: userAgent.oscpuOverride,
+            buildIDOverride: userAgent.buildIDOverride,
             userAgentMode: mode,
             viewportMode: mode
         )
