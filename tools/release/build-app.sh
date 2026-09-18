@@ -24,6 +24,15 @@ for argument in "$@"; do
 	esac
 done
 
+# Upstream preference merges can leave BrowserPreferences.swift structurally
+# damaged (a nested preferences container loses its declaration line, leaving a
+# bare "{"). Swift cannot parse that, so repair it before Xcode reads the
+# sources. The script is idempotent and fails loudly if its anchors disappear.
+REPAIR_SCRIPT="$ROOT_DIR/tools/ci/repair_preferences.py"
+if [ -f "$REPAIR_SCRIPT" ]; then
+	python3 "$REPAIR_SCRIPT"
+fi
+
 rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
