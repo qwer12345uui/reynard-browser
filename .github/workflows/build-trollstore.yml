@@ -48,7 +48,10 @@ jobs:
         with:
           fetch-depth: 0
           submodules: false
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          # Always build the commit this run is recorded against. Using
+          # workflow_run.head_sha would check out the commit that triggered the
+          # upstream sync, i.e. the pre-sync tree, so the merged result would
+          # never actually be compiled.
 
       - name: Compute Gecko product key
         id: key
@@ -77,9 +80,19 @@ jobs:
             exit 0
           fi
 
-          count="$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$ARTIFACT_NAME&per_page=100" \
-            --jq '[.artifacts[] | select(.expired == false)] | length')"
+          count=""
+          for attempt in 1 2 3; do
+            if count="$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$ARTIFACT_NAME&per_page=100" \
+              --jq '[.artifacts[] | select(.expired == false)] | length' 2>/dev/null)"; then
+              break
+            fi
+            echo "Artifact lookup attempt $attempt failed; retrying."
+            sleep 5
+          done
           echo "Reusable artifacts named $ARTIFACT_NAME: $count"
+          # Surfaced as a check annotation: the run log itself needs admin
+          # rights, but annotations are readable and identify key drift.
+          echo "::notice title=Gecko product key::$ARTIFACT_NAME (count=$count)"
           if [ "$count" -gt 0 ]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           else
@@ -216,7 +229,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: recursive
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          # See the note in the gecko job: build the current run's commit.
 
       # Layer 2: package-time Rust registry, git sources and idevice output.
       # This key is independent of Gecko so UI and Swift-only changes reuse it.
