@@ -10,6 +10,15 @@ name: Sync upstream into RootHide fork
 
 on:
   workflow_dispatch:
+  # Triggered by a change to the sync tooling itself, which is also how a first
+  # run is kicked off. The merge this job pushes touches browser/** and
+  # patches/** only, so it can never re-trigger this workflow.
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/sync-upstream.yml"
+      - "tools/ci/sync_roothide.py"
+      - "tools/ci/prefs_merge.py"
 
 permissions:
   contents: write
