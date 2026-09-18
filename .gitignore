@@ -16,6 +16,10 @@ AGENTS.md
 # Research stuff
 research/
 
+# Python
+__pycache__/
+*.py[cod]
+
 # Build artifacts
 dist/
 browser/Reynard/JIT/RPPairing/libidevice_ffi.a
