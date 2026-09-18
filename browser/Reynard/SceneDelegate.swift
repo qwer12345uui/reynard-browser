@@ -23,7 +23,24 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.makeKeyAndVisible()
         self.window = window
         
+        observeMemoryWarnings()
         handleIncomingURLContexts(connectionOptions.urlContexts)
+    }
+    
+    private func observeMemoryWarnings() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleMemoryWarning),
+            name: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil
+        )
+    }
+    
+    // Release regenerable caches instead of letting the OS kill the app.
+    // Tabs, history, and page state are preserved by trimMemory().
+    @objc private func handleMemoryWarning() {
+        (window?.rootViewController as? BrowserViewController)?
+            .tabManager.trimMemory()
     }
     
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {

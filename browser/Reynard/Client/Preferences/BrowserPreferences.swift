@@ -151,19 +151,16 @@ final class BrowserPreferences {
             key("CompatibilitySettings", "androidUserAgentDomains"): [],
             key("CompatibilitySettings", "useAndroidUserAgent"): false,
             
-            // Developer
-            key("DeveloperSettings", "remoteDebuggingEnabled"): false,
-            key("DeveloperSettings", "remoteDebuggingPort"): 6000,
-            
             // Browsing
             key("BrowsingSettings", "requestDesktopWebsite"): UIDevice.current.userInterfaceIdiom == .pad,
             key("BrowsingSettings", "showLinkPreviews"): true,
             key("BrowsingSettings", "showImagePreviews"): true,
             key("BrowsingSettings", "openLinksInExternalApps"): true,
-            key("BrowsingSettings", "openLinksInNewTabsBehavior"): OpenLinksInNewTabsBehavior.switchTabImmediately.rawValue,
             key("BrowsingSettings", "defaultPageZoomLevel"): PageZoomLevels.defaultLevel,
-            key("BrowsingSettings", "readerViewFontSizeStep"): 3,
-            key("BrowsingSettings", "readerViewFontType"): ReaderViewFontType.serif.rawValue,
+            key("BrowsingSettings", "hidesChromeOnScroll"): true,
+            key("BrowsingSettings", "historyGestureMode"): HistoryGestureMode.edge.rawValue,
+            key("BrowsingSettings", "pullToRefreshEnabled"): true,
+            key("BrowsingSettings", "twoFingerLongPressDismissesKeyboard"): true,
             
             // New Tab
             key("NewTabSettings", "newTabDisplayOption"): NewTabDisplayOption.homepage.rawValue,
@@ -228,12 +225,6 @@ final class BrowserPreferences {
             key("HTTPSOnlyMode", "enabled"): false,
             key("HTTPSOnlyMode", "scope"): HTTPSOnlyModeScope.allTabs.rawValue,
             
-            // DNS over HTTPS
-            key("DNSOverHTTPS", "protectionLevel"): DNSOverHTTPSProtectionLevel.defaultProtection.rawValue,
-            key("DNSOverHTTPS", "provider"): SecureDNSProvider.cloudflare.rawValue,
-            key("DNSOverHTTPS", "customProviderURL"): "",
-            key("DNSOverHTTPS", "exceptions"): (try? JSONEncoder().encode([String]())) ?? Data(),
-            
             // Tracking Protection
             key("TrackingProtection", "enhancedTrackingProtectionLevel"): TrackingProtectionLevel.standard.rawValue,
             key("TrackingProtection", "strictBaselineAllowListEnabled"): true,
@@ -247,6 +238,11 @@ final class BrowserPreferences {
             key("TrackingProtection", "customBlocksRedirectTrackers"): true,
             key("TrackingProtection", "customSuspectedFingerprinterScope"): CustomBlockingScope.privateOnly.rawValue,
             key("TrackingProtection", "globalPrivacyControlEnabled"): false,
+key("BrowsingSettings", "openLinksInNewTabsBehavior"): OpenLinksInNewTabsBehavior.switchTabImmediately.rawValue,
+key("BrowsingSettings", "readerViewFontSizeStep"): 3,
+key("BrowsingSettings", "readerViewFontType"): ReaderViewFontType.serif.rawValue,
+key("DeveloperSettings", "remoteDebuggingEnabled"): false,
+key("DeveloperSettings", "remoteDebuggingPort"): 6000,
         ])
     }
     
@@ -606,16 +602,6 @@ final class BrowserPreferences {
             }
         }
         
-        static var openLinksInNewTabsBehavior: OpenLinksInNewTabsBehavior {
-            get {
-                let rawValue = prefs.string(forSetting: "BrowsingSettings", key: "openLinksInNewTabsBehavior") ?? OpenLinksInNewTabsBehavior.switchTabImmediately.rawValue
-                return OpenLinksInNewTabsBehavior(rawValue: rawValue) ?? .switchTabImmediately
-            }
-            set {
-                prefs.set(newValue.rawValue, forSetting: "BrowsingSettings", key: "openLinksInNewTabsBehavior")
-            }
-        }
-        
         static var defaultPageZoomLevel: Int {
             get {
                 let level = prefs.integer(forSetting: "BrowsingSettings", key: "defaultPageZoomLevel")
@@ -628,32 +614,49 @@ final class BrowserPreferences {
                 prefs.set(newValue, forSetting: "BrowsingSettings", key: "defaultPageZoomLevel")
             }
         }
-        
-        static var readerViewFontSizeStep: Int {
-            get {
-                return min(
-                    ReaderViewAppearance.maximumFontSizeStep,
-                    max(
-                        ReaderViewAppearance.minimumFontSizeStep,
-                        prefs.integer(forSetting: "BrowsingSettings", key: "readerViewFontSizeStep")
-                    )
-                )
-            }
+
+        static var hidesChromeOnScroll: Bool {
+            get { prefs.bool(forSetting: "BrowsingSettings", key: "hidesChromeOnScroll") }
             set {
-                prefs.set(newValue, forSetting: "BrowsingSettings", key: "readerViewFontSizeStep")
+                prefs.set(newValue, forSetting: "BrowsingSettings", key: "hidesChromeOnScroll")
+                NotificationCenter.default.post(name: .browsingPreferencesDidChange, object: nil)
             }
         }
-        
-        static var readerViewFontType: ReaderViewFontType {
+
+        static var historyGestureMode: HistoryGestureMode {
             get {
-                let value = prefs.string(forSetting: "BrowsingSettings", key: "readerViewFontType")
-                return ReaderViewFontType(rawValue: value ?? "") ?? .serif
+                let rawValue = prefs.string(forSetting: "BrowsingSettings", key: "historyGestureMode") ?? HistoryGestureMode.edge.rawValue
+                return HistoryGestureMode(rawValue: rawValue) ?? .edge
             }
             set {
-                prefs.set(newValue.rawValue, forSetting: "BrowsingSettings", key: "readerViewFontType")
+                prefs.set(newValue.rawValue, forSetting: "BrowsingSettings", key: "historyGestureMode")
+                NotificationCenter.default.post(name: .browsingPreferencesDidChange, object: nil)
             }
         }
-        
+
+        static var pullToRefreshEnabled: Bool {
+            get { prefs.bool(forSetting: "BrowsingSettings", key: "pullToRefreshEnabled") }
+            set {
+                prefs.set(newValue, forSetting: "BrowsingSettings", key: "pullToRefreshEnabled")
+                NotificationCenter.default.post(name: .browsingPreferencesDidChange, object: nil)
+            }
+        }
+
+        static var twoFingerLongPressDismissesKeyboard: Bool {
+            get { prefs.bool(forSetting: "BrowsingSettings", key: "twoFingerLongPressDismissesKeyboard") }
+            set { prefs.set(newValue, forSetting: "BrowsingSettings", key: "twoFingerLongPressDismissesKeyboard") }
+        }
+    
+        static var openLinksInNewTabsBehavior: OpenLinksInNewTabsBehavior {
+            get {
+                let rawValue = prefs.string(forSetting: "BrowsingSettings", key: "openLinksInNewTabsBehavior") ?? OpenLinksInNewTabsBehavior.switchTabImmediately.rawValue
+                return OpenLinksInNewTabsBehavior(rawValue: rawValue) ?? .switchTabImmediately
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "BrowsingSettings", key: "openLinksInNewTabsBehavior")
+            }
+        }
+
         static var readerViewColorScheme: ReaderViewColorScheme {
             get {
                 if let value = prefs.string(forSetting: "BrowsingSettings", key: "readerViewColorScheme"),
@@ -677,7 +680,32 @@ final class BrowserPreferences {
                 prefs.set(newValue.rawValue, forSetting: "BrowsingSettings", key: "readerViewColorScheme")
             }
         }
-    }
+
+        static var readerViewFontSizeStep: Int {
+            get {
+                return min(
+                    ReaderViewAppearance.maximumFontSizeStep,
+                    max(
+                        ReaderViewAppearance.minimumFontSizeStep,
+                        prefs.integer(forSetting: "BrowsingSettings", key: "readerViewFontSizeStep")
+                    )
+                )
+            }
+            set {
+                prefs.set(newValue, forSetting: "BrowsingSettings", key: "readerViewFontSizeStep")
+            }
+        }
+
+        static var readerViewFontType: ReaderViewFontType {
+            get {
+                let value = prefs.string(forSetting: "BrowsingSettings", key: "readerViewFontType")
+                return ReaderViewFontType(rawValue: value ?? "") ?? .serif
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "BrowsingSettings", key: "readerViewFontType")
+            }
+        }
+}
     
     // MARK: - Clear Browsing Data
     struct ClearBrowsingData {
@@ -754,52 +782,6 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue.rawValue, forSetting: "HTTPSOnlyMode", key: "scope")
-            }
-        }
-    }
-    
-    // MARK: - DNS over HTTPS
-    struct DNSOverHTTPSPreferences {
-        static var protectionLevel: DNSOverHTTPSProtectionLevel {
-            get {
-                let rawValue = prefs.integer(forSetting: "DNSOverHTTPS", key: "protectionLevel")
-                return DNSOverHTTPSProtectionLevel(rawValue: rawValue) ?? .defaultProtection
-            }
-            set {
-                prefs.set(newValue.rawValue, forSetting: "DNSOverHTTPS", key: "protectionLevel")
-            }
-        }
-        
-        static var provider: SecureDNSProvider {
-            get {
-                let rawValue = prefs.string(forSetting: "DNSOverHTTPS", key: "provider") ?? SecureDNSProvider.cloudflare.rawValue
-                return SecureDNSProvider(rawValue: rawValue) ?? .cloudflare
-            }
-            set {
-                prefs.set(newValue.rawValue, forSetting: "DNSOverHTTPS", key: "provider")
-            }
-        }
-        
-        static var customProviderURL: String {
-            get {
-                return prefs.string(forSetting: "DNSOverHTTPS", key: "customProviderURL") ?? ""
-            }
-            set {
-                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "DNSOverHTTPS", key: "customProviderURL")
-            }
-        }
-        
-        static var exceptions: [String] {
-            get {
-                guard let data = prefs.data(forSetting: "DNSOverHTTPS", key: "exceptions"),
-                      let exceptions = try? JSONDecoder().decode([String].self, from: data) else {
-                    return []
-                }
-                return exceptions
-            }
-            set {
-                let data = try? JSONEncoder().encode(newValue)
-                prefs.set(data, forSetting: "DNSOverHTTPS", key: "exceptions")
             }
         }
     }
@@ -1202,27 +1184,6 @@ final class BrowserPreferences {
         }
     }
     
-    // MARK: - Developer
-    struct DeveloperSettings {
-        static var remoteDebuggingEnabled: Bool {
-            get {
-                return prefs.bool(forSetting: "DeveloperSettings", key: "remoteDebuggingEnabled")
-            }
-            set {
-                prefs.set(newValue, forSetting: "DeveloperSettings", key: "remoteDebuggingEnabled")
-            }
-        }
-        
-        static var remoteDebuggingPort: Int {
-            get {
-                return prefs.integer(forSetting: "DeveloperSettings", key: "remoteDebuggingPort")
-            }
-            set {
-                prefs.set(newValue, forSetting: "DeveloperSettings", key: "remoteDebuggingPort")
-            }
-        }
-    }
-    
     // MARK: - Appearance
     struct AppearanceSettings {
         static var appAppearance: AppAppearance {
@@ -1407,6 +1368,71 @@ final class BrowserPreferences {
             set {
                 let data = try? JSONEncoder().encode(newValue)
                 prefs.set(data, forSetting: "AddonSettings", key: "pendingApprovalAddonIDs")
+            }
+        }
+    }
+
+{
+        static var protectionLevel: DNSOverHTTPSProtectionLevel {
+            get {
+                let rawValue = prefs.integer(forSetting: "DNSOverHTTPS", key: "protectionLevel")
+                return DNSOverHTTPSProtectionLevel(rawValue: rawValue) ?? .defaultProtection
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "DNSOverHTTPS", key: "protectionLevel")
+            }
+        }
+        
+        static var provider: SecureDNSProvider {
+            get {
+                let rawValue = prefs.string(forSetting: "DNSOverHTTPS", key: "provider") ?? SecureDNSProvider.cloudflare.rawValue
+                return SecureDNSProvider(rawValue: rawValue) ?? .cloudflare
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "DNSOverHTTPS", key: "provider")
+            }
+        }
+        
+        static var customProviderURL: String {
+            get {
+                return prefs.string(forSetting: "DNSOverHTTPS", key: "customProviderURL") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "DNSOverHTTPS", key: "customProviderURL")
+            }
+        }
+        
+        static var exceptions: [String] {
+            get {
+                guard let data = prefs.data(forSetting: "DNSOverHTTPS", key: "exceptions"),
+                      let exceptions = try? JSONDecoder().decode([String].self, from: data) else {
+                    return []
+                }
+                return exceptions
+            }
+            set {
+                let data = try? JSONEncoder().encode(newValue)
+                prefs.set(data, forSetting: "DNSOverHTTPS", key: "exceptions")
+            }
+        }
+    }
+
+{
+        static var remoteDebuggingEnabled: Bool {
+            get {
+                return prefs.bool(forSetting: "DeveloperSettings", key: "remoteDebuggingEnabled")
+            }
+            set {
+                prefs.set(newValue, forSetting: "DeveloperSettings", key: "remoteDebuggingEnabled")
+            }
+        }
+        
+        static var remoteDebuggingPort: Int {
+            get {
+                return prefs.integer(forSetting: "DeveloperSettings", key: "remoteDebuggingPort")
+            }
+            set {
+                prefs.set(newValue, forSetting: "DeveloperSettings", key: "remoteDebuggingPort")
             }
         }
     }

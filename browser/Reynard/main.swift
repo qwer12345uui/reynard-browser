@@ -28,7 +28,13 @@ private func configureRootHideRuntimePolicy() {
         "dom.ipc.forkserver.enable": false,
         "dom.ipc.keepProcessesAlive.web": 0,
         "dom.ipc.keepProcessesAlive.file": 0,
-        "dom.ipc.keepProcessesAlive.privilegedabout": 0
+        "dom.ipc.keepProcessesAlive.privilegedabout": 0,
+        // RootHide keeps the app in a jailed environment where the
+        // Network framework path monitor can report the link as down
+        // even though sockets connect normally. Let real connection
+        // attempts decide reachability instead of letting a link-status
+        // change flip Gecko into offline mode and fail every request.
+        "network.manage-offline-status": false
     ])
     NSLog("RootHide injection detected; disabled Gecko helper forkserver, prelaunch, and idle process retention.")
 }
@@ -97,6 +103,7 @@ private func configureSandboxExtension() {
 }
 
 LocalizationBundle.activate()
+configureRootHideRuntimePolicy()
 JITController.shared.start()
 
 if #unavailable(iOS 14.0),

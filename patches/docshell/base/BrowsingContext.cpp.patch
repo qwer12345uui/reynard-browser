@@ -11,14 +11,47 @@ index ec540bce5808..ebeed95a42fd 100644
 +  Top()->SetAppVersionOverride(aAppVersion, aRv);
 +}
 +
++void BrowsingContext::DidSet(FieldIndex<IDX_AppVersionOverride>) {
++  MOZ_ASSERT(IsTop());
++
++  PreOrderWalk([&](BrowsingContext* aContext) {
++    nsIDocShell* shell = aContext->GetDocShell();
++    if (shell) {
++      shell->ClearCachedAppVersion();
++    }
++  });
++}
++
 +void BrowsingContext::SetCustomOscpu(const nsAString& aOscpu,
 +                                     ErrorResult& aRv) {
 +  Top()->SetOscpuOverride(aOscpu, aRv);
 +}
 +
++void BrowsingContext::DidSet(FieldIndex<IDX_OscpuOverride>) {
++  MOZ_ASSERT(IsTop());
++
++  PreOrderWalk([&](BrowsingContext* aContext) {
++    nsIDocShell* shell = aContext->GetDocShell();
++    if (shell) {
++      shell->ClearCachedOscpu();
++    }
++  });
++}
++
 +void BrowsingContext::SetCustomBuildID(const nsAString& aBuildID,
 +                                       ErrorResult& aRv) {
 +  Top()->SetBuildIDOverride(aBuildID, aRv);
++}
++
++void BrowsingContext::DidSet(FieldIndex<IDX_BuildIDOverride>) {
++  MOZ_ASSERT(IsTop());
++
++  PreOrderWalk([&](BrowsingContext* aContext) {
++    nsIDocShell* shell = aContext->GetDocShell();
++    if (shell) {
++      shell->ClearCachedBuildID();
++    }
++  });
 +}
 +
  auto BrowsingContext::LegacyRevertIfNotOwningOrParentProcess(

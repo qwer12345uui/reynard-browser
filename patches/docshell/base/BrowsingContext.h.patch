@@ -36,13 +36,16 @@ index c1100f15036a..917081e9aa88 100644
                        const nsString& aPlatformOverride,
                        ContentParent* aSource);
  
++  void DidSet(FieldIndex<IDX_AppVersionOverride>);
 +  CanSetResult CanSet(FieldIndex<IDX_AppVersionOverride>,
 +                      const nsString& aAppVersionOverride,
 +                      ContentParent* aSource);
 +
++  void DidSet(FieldIndex<IDX_OscpuOverride>);
 +  CanSetResult CanSet(FieldIndex<IDX_OscpuOverride>,
 +                      const nsString& aOscpuOverride, ContentParent* aSource);
 +
++  void DidSet(FieldIndex<IDX_BuildIDOverride>);
 +  CanSetResult CanSet(FieldIndex<IDX_BuildIDOverride>,
 +                      const nsString& aBuildIDOverride, ContentParent* aSource);
 +

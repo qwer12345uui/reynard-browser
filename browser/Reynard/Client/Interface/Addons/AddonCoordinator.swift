@@ -14,7 +14,7 @@ protocol AddonCoordinatorDataSource: AnyObject {
     var addonTabs: [Tab] { get }
     var selectedAddonTabMode: TabMode { get }
     var shouldPresentAddonPopupAsPopover: Bool { get }
-
+    
     func indexOfAddonTab(for session: GeckoSession) -> Int?
 }
 
@@ -43,7 +43,7 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
     private enum UX {
         static let menuIconSize: CGFloat = 18
     }
-
+    
     private weak var dataSource: AddonCoordinatorDataSource?
     private weak var delegate: AddonCoordinatorDelegate?
     private let sessionManager: SessionManager
@@ -55,7 +55,7 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
     private var pendingAddonDownloadPaths = Set<String>()
     private var pendingWebExtensionDownloadsByPath: [String: DownloadStore.WebExtensionDownloadItem] = [:]
     let updateCoordinator: AddonUpdateCoordinator
-
+    
     init(
         dataSource: AddonCoordinatorDataSource,
         delegate: AddonCoordinatorDelegate,
@@ -68,45 +68,45 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         super.init()
         iconCache.countLimit = 64
     }
-
+    
     // MARK: - Runtime Lifecycle
-
+    
     func start() async {
         AddonRuntime.shared.delegate = self
         _ = try? await AddonRuntime.shared.list()
         updateCoordinator.start()
         delegate?.refreshAddonChrome(self)
     }
-
+    
     func handleExternalResponse(_ response: ExternalResponseInfo) -> Bool {
-        guard shouldInterceptAMOInstall(response) else {
+        guard shouldInterceptAddonInstall(response) else {
             return false
         }
-
+        
         pendingAddonDownloadPaths.insert(response.localFilePath)
         return true
     }
-
+    
     func shouldContinueExternalResponse(localFilePath: String) -> Bool {
         return pendingAddonDownloadPaths.contains(localFilePath)
     }
-
+    
     func completeExternalResponse(localFilePath: String, succeeded: Bool) -> Bool {
         guard pendingAddonDownloadPaths.remove(localFilePath) != nil else {
             return false
         }
-
+        
         let packageFileURL = URL(fileURLWithPath: localFilePath)
         guard succeeded else {
             try? FileManager.default.removeItem(at: packageFileURL)
             return true
         }
-
+        
         Task { @MainActor [weak self] in
             defer {
                 try? FileManager.default.removeItem(at: packageFileURL)
             }
-
+            
             do {
                 _ = try await AddonRuntime.shared.install(
                     url: packageFileURL.absoluteString,
@@ -127,25 +127,25 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         }
         return true
     }
-
+    
     // MARK: - Tab State
-
+    
     func handleTabSelectionChange(selectedIndex: Int, previousIndex: Int?) {
         let activeTabs = dataSource?.addonTabs ?? []
         if let previousIndex,
            activeTabs.indices.contains(previousIndex) {
             sessionManager.setAddonTabActive(false, for: activeTabs[previousIndex].session)
         }
-
+        
         if activeTabs.indices.contains(selectedIndex) {
             sessionManager.setAddonTabActive(true, for: activeTabs[selectedIndex].session)
         }
     }
-
+    
     func handleSelectedTabSessionReplacement(from previousSession: GeckoSession, to replacementSession: GeckoSession) {
         sessionManager.transferAddonTabActivation(from: previousSession, to: replacementSession)
     }
-
+    
     private var menuAddons: [Addon] {
         let installedAddons = AddonRuntime.shared.installedAddons.filter { !$0.isBuiltIn }
         guard dataSource?.isSelectedAddonTabPrivate == true else {
@@ -154,14 +154,14 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         
         return installedAddons.filter { $0.metaData.allowedInPrivateBrowsing }
     }
-
+    
     // MARK: - Menu Actions
-
+    
     func currentSiteMenuItems() -> [AddonMenuItem] {
         guard let session = dataSource?.selectedAddonSession else {
             return []
         }
-
+        
         return menuAddons.flatMap { addon in
             visibleActions(for: addon, session: session).map { action in
                 AddonMenuItem(
@@ -172,33 +172,33 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
             }
         }
     }
-
+    
     func visibleActions(for addon: Addon, session: GeckoSession) -> [AddonAction] {
         guard addon.metaData.enabled else {
             return []
         }
-
+        
         var actions: [AddonAction] = []
-
+        
         if let action = mergedBrowserAction(for: addon, session: session),
            action.enabled != false {
             actions.append(action)
         }
-
+        
         if let action = mergedPageAction(for: addon, session: session),
            action.enabled == true {
             actions.append(action)
         }
-
+        
         return actions
     }
-
+    
     func activateMenuItem(_ item: AddonMenuItem) {
         Task { @MainActor [weak self] in
             guard let self else {
                 return
             }
-
+            
             do {
                 if let url = try await AddonRuntime.shared.clickAction(kind: item.action.kind, addon: item.addon),
                    !url.isEmpty {
@@ -209,9 +209,9 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
             }
         }
     }
-
+    
     // MARK: - AddonEmbedderDelegate
-
+    
     func addonController(_ controller: AddonRuntime, didUpdate addon: Addon) {
         _ = addon
         if addon.metaData.enabled == false || AddonRuntime.shared.installedAddons.contains(where: { $0.id == addon.id }) == false {
@@ -219,12 +219,12 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         }
         delegate?.refreshAddonChrome(self)
     }
-
+    
     func addonController(_ controller: AddonRuntime, didFailInstall failure: AddonInstallFailure) {
         _ = controller
         _ = failure
     }
-
+    
     @MainActor
     func addonController(_ controller: AddonRuntime, promptFor prompt: AddonPermissionPrompt) async -> AddonPermissionPromptResponse {
         let presentPrompt: @MainActor (AddonPermissionPrompt) async -> AddonPermissionPromptResponse = { prompt in
@@ -233,29 +233,29 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
                     continuation.resume(returning: .deny)
                     return
                 }
-
+                
                 let promptViewController = AddonPermissionPromptViewController(prompt: prompt) { response in
                     continuation.resume(returning: response)
                 }
-
+                
                 let navigationController = UINavigationController(rootViewController: promptViewController)
                 navigationController.modalPresentationStyle = .pageSheet
                 delegate.presentAddonViewController(self, navigationController)
             }
         }
-
+        
         if prompt.kind == .update {
             return await updateCoordinator.responseForUpdatePrompt(prompt, presentPrompt: presentPrompt)
         }
-
+        
         return await presentPrompt(prompt)
     }
-
+    
     func addonController(_ controller: AddonRuntime, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?) {
         guard let session else {
             return
         }
-
+        
         let key = ObjectIdentifier(session)
         switch action.kind {
         case .browser:
@@ -267,12 +267,12 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
             actions[addon.id] = action
             pageActionsBySession[key] = actions
         }
-
+        
         if session === dataSource?.selectedAddonSession {
             delegate?.refreshAddonChrome(self)
         }
     }
-
+    
     func addonController(_ controller: AddonRuntime, didRequestOpenPopup url: String, for addon: Addon, action: AddonAction, session: GeckoSession?) {
         Task { @MainActor [weak self] in
             self?.presentPopupAfterMenuDismissal(
@@ -280,14 +280,14 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
             )
         }
     }
-
+    
     func addonController(_ controller: AddonRuntime, didRequestOpenOptionsPageFor addon: Addon) {
         _ = controller
         guard let value = addon.metaData.optionsPageURL,
               URL(string: value) != nil else {
             return
         }
-
+        
         let createTab: () -> Void = { [weak self] in
             self?.createAddonTab(
                 selecting: true,
@@ -295,16 +295,16 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
                 loadImmediately: true
             )
         }
-
+        
         if delegate?.dismissAddonModal(self, completion: createTab) == true {
             return
         }
-
+        
         createTab()
     }
-
+    
     // MARK: - WebExtension Downloads
-
+    
     @MainActor
     func addonController(_ controller: AddonRuntime, didRequestDownload options: [String: Any?], for addon: Addon) async -> [String: Any]? {
         _ = controller
@@ -315,9 +315,9 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         ) else {
             return nil
         }
-
+        
         pendingWebExtensionDownloadsByPath[downloadItem.localFilePath] = downloadItem
-
+        
         let startTime = ISO8601DateFormatter().string(from: downloadItem.addedAt)
         return [
             "id": downloadItem.id,
@@ -334,14 +334,14 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
             "localFilePath": downloadItem.localFilePath,
         ]
     }
-
+    
     @MainActor
     func addonController(_ controller: AddonRuntime, didCompleteDownloadAt localFilePath: String, succeeded: Bool) {
         _ = controller
         guard let downloadItem = pendingWebExtensionDownloadsByPath.removeValue(forKey: localFilePath) else {
             return
         }
-
+        
         let fileSize: Int64
         if succeeded,
            let attributes = try? FileManager.default.attributesOfItem(atPath: localFilePath),
@@ -350,12 +350,12 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         } else {
             fileSize = 0
         }
-
+        
         DownloadStore.shared.completeCapturedDownload(
             localFilePath: localFilePath,
             succeeded: succeeded
         )
-
+        
         GeckoRuntime.dispatchEvent(
             type: "GeckoView:WebExtension:DownloadChanged",
             message: [
@@ -370,7 +370,7 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
             ]
         )
     }
-
+    
     func addonController(_ controller: AddonRuntime, createNewTabFor addon: Addon, details: AddonCreateTabDetails, newSessionID: String) -> Bool {
         _ = addon
         let createTab: () -> Void = { [weak self] in
@@ -381,40 +381,40 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
                 at: details.index
             )
         }
-
+        
         if delegate?.dismissAddonModal(self, completion: createTab) != true {
             createTab()
         }
         return true
     }
-
+    
     func addonController(_ controller: AddonRuntime, updateTab session: GeckoSession, for addon: Addon, details: AddonUpdateTabDetails) -> AllowOrDeny {
         _ = addon
         guard let dataSource,
               let index = dataSource.indexOfAddonTab(for: session) else {
             return .deny
         }
-
+        
         if details.active == true {
             delegate?.selectAddonTab(self, at: index, mode: dataSource.selectedAddonTabMode)
         }
-
+        
         return .allow
     }
-
+    
     func addonController(_ controller: AddonRuntime, closeTab session: GeckoSession, for addon: Addon) -> AllowOrDeny {
         _ = addon
         guard let dataSource,
               let index = dataSource.indexOfAddonTab(for: session) else {
             return .deny
         }
-
+        
         delegate?.closeAddonTab(self, at: index, mode: dataSource.selectedAddonTabMode)
         return .allow
     }
-
+    
     // MARK: - Action State
-
+    
     private func clearCachedActions(for addonID: String) {
         browserActionsBySession = browserActionsBySession.reduce(into: [:]) { result, entry in
             var actions = entry.value
@@ -423,7 +423,7 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
                 result[entry.key] = actions
             }
         }
-
+        
         pageActionsBySession = pageActionsBySession.reduce(into: [:]) { result, entry in
             var actions = entry.value
             actions.removeValue(forKey: addonID)
@@ -432,7 +432,7 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
             }
         }
     }
-
+    
     private func mergedBrowserAction(for addon: Addon, session: GeckoSession) -> AddonAction? {
         let key = ObjectIdentifier(session)
         if let override = browserActionsBySession[key]?[addon.id],
@@ -441,7 +441,7 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         }
         return browserActionsBySession[key]?[addon.id] ?? addon.browserAction
     }
-
+    
     private func mergedPageAction(for addon: Addon, session: GeckoSession) -> AddonAction? {
         let key = ObjectIdentifier(session)
         if let override = pageActionsBySession[key]?[addon.id],
@@ -450,26 +450,33 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         }
         return pageActionsBySession[key]?[addon.id] ?? addon.pageAction
     }
-
-    private func shouldInterceptAMOInstall(_ response: ExternalResponseInfo) -> Bool {
-        guard let url = URL(string: response.url),
-              url.host?.lowercased() == "addons.mozilla.org" else {
+    
+    // Accept add-on packages from any origin, not just addons.mozilla.org.
+    // Sideloading a local or self-hosted .xpi is often the only way to install
+    // an extension on a jailbroken device, so restricting the host would block
+    // legitimate packages. The add-on still goes through the normal install
+    // and permission prompt flow.
+    private func shouldInterceptAddonInstall(_ response: ExternalResponseInfo) -> Bool {
+        guard let url = URL(string: response.url) else {
             return false
         }
 
-        let path = url.path.lowercased()
-        return path.contains("/firefox/downloads/file/") && path.hasSuffix(".xpi")
+        if url.isFileURL {
+            return url.pathExtension.lowercased() == "xpi"
+        }
+
+        return url.path.lowercased().hasSuffix(".xpi")
     }
-
+    
     // MARK: - Presentation
-
+    
     @MainActor
     private func presentPopupAfterMenuDismissal(url: String) {
         delegate?.performAfterAddonMenuDismissal(self, work: { [weak self] in
             self?.presentPopup(url: url)
         })
     }
-
+    
     private func presentPopup(url: String) {
         let isPopover = dataSource?.shouldPresentAddonPopupAsPopover == true
         let popupViewController = AddonPopupViewController(
@@ -496,9 +503,9 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         }
         delegate?.presentAddonViewController(self, popupViewController)
     }
-
+    
     // MARK: - Tab Actions
-
+    
     @discardableResult
     private func createAddonTab(
         selecting: Bool,
@@ -518,25 +525,25 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         delegate?.refreshAddonChrome(self)
         return tab
     }
-
+    
     private func openPopupURLInTab(_ url: String) {
         let createTab: () -> Void = { [weak self] in
             self?.createAddonTab(selecting: true, url: url, loadImmediately: true)
         }
-
+        
         if delegate?.dismissAddonModal(self, completion: createTab) != true {
             createTab()
         }
     }
-
+    
     private func createPopupTabSession(url: String, windowId: String) -> GeckoSession? {
         let session = createAddonTab(selecting: true, url: url, windowId: windowId)?.session
         _ = delegate?.dismissAddonModal(self, completion: nil)
         return session
     }
-
+    
     // MARK: - Icons
-
+    
     func menuIcon(for addon: Addon) -> UIImage? {
         let cacheKey = addon.id as NSString
         if let cached = iconCache.object(forKey: cacheKey) {
@@ -544,7 +551,7 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         }
         return UIImage(named: "reynard.puzzlepiece.extension")
     }
-
+    
     private func prefetchIconIfNeeded(for addon: Addon) {
         let cacheKey = addon.id as NSString
         guard iconCache.object(forKey: cacheKey) == nil,
@@ -552,7 +559,7 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
               addon.metaData.iconURL != nil else {
             return
         }
-
+        
         loadingIconIDs.insert(addon.id)
         let iconURL = addon.metaData.iconURL
         iconLoadingQueue.async { [weak self] in
@@ -572,12 +579,12 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
             }
         }
     }
-
+    
     func prepareMenuIcons() {
         guard let session = dataSource?.selectedAddonSession else {
             return
         }
-
+        
         menuAddons
             .filter { addon in
                 visibleActions(for: addon, session: session).isEmpty == false

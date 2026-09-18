@@ -44,59 +44,59 @@ final class AddressBar: UIView {
         static let addressBarBackgroundShadowOffset = CGSize(width: 0, height: 2)
         static let borderWidth: CGFloat = 0.5
     }
-
+    
     enum EditingState: Equatable {
         case inactive
         case focused
         case composing
     }
-
+    
     enum LoadingState {
         case idle
         case loading(progress: Float)
     }
-
+    
     private enum AutocompleteState {
         case none
         case focusPreview
         case suggestion(committedText: String, submissionText: String)
     }
-
+    
     private enum ContentState {
         case placeholder
         case page(NSAttributedString)
         case typedText
     }
-
+    
     private enum LeadingButtonState: Equatable {
         case hidden
         case search
         case menu
         case loading
     }
-
+    
     private enum TrailingButtonState: Equatable {
         case hidden
         case reload
         case stop
     }
-
+    
     private struct RenderModel {
         let content: ContentState
         let leadingButton: LeadingButtonState
         let trailingButton: TrailingButtonState
     }
-
+    
     private final class PasteAndGoMenuState {
         var isAvailable = false
         var menuWasReturned = false
     }
-
+    
     static let placeholderText = NSLocalizedString("Search or enter address", comment: "")
-
+    
     private weak var delegate: AddressBarDelegate?
     private weak var searchDelegate: AddressBarSearchDelegate?
-
+    
     private var editingState: EditingState = .inactive
     private var loadingState: LoadingState = .idle
     private var position: BrowserChromePosition = .bottom
@@ -104,19 +104,19 @@ final class AddressBar: UIView {
     private var autocompleteState: AutocompleteState = .none
     private var autocompleteDeletedText: String?
     private var trailingButtonState: TrailingButtonState = .hidden
-
+    
     private var currentText: String?
     private var currentLocationText: String?
     private var currentLocationTitle: String?
     private var canShowBarMenu = false
-
+    
     private var preserveAutocompleteAfterResign = false
     private var addonsMenu: UIMenu?
     private var isReaderActive = false
     
     private var lastEditingText = ""
     private var lastEditWasDelete = false
-
+    
     private var textLeadingToButtonConstraint: NSLayoutConstraint!
     private var textLeadingToBackgroundConstraint: NSLayoutConstraint!
     private var textTrailingToButtonConstraint: NSLayoutConstraint!
@@ -125,7 +125,7 @@ final class AddressBar: UIView {
     private var labelLeadingToBackgroundConstraint: NSLayoutConstraint!
     private var labelTrailingToButtonConstraint: NSLayoutConstraint!
     private var labelTrailingToBackgroundConstraint: NSLayoutConstraint!
-
+    
     private let addressBarBackground: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -134,7 +134,7 @@ final class AddressBar: UIView {
         view.layer.cornerRadius = UX.addressBarBackgroundCornerRadius
         return view
     }()
-
+    
     private let addressBarContent: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -158,7 +158,7 @@ final class AddressBar: UIView {
         view.layer.borderColor = UIColor.separator.withAlphaComponent(0.2).cgColor
         return view
     }()
-
+    
     private let leadingButton: AddressBarButton = {
         let button = AddressBarButton(type: .system)
         if #available(iOS 13.4, *) {
@@ -172,7 +172,7 @@ final class AddressBar: UIView {
         button.isUserInteractionEnabled = false
         return button
     }()
-
+    
     private let trailingButton: AddressBarButton = {
         let button = AddressBarButton(type: .system)
         if #available(iOS 13.4, *) {
@@ -184,7 +184,7 @@ final class AddressBar: UIView {
         button.isUserInteractionEnabled = false
         return button
     }()
-
+    
     private let textField: AddressBarTextField = {
         let field = AddressBarTextField()
         field.translatesAutoresizingMaskIntoConstraints = false
@@ -200,7 +200,7 @@ final class AddressBar: UIView {
         field.clearButtonMode = .whileEditing
         return field
     }()
-
+    
     private let addressLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -212,7 +212,7 @@ final class AddressBar: UIView {
         label.isUserInteractionEnabled = false
         return label
     }()
-
+    
     private let autocompleteLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -224,7 +224,7 @@ final class AddressBar: UIView {
         label.isHidden = true
         return label
     }()
-
+    
     private let autocompleteButton: UIButton = {
         let button = UIButton(type: .custom)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -232,7 +232,7 @@ final class AddressBar: UIView {
         button.isHidden = true
         return button
     }()
-
+    
     private let progressView: UIProgressView = {
         let view = UIProgressView(progressViewStyle: .default)
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -241,18 +241,18 @@ final class AddressBar: UIView {
         view.isHidden = true
         return view
     }()
-
+    
     private let dismissButton = AddressBarDismissButton(type: .system)
     private var gestures: AddressBarGestures?
-
+    
     private var backgroundTrailingFullConstraint: NSLayoutConstraint!
     private var backgroundTrailingFocusedConstraint: NSLayoutConstraint!
     private var backgroundHeightConstraint: NSLayoutConstraint!
     private var dismissWidthConstraint: NSLayoutConstraint!
     private var dismissHeightConstraint: NSLayoutConstraint!
-
+    
     // MARK: - Lifecycle
-
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         configureAppearance()
@@ -262,23 +262,23 @@ final class AddressBar: UIView {
         configureObservers()
         applyState()
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-
+    
     override var canBecomeFirstResponder: Bool {
         return textField.canBecomeFirstResponder
     }
-
+    
     override func becomeFirstResponder() -> Bool {
         return textField.becomeFirstResponder()
     }
-
+    
     override func resignFirstResponder() -> Bool {
         return textField.resignFirstResponder()
     }
@@ -299,7 +299,7 @@ final class AddressBar: UIView {
     }
     
     // MARK: - Configuration
-
+    
     func configure(delegate: AddressBarDelegate, searchDelegate: AddressBarSearchDelegate, gestureDelegate: AddressBarGestureDelegate) {
         self.delegate = delegate
         self.searchDelegate = searchDelegate
@@ -334,14 +334,11 @@ final class AddressBar: UIView {
             }
             self.searchDelegate?.addressBarDidTapDismiss(self)
         }
-        textField.onTextInteraction = { [weak self] in
-            self?.clearAutocomplete()
-        }
         let gestures = AddressBarGestures(addressBar: self, delegate: gestureDelegate)
         self.gestures = gestures
         gestures.configure()
     }
-
+    
     func setText(
         _ text: String?,
         locationText: String? = nil,
@@ -356,7 +353,7 @@ final class AddressBar: UIView {
             applyState()
             return
         }
-
+        
         textField.text = currentText
         clearAutocomplete()
         applyState()
@@ -407,19 +404,19 @@ final class AddressBar: UIView {
         )
         applyState()
     }
-
+    
     func setEditingState(_ state: EditingState) {
         editingState = state
         applyState()
     }
-
+    
     func setPreservesAutocompleteAfterResign(_ preserve: Bool) {
         preserveAutocompleteAfterResign = preserve
         if !preserve && !textField.isFirstResponder {
             clearAutocomplete()
         }
     }
-
+    
     func updateLayout(position: BrowserChromePosition, chromeMode: BrowserChromeMode) {
         self.position = position
         self.chromeMode = chromeMode
@@ -428,7 +425,7 @@ final class AddressBar: UIView {
         dismissHeightConstraint.constant = UX.addressBarHeight
         applyState()
     }
-
+    
     func setDismissButtonVisible(_ visible: Bool, animated: Bool) {
         backgroundTrailingFullConstraint.isActive = !visible
         backgroundTrailingFocusedConstraint.isActive = visible
@@ -451,34 +448,34 @@ final class AddressBar: UIView {
             completion(true)
         }
     }
-
+    
     // MARK: - Text And Autocomplete
-
+    
     private var editingText: String? {
         return textField.text
     }
-
+    
     func setAutocomplete(displayText: NSAttributedString, committedText: String, submissionText: String) {
         guard textField.isFirstResponder else {
             return
         }
-
+        
         autocompleteState = .suggestion(committedText: committedText, submissionText: submissionText)
         autocompleteLabel.attributedText = displayText
         autocompleteLabel.isHidden = false
         updateAutocompletePresentation()
     }
-
+    
     func recordEditForAutocomplete(previousText: String, currentText: String, isDelete: Bool) {
         autocompleteDeletedText = isDelete && previousText.count > currentText.count ? currentText : nil
     }
-
+    
     func applySearchAutocomplete(query: String, result: UserDataSearchResult?, topDomain: String?) {
         guard isEditingText else {
             clearAutocomplete()
             return
         }
-
+        
         let currentText = editingText ?? ""
         guard !query.isEmpty,
               currentText == query,
@@ -486,7 +483,7 @@ final class AddressBar: UIView {
             clearAutocomplete()
             return
         }
-
+        
         let autocomplete = result.flatMap {
             searchAutocompletePresentation(for: $0, query: query)
         } ?? topDomain.flatMap {
@@ -496,66 +493,66 @@ final class AddressBar: UIView {
             clearAutocomplete()
             return
         }
-
+        
         setAutocomplete(
             displayText: autocomplete.displayText,
             committedText: autocomplete.committedText,
             submissionText: autocomplete.submissionText
         )
     }
-
+    
     func clearAutocomplete() {
         autocompleteState = .none
         autocompleteLabel.attributedText = nil
         autocompleteLabel.isHidden = true
         updateAutocompletePresentation()
     }
-
+    
     var isShowingAutocomplete: Bool {
         if case .suggestion = autocompleteState { return true }
         return false
     }
-
+    
     private var isShowingOverlay: Bool {
         if case .none = autocompleteState { return false }
         return true
     }
-
+    
     // MARK: - Loading And Menu
-
+    
     func setLoadingProgress(_ progress: Float, isLoading: Bool) {
         loadingState = isLoading ? .loading(progress: progress) : .idle
         applyState()
     }
-
+    
     func performAfterMenuDismissal(_ action: @escaping () -> Void) {
         leadingButton.performAfterMenuDismissal(action)
     }
-
+    
     var addressBarButton: AddressBarButton {
         return leadingButton
     }
-
+    
     // MARK: - Tab Transitions
-
+    
     func resetHorizontalTransition() {
         gestures?.resetHorizontalTransition()
     }
-
+    
     func performAfterTransition(_ completion: @escaping () -> Void) -> Bool {
         gestures?.performAfterTransition(completion) ?? false
     }
-
+    
     func animateAutomaticNewTabTransition(to tab: Tab, completion: @escaping () -> Void) {
         gestures?.animateAutomaticNewTabTransition(to: tab, completion: completion)
     }
-
+    
     var isEditingText: Bool {
         return textField.isFirstResponder
     }
-
+    
     // MARK: - View Setup
-
+    
     private func configureAppearance() {
         translatesAutoresizingMaskIntoConstraints = false
         backgroundColor = .clear
@@ -580,7 +577,7 @@ final class AddressBar: UIView {
         addressBarContent.addSubview(progressView)
         addressBarContent.addSubview(addressBarBorder)
     }
-
+    
     private func configureConstraints() {
         backgroundTrailingFullConstraint = addressBarBackground.trailingAnchor.constraint(equalTo: trailingAnchor)
         backgroundTrailingFocusedConstraint = addressBarBackground.trailingAnchor.constraint(
@@ -590,61 +587,61 @@ final class AddressBar: UIView {
         backgroundHeightConstraint = addressBarBackground.heightAnchor.constraint(equalToConstant: UX.addressBarHeight)
         dismissWidthConstraint = dismissButton.widthAnchor.constraint(equalToConstant: UX.addressBarHeight)
         dismissHeightConstraint = dismissButton.heightAnchor.constraint(equalToConstant: UX.addressBarHeight)
-
+        
         NSLayoutConstraint.activate([
             addressBarBackground.leadingAnchor.constraint(equalTo: leadingAnchor),
             backgroundTrailingFullConstraint,
             addressBarBackground.topAnchor.constraint(equalTo: topAnchor),
             addressBarBackground.bottomAnchor.constraint(equalTo: bottomAnchor),
             backgroundHeightConstraint,
-
+            
             addressBarContent.leadingAnchor.constraint(equalTo: addressBarBackground.leadingAnchor),
             addressBarContent.trailingAnchor.constraint(equalTo: addressBarBackground.trailingAnchor),
             addressBarContent.topAnchor.constraint(equalTo: addressBarBackground.topAnchor),
             addressBarContent.bottomAnchor.constraint(equalTo: addressBarBackground.bottomAnchor),
-
+            
             addressBarBorder.leadingAnchor.constraint(equalTo: addressBarContent.leadingAnchor),
             addressBarBorder.trailingAnchor.constraint(equalTo: addressBarContent.trailingAnchor),
             addressBarBorder.topAnchor.constraint(equalTo: addressBarContent.topAnchor),
             addressBarBorder.bottomAnchor.constraint(equalTo: addressBarContent.bottomAnchor),
-
+            
             dismissButton.trailingAnchor.constraint(equalTo: trailingAnchor),
             dismissButton.centerYAnchor.constraint(equalTo: addressBarBackground.centerYAnchor),
             dismissWidthConstraint,
             dismissHeightConstraint,
-
+            
             leadingButton.leadingAnchor.constraint(equalTo: addressBarContent.leadingAnchor, constant: UX.addressBarContentHorizontalInset),
             leadingButton.centerYAnchor.constraint(equalTo: addressBarContent.centerYAnchor),
             leadingButton.widthAnchor.constraint(equalToConstant: UX.addressBarButtonSize),
             leadingButton.heightAnchor.constraint(equalToConstant: UX.addressBarButtonSize),
-
+            
             trailingButton.trailingAnchor.constraint(equalTo: addressBarContent.trailingAnchor, constant: -UX.addressBarContentHorizontalInset),
             trailingButton.centerYAnchor.constraint(equalTo: addressBarContent.centerYAnchor),
             trailingButton.widthAnchor.constraint(equalToConstant: UX.addressBarButtonSize),
             trailingButton.heightAnchor.constraint(equalToConstant: UX.addressBarButtonSize),
-
+            
             textField.topAnchor.constraint(equalTo: addressBarContent.topAnchor),
             textField.bottomAnchor.constraint(equalTo: addressBarContent.bottomAnchor),
-
+            
             autocompleteButton.leadingAnchor.constraint(equalTo: textField.leadingAnchor),
             autocompleteButton.trailingAnchor.constraint(equalTo: textField.trailingAnchor, constant: -UX.addressBarAutocompleteTrailingInset),
             autocompleteButton.topAnchor.constraint(equalTo: textField.topAnchor),
             autocompleteButton.bottomAnchor.constraint(equalTo: textField.bottomAnchor),
-
+            
             autocompleteLabel.leadingAnchor.constraint(equalTo: textField.leadingAnchor),
             autocompleteLabel.trailingAnchor.constraint(equalTo: textField.trailingAnchor, constant: -UX.addressBarAutocompleteTrailingInset),
             autocompleteLabel.topAnchor.constraint(equalTo: textField.topAnchor),
             autocompleteLabel.bottomAnchor.constraint(equalTo: textField.bottomAnchor),
-
+            
             addressLabel.topAnchor.constraint(equalTo: addressBarContent.topAnchor),
             addressLabel.bottomAnchor.constraint(equalTo: addressBarContent.bottomAnchor),
-
+            
             progressView.leadingAnchor.constraint(equalTo: addressBarContent.leadingAnchor),
             progressView.trailingAnchor.constraint(equalTo: addressBarContent.trailingAnchor),
             progressView.bottomAnchor.constraint(equalTo: addressBarContent.bottomAnchor),
             progressView.heightAnchor.constraint(equalToConstant: UX.addressBarLoadingProgressHeight),
         ])
-
+        
         textLeadingToButtonConstraint = textField.leadingAnchor.constraint(equalTo: leadingButton.trailingAnchor, constant: UX.addressBarButtonToTextSpacing)
         textLeadingToBackgroundConstraint = textField.leadingAnchor.constraint(equalTo: addressBarContent.leadingAnchor, constant: UX.addressBarContentHorizontalInset)
         textTrailingToButtonConstraint = textField.trailingAnchor.constraint(equalTo: trailingButton.leadingAnchor, constant: -UX.addressBarButtonToTextSpacing)
@@ -654,7 +651,7 @@ final class AddressBar: UIView {
         labelTrailingToButtonConstraint = addressLabel.trailingAnchor.constraint(equalTo: trailingButton.leadingAnchor, constant: -UX.addressBarButtonToTextSpacing)
         labelTrailingToBackgroundConstraint = addressLabel.trailingAnchor.constraint(equalTo: addressBarContent.trailingAnchor, constant: -UX.addressBarContentHorizontalInset)
     }
-
+    
     private func configureTargets() {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleBarTap))
         tapGesture.cancelsTouchesInView = true
@@ -668,7 +665,7 @@ final class AddressBar: UIView {
         autocompleteButton.addTarget(self, action: #selector(handleOverlayButtonTap), for: .touchUpInside)
         dismissButton.addTarget(self, action: #selector(handleDismissButtonTap), for: .touchUpInside)
     }
-
+    
     private func configureObservers() {
         NotificationCenter.default.addObserver(
             self,
@@ -677,16 +674,16 @@ final class AddressBar: UIView {
             object: nil
         )
     }
-
+    
     // MARK: - State Rendering
-
+    
     private func applyState() {
         applyRenderModel(resolveRenderModel())
         applyLoadingState()
         addressBarBackground.layer.shadowOpacity = UX.addressBarBackgroundShadowOpacity
         setNeedsLayout()
     }
-
+    
     private func applyLoadingState() {
         switch loadingState {
         case .idle:
@@ -696,7 +693,7 @@ final class AddressBar: UIView {
             progressView.isHidden = false
         }
     }
-
+    
     private func resolveRenderModel() -> RenderModel {
         let content = resolveContentState()
         return RenderModel(
@@ -705,19 +702,19 @@ final class AddressBar: UIView {
             trailingButton: resolveTrailingButtonState(for: content)
         )
     }
-
+    
     private func resolveContentState() -> ContentState {
         if editingState != .inactive {
             let typedText = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             return typedText.isEmpty ? .placeholder : .typedText
         }
-
+        
         guard let displayText = displayAttributedText() else {
             return .placeholder
         }
         return .page(displayText)
     }
-
+    
     private func resolveLeadingButtonState(for content: ContentState) -> LeadingButtonState {
         guard editingState == .inactive else { return .hidden }
         if isReaderActive { return .menu }
@@ -731,22 +728,22 @@ final class AddressBar: UIView {
             return .hidden
         }
     }
-
+    
     private func resolveTrailingButtonState(for content: ContentState) -> TrailingButtonState {
         guard editingState == .inactive else { return .hidden }
         if case .loading = loadingState { return .stop }
         if case .page = content { return .reload }
         return .hidden
     }
-
+    
     private func applyRenderModel(_ model: RenderModel) {
         applyContentState(model.content)
         applyLeadingButtonState(model.leadingButton)
         applyTrailingButtonState(model.trailingButton)
-
+        
         let showsLeadingButton = model.leadingButton != .hidden
         let showsTrailingButton = model.trailingButton != .hidden
-
+        
         NSLayoutConstraint.deactivate([
             textLeadingToButtonConstraint,
             textLeadingToBackgroundConstraint,
@@ -757,7 +754,7 @@ final class AddressBar: UIView {
             labelTrailingToButtonConstraint,
             labelTrailingToBackgroundConstraint,
         ])
-
+        
         NSLayoutConstraint.activate([
             showsLeadingButton ? textLeadingToButtonConstraint : textLeadingToBackgroundConstraint,
             showsTrailingButton ? textTrailingToButtonConstraint : textTrailingToBackgroundConstraint,
@@ -765,7 +762,7 @@ final class AddressBar: UIView {
             showsTrailingButton ? labelTrailingToButtonConstraint : labelTrailingToBackgroundConstraint,
         ])
     }
-
+    
     private func applyContentState(_ state: ContentState) {
         switch state {
         case .placeholder, .typedText:
@@ -782,7 +779,7 @@ final class AddressBar: UIView {
         guard isReaderActive else { return }
         delegate?.addressBarDidRequestReader(self)
     }
-
+    
     private func applyLeadingButtonState(_ state: LeadingButtonState) {
         guard state != .hidden else {
             leadingButton.isHidden = true
@@ -791,7 +788,7 @@ final class AddressBar: UIView {
             leadingButton.isUserInteractionEnabled = false
             return
         }
-
+        
         leadingButton.isHidden = false
         if state == .search {
             leadingButton.tintColor = .secondaryLabel
@@ -800,7 +797,7 @@ final class AddressBar: UIView {
             leadingButton.isUserInteractionEnabled = false
             return
         }
-
+        
         if state == .loading {
             leadingButton.tintColor = .secondaryLabel
             leadingButton.setImage(UIImage(named: "reynard.list.bullet.below.rectangle"), for: .normal)
@@ -808,7 +805,7 @@ final class AddressBar: UIView {
             leadingButton.isUserInteractionEnabled = false
             return
         }
-
+        
         leadingButton.tintColor = .label
         leadingButton.setImage(UIImage(named: isReaderActive ? "reynard.text.page" : "reynard.list.bullet.below.rectangle"), for: .normal)
         if #available(iOS 14.0, *) {
@@ -817,7 +814,7 @@ final class AddressBar: UIView {
         leadingButton.setMenuPreservingPresentation(isReaderActive ? nil : addonsMenu)
         leadingButton.isUserInteractionEnabled = isReaderActive || addonsMenu != nil
     }
-
+    
     private func applyTrailingButtonState(_ state: TrailingButtonState) {
         trailingButtonState = state
         let visible = state != .hidden
@@ -828,7 +825,7 @@ final class AddressBar: UIView {
         }
         trailingButton.setImage(UIImage(named: state == .stop ? "reynard.xmark" : "reynard.arrow.clockwise"), for: .normal)
     }
-
+    
     // MARK: - Display Content
     
     func toolbarTextPresentation(in view: UIView) -> (text: NSAttributedString, font: UIFont, frame: CGRect)? {
@@ -856,7 +853,7 @@ final class AddressBar: UIView {
         guard let currentText, !currentText.isEmpty else {
             return nil
         }
-
+        
         guard !Prefs.AppearanceSettings.showsFullWebsiteAddress,
               canShowBarMenu,
               let host = locationHost() else {
@@ -865,7 +862,7 @@ final class AddressBar: UIView {
                 attributes: [.foregroundColor: UIColor.label]
             )
         }
-
+        
         let attributedText = NSMutableAttributedString(
             string: host,
             attributes: [.foregroundColor: UIColor.label]
@@ -887,7 +884,7 @@ final class AddressBar: UIView {
         }
         return attributedText
     }
-
+    
     private func locationHost() -> String? {
         let sourceText = currentLocationText ?? currentText
         guard let sourceText,
@@ -897,7 +894,7 @@ final class AddressBar: UIView {
         }
         return host
     }
-
+    
     @objc
     private func showFullWebsiteAddressDidChange() {
         guard editingState == .inactive else {
@@ -905,9 +902,9 @@ final class AddressBar: UIView {
         }
         applyState()
     }
-
+    
     // MARK: - Actions
-
+    
     @objc
     private func handleBarTap() {
         if textField.isFirstResponder {
@@ -916,10 +913,10 @@ final class AddressBar: UIView {
             }
             return
         }
-
+        
         textField.becomeFirstResponder()
     }
-
+    
     @objc
     private func textFieldDidChange() {
         let previousText = lastEditingText
@@ -932,48 +929,48 @@ final class AddressBar: UIView {
             applyState()
         }
     }
-
+    
     @objc
     private func handleTrailingButtonTap() {
         delegate?.addressBarDidRequestReloadOrStop(self)
     }
-
+    
     @objc
     private func handleTrailingButtonLongPress(_ recognizer: UILongPressGestureRecognizer) {
         guard recognizer.state == .began, trailingButtonState == .reload else {
             return
         }
-
+        
         delegate?.addressBarDidRequestHardReload(self)
         Haptics.rigid()
     }
-
+    
     @objc
     private func handleDismissButtonTap() {
         searchDelegate?.addressBarDidTapDismiss(self)
     }
-
+    
     @objc
     private func handleOverlayButtonTap() {
         handleOverlayTap()
     }
-
+    
     private func handleOverlayTap() {
         if !textField.isFirstResponder {
             _ = textField.becomeFirstResponder()
         }
-
+        
         if isShowingAutocomplete {
             commitAutocompleteForEditing()
             return
         }
-
+        
         if case .focusPreview = autocompleteState {
             clearFocusPreview()
             selectAllText()
         }
     }
-
+    
     private func moveCursor(to boundary: AddressBarTextField.CursorBoundary) {
         switch autocompleteState {
         case .focusPreview:
@@ -991,9 +988,9 @@ final class AddressBar: UIView {
             break
         }
     }
-
+    
     // MARK: - Autocomplete Presentation
-
+    
     private func commitAutocompleteForEditing() {
         guard case let .suggestion(committedText, _) = autocompleteState else {
             return
@@ -1003,13 +1000,13 @@ final class AddressBar: UIView {
         lastEditingText = committedText
         restoreCaretToEnd()
     }
-
+    
     private func showFocusPreview() {
         guard let text = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !text.isEmpty else {
             return
         }
-
+        
         let attributedText = NSAttributedString(
             string: text,
             attributes: [
@@ -1022,7 +1019,7 @@ final class AddressBar: UIView {
         autocompleteState = .focusPreview
         updateAutocompletePresentation()
     }
-
+    
     private func searchAutocompletePresentation(
         for result: UserDataSearchResult,
         query: String
@@ -1038,7 +1035,7 @@ final class AddressBar: UIView {
             .foregroundColor: UIColor.systemBlue,
             .backgroundColor: UIColor.systemGray4
         ]
-
+        
         if title.hasPrefix(query) {
             let attributed = NSMutableAttributedString(
                 string: String(title.prefix(query.count)),
@@ -1051,13 +1048,13 @@ final class AddressBar: UIView {
             attributed.append(NSAttributedString(string: " — \(strippedURL)", attributes: suffixAttributes))
             return (attributed, strippedURL, result.url.absoluteString)
         }
-
+        
         let strippedQuery = URLUtils.normalizedURLMatchString(from: query)
         let strippedURLMatchValue = URLUtils.normalizedURLMatchString(from: result.url.absoluteString)
         guard !strippedQuery.isEmpty else {
             return nil
         }
-
+        
         let completedURL: String
         if strippedURLMatchValue.hasPrefix(strippedQuery) {
             completedURL = URLUtils.autocompleteURLString(for: query, url: result.url) ?? strippedURL
@@ -1066,7 +1063,7 @@ final class AddressBar: UIView {
         } else {
             return nil
         }
-
+        
         let attributed = NSMutableAttributedString(
             string: query,
             attributes: queryAttributes
@@ -1078,7 +1075,7 @@ final class AddressBar: UIView {
         attributed.append(NSAttributedString(string: " — \(title)", attributes: suffixAttributes))
         return (attributed, completedURL, result.url.absoluteString)
     }
-
+    
     private func topDomainAutocompletePresentation(
         for domain: String,
         query: String
@@ -1086,7 +1083,7 @@ final class AddressBar: UIView {
         guard domain.range(of: query, options: [.anchored, .caseInsensitive]) != nil else {
             return nil
         }
-
+        
         let attributed = NSMutableAttributedString(
             string: query,
             attributes: [.foregroundColor: UIColor.label]
@@ -1100,27 +1097,25 @@ final class AddressBar: UIView {
         ))
         return (attributed, domain, domain)
     }
-
+    
     private func clearFocusPreview() {
         autocompleteState = .none
         autocompleteLabel.attributedText = nil
         autocompleteLabel.isHidden = true
         updateAutocompletePresentation()
     }
-
+    
     private func updateAutocompletePresentation() {
         textField.isAutocompleteActive = isShowingOverlay
         textField.textColor = isShowingOverlay ? .clear : .label
         textField.tintColor = isShowingOverlay ? .clear : tintColor
-        // The label presents the suggestion only; it must not intercept a tap
-        // that UIKit needs to turn into an insertion-point or selection change.
-        autocompleteButton.isHidden = true
+        autocompleteButton.isHidden = !isShowingOverlay
     }
-
+    
     private func restoreCaretToEnd() {
         restoreCaret(to: .end)
     }
-
+    
     private func restoreCaret(to boundary: AddressBarTextField.CursorBoundary) {
         let position: UITextPosition
         switch boundary {
@@ -1131,7 +1126,7 @@ final class AddressBar: UIView {
         }
         textField.selectedTextRange = textField.textRange(from: position, to: position)
     }
-
+    
     private func selectAllText() {
         let start = textField.beginningOfDocument
         let end = textField.endOfDocument
@@ -1149,13 +1144,13 @@ extension AddressBar: UIContextMenuInteractionDelegate {
         guard editingState == .inactive else {
             return nil
         }
-
+        
         let trailingButtonLocation = trailingButton.convert(location, from: interaction.view)
         if trailingButtonState == .reload,
            trailingButton.point(inside: trailingButtonLocation, with: nil) {
             return nil
         }
-
+        
         let url = delegate?.addressBarShareableURL(self)
         let menuState = PasteAndGoMenuState()
         if #available(iOS 14.0, *) {
@@ -1164,7 +1159,7 @@ extension AddressBar: UIContextMenuInteractionDelegate {
                 guard isAvailable, menuState.menuWasReturned else {
                     return
                 }
-
+                
                 interaction?.updateVisibleMenu { [weak self] visibleMenu in
                     self?.makeContextMenu(
                         for: url,
@@ -1173,7 +1168,7 @@ extension AddressBar: UIContextMenuInteractionDelegate {
                 }
             }
         }
-
+        
         return UIContextMenuConfiguration(identifier: url.map { $0 as NSURL }, previewProvider: nil) { [weak self] _ in
             menuState.menuWasReturned = true
             guard let self else {
@@ -1185,7 +1180,7 @@ extension AddressBar: UIContextMenuInteractionDelegate {
             )
         }
     }
-
+    
     private func makeContextMenu(
         for url: URL?,
         includesPasteAndGo: Bool
@@ -1202,7 +1197,7 @@ extension AddressBar: UIContextMenuInteractionDelegate {
                 self?.searchDelegate?.addressBarDidSubmit(text)
             })
         }
-
+        
         if let url {
             children.append(UIAction(
                 title: NSLocalizedString("Copy Link", comment: ""),
@@ -1223,7 +1218,7 @@ extension AddressBar: UIContextMenuInteractionDelegate {
                 )
             })
         }
-
+        
         let tabCount = delegate?.addressBarTabCount(self) ?? 0
         let closeTabAction = UIAction(
             title: NSLocalizedString("Close This Tab", comment: ""),
@@ -1251,7 +1246,7 @@ extension AddressBar: UIContextMenuInteractionDelegate {
                 self.delegate?.addressBarDidRequestCloseAllTabs(self)
             }, at: 0)
         }
-
+        
         if children.isEmpty {
             children.append(contentsOf: closeTabActions)
         } else {
@@ -1259,7 +1254,7 @@ extension AddressBar: UIContextMenuInteractionDelegate {
         }
         return UIMenu(title: "", children: children)
     }
-
+    
     @available(iOS 14.0, *)
     private func detectPasteAndGoAvailability(completion: @escaping (Bool) -> Void) {
         UIPasteboard.general.detectPatterns(for: [.probableWebURL, .probableWebSearch]) { result in
@@ -1304,24 +1299,24 @@ extension AddressBar: UITextFieldDelegate {
             }
             return false
         }
-
+        
         guard isShowingAutocomplete,
               string.isEmpty,
               range.length > 0 else {
             lastEditWasDelete = string.isEmpty && range.length > 0
             return true
         }
-
+        
         clearAutocomplete()
         restoreCaretToEnd()
         lastEditWasDelete = true
         return false
     }
-
+    
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         return submitTextField()
     }
-
+    
     private func submitTextField() -> Bool {
         if searchDelegate?.addressBarDidRequestSubmitSelectedSuggestion(self) == true {
             return true
@@ -1335,11 +1330,11 @@ extension AddressBar: UITextFieldDelegate {
         guard let searchText, !searchText.isEmpty else {
             return false
         }
-
+        
         searchDelegate?.addressBarDidSubmit(searchText)
         return true
     }
-
+    
     func textFieldDidBeginEditing(_ textField: UITextField) {
         editingState = .focused
         if let currentText,
@@ -1360,7 +1355,7 @@ extension AddressBar: UITextFieldDelegate {
             showFocusPreview()
         }
     }
-
+    
     func textFieldDidEndEditing(_ textField: UITextField) {
         if editingState != .composing {
             editingState = .inactive
@@ -1386,15 +1381,15 @@ extension AddressBar: UIGestureRecognizerDelegate {
         if touch.view?.isDescendant(of: leadingButton) == true {
             return false
         }
-
+        
         if touch.view?.isDescendant(of: trailingButton) == true {
             return false
         }
-
+        
         if touch.view?.isDescendant(of: textField) == true {
             return false
         }
-
+        
         return true
     }
 }
