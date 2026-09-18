@@ -3,7 +3,7 @@ new file mode 100644
 index 000000000000..441b0e633e44
 --- /dev/null
 +++ b/netwerk/system/ios/nsIOSNetworkLinkService.mm
-@@ -0,0 +1,647 @@
+@@ -0,0 +1,698 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -53,6 +53,57 @@ index 000000000000..441b0e633e44
 +#define LOG(args) MOZ_LOG(gNotifyAddrLog, mozilla::LogLevel::Debug, args)
 +
 +static Atomic<bool, Relaxed> sHasNonLocalIPv6{true};
++
++// RootHide injects roothideinit.dylib into every process it manages. Inside
++// that jailed environment the Network.framework path monitor is unreliable: it
++// may report the path as unsatisfied, or never invoke its update handler at
++// all, even though ordinary sockets connect normally. Trusting it blindly
++// makes Gecko believe the device is offline and fail every request, so detect
++// the environment once and fall back to a real route lookup.
++static bool IsRootHideInjectionActive() {
++  static bool sActive = [] {
++    uint32_t imageCount = _dyld_image_count();
++    for (uint32_t index = 0; index < imageCount; index++) {
++      const char* imagePath = _dyld_image_name(index);
++      if (imagePath && strstr(imagePath, "/usr/lib/roothideinit.dylib")) {
++        return true;
++      }
++    }
++    return false;
++  }();
++  return sActive;
++}
++
++// Lightweight reachability probe. A UDP connect does not transmit any packet,
++// it only asks the kernel whether a route to the address exists, so this is
++// cheap enough to call from the monitor queue and from startup.
++static bool ProbeNetworkReachability() {
++  int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
++  if (fd < 0) {
++    return false;
++  }
++
++  struct timeval timeout;
++  timeout.tv_sec = 2;
++  timeout.tv_usec = 0;
++  setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
++
++  struct sockaddr_in address;
++  memset(&address, 0, sizeof(address));
++  address.sin_family = AF_INET;
++  address.sin_len = sizeof(address);
++  address.sin_port = htons(53);
++  address.sin_addr.s_addr = inet_addr("8.8.8.8");
++
++  bool reachable =
++      connect(fd, reinterpret_cast<struct sockaddr*>(&address),
++              sizeof(address)) == 0 ||
++      errno == EINPROGRESS || errno == EWOULDBLOCK;
++  int savedErrno = errno;
++  close(fd);
++  errno = savedErrno;
++  return reachable;
++}
 +
 +// RootHide injects roothideinit.dylib into every process it manages. Inside
 +// that jailed environment the Network.framework path monitor is unreliable: it
