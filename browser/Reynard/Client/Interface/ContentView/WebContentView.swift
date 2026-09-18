@@ -37,6 +37,7 @@ final class WebContentView: UIView, UIScrollViewDelegate {
     private var isSystemTextInputActive = false
     private var lastScrollState: (position: CGFloat, zoomScale: CGFloat)?
     private var currentScrollY: CGFloat = 0
+    private var awaitsScrollInteraction = true
     private var pageBackgroundTopConstraint: NSLayoutConstraint?
     private var pageBackgroundBottomConstraint: NSLayoutConstraint?
     
@@ -52,7 +53,7 @@ final class WebContentView: UIView, UIScrollViewDelegate {
     var onHistorySwipeDidUpdate: ((CGFloat) -> Void)?
     var onHistorySwipeDidComplete: ((GeckoEdgeSwipeDirections) -> Void)?
     var onHistorySwipeDidEnd: (() -> Void)?
-    var onVerticalScroll: ((CGFloat) -> Void)?
+    var onVerticalScroll: ((CGFloat, CGFloat) -> Void)?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -152,7 +153,7 @@ final class WebContentView: UIView, UIScrollViewDelegate {
             
             refreshIndicatorContainer.centerXAnchor.constraint(equalTo: centerXAnchor),
             refreshIndicatorContainer.topAnchor.constraint(
-                equalTo: topAnchor,
+                equalTo: safeAreaLayoutGuide.topAnchor,
                 constant: (UX.refreshingContentOffset - refreshIndicator.intrinsicContentSize.height) / 2
             ),
             refreshIndicator.topAnchor.constraint(equalTo: refreshIndicatorContainer.topAnchor),
@@ -173,6 +174,11 @@ final class WebContentView: UIView, UIScrollViewDelegate {
         NSLayoutConstraint.activate([topConstraint, bottomConstraint])
         pageBackgroundTopConstraint = topConstraint
         pageBackgroundBottomConstraint = bottomConstraint
+    }
+    
+    func setFullscreen(_ fullscreen: Bool) {
+        pageBackgroundView.isHidden = fullscreen
+        backgroundColor = fullscreen ? .black : .systemBackground
     }
     
     func setVisibility(_ visibility: VisibilityState) {
@@ -202,7 +208,7 @@ final class WebContentView: UIView, UIScrollViewDelegate {
         guard webView.session !== tab?.session else {
             return
         }
-        lastScrollState = nil
+        resetScrollTracking()
         currentScrollY = 0
         refreshingSession = nil
         pullToRefreshRecognizer?.cancelPull()
@@ -216,6 +222,7 @@ final class WebContentView: UIView, UIScrollViewDelegate {
     
     func resetScrollTracking() {
         lastScrollState = nil
+        awaitsScrollInteraction = true
     }
     
     func showPageError(for url: String?) {
@@ -448,6 +455,7 @@ extension WebContentView: GeckoViewInteractionDelegate {
         scrollableEdges: GeckoScrollableEdges,
         overscrollAxes: GeckoOverscrollAxes
     ) {
+        awaitsScrollInteraction = false
         pullToRefreshRecognizer?.resolveInputSequence(PullInputResult(
             sequenceID: sequenceID,
             inputHandling: inputHandling,
@@ -459,6 +467,7 @@ extension WebContentView: GeckoViewInteractionDelegate {
     func touchSequenceDidEnd(_ sequenceID: UInt64) {}
     
     func trackpadScrollDidBegin(_ delta: CGPoint) {
+        awaitsScrollInteraction = false
         guard currentScrollY <= 0.5 else {
             return
         }
@@ -483,13 +492,14 @@ extension WebContentView: GeckoViewInteractionDelegate {
         defer {
             lastScrollState = currentState
         }
-        guard let previousState = lastScrollState,
+        guard !awaitsScrollInteraction,
+              let previousState = lastScrollState,
               currentState.zoomScale == previousState.zoomScale || currentState.zoomScale == 1 else {
             return
         }
         let scrollDelta = currentState.position - previousState.position
         if scrollDelta != 0 {
-            onVerticalScroll?(scrollDelta)
+            onVerticalScroll?(scrollDelta, currentState.position)
         }
     }
     

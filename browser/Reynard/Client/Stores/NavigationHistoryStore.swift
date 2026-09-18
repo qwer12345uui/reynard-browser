@@ -16,6 +16,12 @@ final class NavigationHistoryStore {
         let url: String
     }
     
+    struct State {
+        let canGoBack: Bool
+        let canGoForward: Bool
+        let usesStoredHistory: Bool
+    }
+    
     struct Snapshot {
         let canGoBack: Bool
         let canGoForward: Bool
@@ -26,13 +32,42 @@ final class NavigationHistoryStore {
         let usesStoredHistory: Bool
     }
     
-    private struct NavigationEntry: Codable {
+    nonisolated private struct NavigationEntry: Codable, Sendable {
+        let id: UUID
         var url: String
         var title: String
         var thumbnailData: Data?
+        
+        private enum CodingKeys: String, CodingKey {
+            case id
+            case url
+            case title
+            case thumbnailData
+        }
+        
+        init(
+            id: UUID = UUID(),
+            url: String,
+            title: String,
+            thumbnailData: Data?
+        ) {
+            self.id = id
+            self.url = url
+            self.title = title
+            self.thumbnailData = thumbnailData
+        }
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+            url = try container.decode(String.self, forKey: .url)
+            title = try container.decode(String.self, forKey: .title)
+            thumbnailData = try container.decodeIfPresent(Data.self, forKey: .thumbnailData)
+        }
     }
     
-    private struct StoredHistory: Codable {
+    nonisolated private struct StoredHistory: Codable, Sendable {
+        var currentEntryID: UUID?
         var currentURL: String?
         var currentTitle: String?
         var currentThumbnailData: Data?
@@ -41,6 +76,7 @@ final class NavigationHistoryStore {
         var usesStoredHistory: Bool?
         
         private enum CodingKeys: String, CodingKey {
+            case currentEntryID = "currentID"
             case currentURL
             case currentTitle
             case currentThumbnailData = "currentThumbnail"
@@ -50,6 +86,7 @@ final class NavigationHistoryStore {
         }
         
         init(
+            currentEntryID: UUID?,
             currentURL: String?,
             currentTitle: String?,
             currentThumbnailData: Data?,
@@ -57,6 +94,7 @@ final class NavigationHistoryStore {
             forwardHistory: [NavigationEntry],
             usesStoredHistory: Bool?
         ) {
+            self.currentEntryID = currentEntryID
             self.currentURL = currentURL
             self.currentTitle = currentTitle
             self.currentThumbnailData = currentThumbnailData
@@ -64,13 +102,18 @@ final class NavigationHistoryStore {
             self.forwardHistory = forwardHistory
             self.usesStoredHistory = usesStoredHistory
         }
-        
     }
     
-    private let thumbnailJPEGQuality = 0.8
+    private let thumbnailJPEGQuality = 0.7
+    private let persistenceDelay: DispatchTimeInterval = .milliseconds(100)
     private let fileManager: FileManager
     private let storageURL: URL
     private let queue = DispatchQueue(label: "com.minh-ton.Reynard.NavigationHistoryStore.Queue", qos: .userInitiated)
+    private let thumbnailQueue = DispatchQueue(label: "com.minh-ton.Reynard.NavigationHistoryStore.ThumbnailQueue", qos: .utility)
+    private let persistenceQueue = DispatchQueue(label: "com.minh-ton.Reynard.NavigationHistoryStore.PersistenceQueue", qos: .utility)
+    private var historyCache: [UUID: StoredHistory] = [:]
+    private var pendingHistories: [UUID: StoredHistory] = [:]
+    private var isPersistenceScheduled = false
     
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
@@ -95,7 +138,28 @@ final class NavigationHistoryStore {
         }
     }
     
-    func recordNavigation(to url: String, title: String, for tabID: UUID) -> Snapshot {
+    func currentState(for tabID: UUID) -> State {
+        queue.sync {
+            let history = loadHistory(for: tabID)
+            return State(
+                canGoBack: !history.backHistory.isEmpty,
+                canGoForward: !history.forwardHistory.isEmpty,
+                usesStoredHistory: history.usesStoredHistory ?? false
+            )
+        }
+    }
+    
+    func currentPreviewImages(for tabID: UUID) -> NavigationPreviewImages {
+        queue.sync {
+            let history = loadHistory(for: tabID)
+            return NavigationPreviewImages(
+                backImage: history.backHistory.last?.thumbnailData.flatMap(UIImage.init(data:)),
+                forwardImage: history.forwardHistory.first?.thumbnailData.flatMap(UIImage.init(data:))
+            )
+        }
+    }
+    
+    func recordNavigation(to url: String, title: String, for tabID: UUID) {
         queue.sync {
             var history = loadHistory(for: tabID)
             guard history.currentURL != url else {
@@ -105,34 +169,34 @@ final class NavigationHistoryStore {
                     history.currentTitle = trimmedTitle
                     saveHistory(history, for: tabID)
                 }
-                return snapshot(from: history)
+                return
             }
             let normalizedTitle = normalizedTitle(title, fallback: url)
             
             if let currentURL = history.currentURL,
                !currentURL.isEmpty {
                 history.backHistory.append(NavigationEntry(
+                    id: history.currentEntryID ?? UUID(),
                     url: currentURL,
                     title: history.currentTitle ?? currentURL,
                     thumbnailData: history.currentThumbnailData
                 ))
             }
             
+            history.currentEntryID = UUID()
             history.currentURL = url
             history.currentTitle = normalizedTitle
             history.currentThumbnailData = nil
             history.forwardHistory.removeAll(keepingCapacity: false)
             saveHistory(history, for: tabID)
-            return snapshot(from: history)
         }
     }
     
-    func setUsesPersistedHistory(_ usesPersistedHistory: Bool, for tabID: UUID) -> Snapshot {
+    func setUsesPersistedHistory(_ usesPersistedHistory: Bool, for tabID: UUID) {
         queue.sync {
             var history = loadHistory(for: tabID)
             history.usesStoredHistory = usesPersistedHistory
             saveHistory(history, for: tabID)
-            return snapshot(from: history)
         }
     }
     
@@ -153,6 +217,7 @@ final class NavigationHistoryStore {
             if let currentURL = history.currentURL,
                !currentURL.isEmpty {
                 movedEntries.append(NavigationEntry(
+                    id: history.currentEntryID ?? UUID(),
                     url: currentURL,
                     title: history.currentTitle ?? currentURL,
                     thumbnailData: history.currentThumbnailData
@@ -161,6 +226,7 @@ final class NavigationHistoryStore {
             
             history.backHistory.removeLast(index + 1)
             history.forwardHistory = movedEntries + history.forwardHistory
+            history.currentEntryID = target.id
             history.currentURL = target.url
             history.currentTitle = target.title
             history.currentThumbnailData = target.thumbnailData
@@ -182,6 +248,7 @@ final class NavigationHistoryStore {
             if let currentURL = history.currentURL,
                !currentURL.isEmpty {
                 history.backHistory.append(NavigationEntry(
+                    id: history.currentEntryID ?? UUID(),
                     url: currentURL,
                     title: history.currentTitle ?? currentURL,
                     thumbnailData: history.currentThumbnailData
@@ -189,6 +256,7 @@ final class NavigationHistoryStore {
             }
             history.backHistory.append(contentsOf: movedEntries)
             history.forwardHistory.removeFirst(index + 1)
+            history.currentEntryID = target.id
             history.currentURL = target.url
             history.currentTitle = target.title
             history.currentThumbnailData = target.thumbnailData
@@ -214,39 +282,71 @@ final class NavigationHistoryStore {
         }
     }
     
-    func updateCurrentHistoryThumbnail(_ image: UIImage?, for tabID: UUID, matching url: String) {
+    func updateCurrentHistoryThumbnail(
+        _ image: UIImage?,
+        for tabID: UUID,
+        matching url: String,
+        completion: @escaping () -> Void
+    ) {
         queue.async {
             var history = self.loadHistory(for: tabID)
             guard history.currentURL == url else {
                 return
             }
             
-            history.currentThumbnailData = image?.jpegData(compressionQuality: self.thumbnailJPEGQuality)
-            self.saveHistory(history, for: tabID)
+            let entryID = history.currentEntryID ?? UUID()
+            if history.currentEntryID == nil {
+                history.currentEntryID = entryID
+                self.saveHistory(history, for: tabID)
+            }
+            
+            self.thumbnailQueue.async {
+                let thumbnailData = image?.jpegData(compressionQuality: self.thumbnailJPEGQuality)
+                self.queue.async {
+                    var history = self.loadHistory(for: tabID)
+                    guard self.updateThumbnailData(thumbnailData, for: entryID, in: &history) else {
+                        return
+                    }
+                    
+                    self.saveHistory(history, for: tabID)
+                    DispatchQueue.main.async(execute: completion)
+                }
+            }
+        }
+    }
+    
+    func flushPendingWrites() {
+        queue.sync {}
+        thumbnailQueue.sync {}
+        let pendingHistories = queue.sync {
+            takePendingHistories()
+        }
+        persistenceQueue.sync {
+            persist(pendingHistories)
         }
     }
     
     func invalidateThumbnails() {
         queue.sync {
-            guard let fileURLs = try? self.fileManager.contentsOfDirectory(
+            let fileURLs = (try? self.fileManager.contentsOfDirectory(
                 at: self.storageURL,
                 includingPropertiesForKeys: nil
-            ) else {
-                return
-            }
+            )) ?? []
+            let storedTabIDs = fileURLs.compactMap { UUID(uuidString: $0.lastPathComponent) }
+            let tabIDs = Set(storedTabIDs).union(self.historyCache.keys)
             
-            fileURLs.forEach { fileURL in
-                guard let tabID = UUID(uuidString: fileURL.lastPathComponent) else {
-                    return
-                }
-                
+            tabIDs.forEach { tabID in
                 var history = self.loadHistory(for: tabID)
                 history.currentThumbnailData = nil
                 history.backHistory = history.backHistory.map {
-                    NavigationEntry(url: $0.url, title: $0.title, thumbnailData: nil)
+                    var entry = $0
+                    entry.thumbnailData = nil
+                    return entry
                 }
                 history.forwardHistory = history.forwardHistory.map {
-                    NavigationEntry(url: $0.url, title: $0.title, thumbnailData: nil)
+                    var entry = $0
+                    entry.thumbnailData = nil
+                    return entry
                 }
                 self.saveHistory(history, for: tabID)
             }
@@ -255,12 +355,12 @@ final class NavigationHistoryStore {
     
     func removeNavigationHistory(for tabID: UUID) {
         queue.async {
+            self.historyCache.removeValue(forKey: tabID)
+            self.pendingHistories.removeValue(forKey: tabID)
             let fileURL = self.historyURL(for: tabID)
-            guard self.fileManager.fileExists(atPath: fileURL.path) else {
-                return
+            self.persistenceQueue.async {
+                try? self.fileManager.removeItem(at: fileURL)
             }
-            
-            try? self.fileManager.removeItem(at: fileURL)
         }
     }
     
@@ -269,9 +369,17 @@ final class NavigationHistoryStore {
     }
     
     private func loadHistory(for tabID: UUID) -> StoredHistory {
-        guard let data = try? Data(contentsOf: historyURL(for: tabID)),
-              let decoded = try? JSONDecoder().decode(StoredHistory.self, from: data) else {
-            return StoredHistory(
+        if let history = historyCache[tabID] {
+            return history
+        }
+        
+        let history: StoredHistory
+        if let data = try? Data(contentsOf: historyURL(for: tabID)),
+           let decoded = try? JSONDecoder().decode(StoredHistory.self, from: data) {
+            history = decoded
+        } else {
+            history = StoredHistory(
+                currentEntryID: nil,
                 currentURL: nil,
                 currentTitle: nil,
                 currentThumbnailData: nil,
@@ -281,15 +389,60 @@ final class NavigationHistoryStore {
             )
         }
         
-        return decoded
+        historyCache[tabID] = history
+        return history
     }
     
     private func saveHistory(_ history: StoredHistory, for tabID: UUID) {
-        guard let data = try? JSONEncoder().encode(history) else {
+        historyCache[tabID] = history
+        pendingHistories[tabID] = history
+        guard !isPersistenceScheduled else {
             return
         }
         
-        try? data.write(to: historyURL(for: tabID), options: .atomic)
+        isPersistenceScheduled = true
+        persistenceQueue.asyncAfter(deadline: .now() + persistenceDelay) {
+            let pendingHistories = self.queue.sync {
+                self.takePendingHistories()
+            }
+            self.persist(pendingHistories)
+        }
+    }
+    
+    private func takePendingHistories() -> [(UUID, StoredHistory)] {
+        isPersistenceScheduled = false
+        let histories = Array(pendingHistories)
+        pendingHistories.removeAll()
+        return histories
+    }
+    
+    private func persist(_ histories: [(UUID, StoredHistory)]) {
+        histories.forEach { tabID, history in
+            guard let data = try? JSONEncoder().encode(history) else {
+                return
+            }
+            
+            try? data.write(to: historyURL(for: tabID), options: .atomic)
+        }
+    }
+    
+    private func updateThumbnailData(_ thumbnailData: Data?, for entryID: UUID, in history: inout StoredHistory) -> Bool {
+        if history.currentEntryID == entryID {
+            history.currentThumbnailData = thumbnailData
+            return true
+        }
+        
+        if let index = history.backHistory.firstIndex(where: { $0.id == entryID }) {
+            history.backHistory[index].thumbnailData = thumbnailData
+            return true
+        }
+        
+        if let index = history.forwardHistory.firstIndex(where: { $0.id == entryID }) {
+            history.forwardHistory[index].thumbnailData = thumbnailData
+            return true
+        }
+        
+        return false
     }
     
     private func snapshot(from history: StoredHistory) -> Snapshot {

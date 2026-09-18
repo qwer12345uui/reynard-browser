@@ -19,7 +19,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         let window = UIWindow(windowScene: windowScene)
         window.overrideUserInterfaceStyle = AppAppearanceController.userInterfaceStyle(for: Prefs.AppearanceSettings.appAppearance)
-        window.backgroundColor = .systemBackground
         window.rootViewController = browserViewController
         window.makeKeyAndVisible()
         self.window = window

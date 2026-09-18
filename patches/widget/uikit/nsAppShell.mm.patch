@@ -1,8 +1,8 @@
 diff --git a/widget/uikit/nsAppShell.mm b/widget/uikit/nsAppShell.mm
-index 13436918ecd2..5ec8f93a37d6 100644
+index 13436918ecd2..592fd9317012 100644
 --- a/widget/uikit/nsAppShell.mm
 +++ b/widget/uikit/nsAppShell.mm
-@@ -3,17 +3,24 @@
+@@ -3,17 +3,25 @@
   * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
  #import <UIKit/UIApplication.h>
@@ -19,6 +19,7 @@ index 13436918ecd2..5ec8f93a37d6 100644
  #include "mozilla/Components.h"
  #include "mozilla/Hal.h"
 +#include "mozilla/MemoryPressureLevelIOS.h"
++#include "mozilla/MemoryPressureMonitorIOS.h"
  #include "mozilla/Services.h"
  #include "mozilla/dom/Document.h"
 +#include "mozilla/ipc/GeckoChildProcessHost.h"
@@ -27,7 +28,7 @@ index 13436918ecd2..5ec8f93a37d6 100644
  #include "mozilla/widget/ScreenManager.h"
  #include "nsAppRunner.h"
  #include "nsAppShell.h"
-@@ -42,25 +49,150 @@
+@@ -42,25 +50,150 @@
    fprintf(stderr, "\n")
  
  static void ApplicationWillTerminate(bool aCallExit);
@@ -179,7 +180,7 @@ index 13436918ecd2..5ec8f93a37d6 100644
  - (void)applicationWillTerminate:(UIApplication*)application {
    ALOG("[AppShellDelegate applicationWillTerminate:]");
    ApplicationWillTerminate(/* aCallExit */ false);
-@@ -68,15 +200,129 @@ - (void)applicationWillTerminate:(UIApplication*)application {
+@@ -68,15 +201,129 @@ - (void)applicationWillTerminate:(UIApplication*)application {
  
  - (void)applicationDidBecomeActive:(UIApplication*)application {
    ALOG("[AppShellDelegate applicationDidBecomeActive:]");
@@ -310,7 +311,26 @@ index 13436918ecd2..5ec8f93a37d6 100644
  }
  @end
  
-@@ -281,7 +527,12 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+@@ -112,6 +359,7 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+   }
+ 
+   gAppShell = NULL;
++  MemoryPressureMonitorIOS::Shutdown();
+ }
+ 
+ // Init
+@@ -154,6 +402,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+ 
+   nsresult rv = nsBaseAppShell::Init();
+ 
++  if (NS_SUCCEEDED(rv) && (XRE_IsContentProcess() || XRE_IsGPUProcess())) {
++    MemoryPressureMonitorIOS::Initialize();
++  }
++
+   nsCOMPtr<nsIObserverService> obsServ =
+       mozilla::services::GetObserverService();
+   if (obsServ) {
+@@ -281,7 +533,12 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
    ALOG("nsAppShell::Run");
  
    nsresult rv = NS_OK;
@@ -324,7 +344,7 @@ index 13436918ecd2..5ec8f93a37d6 100644
      char argv[1][4] = {"app"};
      UIApplicationMain(1, (char**)argv, nil, @"AppShellDelegate");
      // UIApplicationMain doesn't exit. :-(
-@@ -298,7 +549,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+@@ -298,7 +555,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
  
    mTerminated = true;
  
@@ -336,7 +356,7 @@ index 13436918ecd2..5ec8f93a37d6 100644
      // Dispatch a native event to the main queue to terminate. XPCOM doesn't
      // like being shut down from within an XPCOM runnable, so we cannot use
      // `NS_DispatchToMainThread` here.
-@@ -318,6 +572,11 @@ static void ApplicationWillTerminate(bool aCallExit) {
+@@ -318,6 +578,11 @@ static void ApplicationWillTerminate(bool aCallExit) {
      return;
    }
  
@@ -348,7 +368,7 @@ index 13436918ecd2..5ec8f93a37d6 100644
    // Perform the steps which would normally happen after nsAppShell::Run, such
    // as `~ScopedXPCOMStartup`, as UIApplicationMain will never shutdown.
    if (nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service()) {
-@@ -331,12 +590,19 @@ static void ApplicationWillTerminate(bool aCallExit) {
+@@ -331,12 +596,19 @@ static void ApplicationWillTerminate(bool aCallExit) {
  
    gDirServiceProvider->DoShutdown();
  

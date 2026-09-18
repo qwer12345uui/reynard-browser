@@ -44,7 +44,7 @@ protocol TabManager: AnyObject {
     func tabIndex(for session: GeckoSession) -> Int?
     func shareableURL(for tab: Tab) -> URL?
     func updateThumbnail(_ image: UIImage?, forTabAt index: Int, mode: TabMode)
-    func updateHistoryThumbnail(_ image: UIImage?, for tab: Tab, url: String)
+    func updateHistoryThumbnail(_ image: UIImage?, for tab: Tab, url: String, isPreparedForNavigation: Bool)
     func navigationHistory(for tab: Tab) -> NavigationHistoryStore.Snapshot
     func navigationPreviewImages(for tab: Tab) -> NavigationPreviewImages
     func invalidateNavigationThumbnails()
@@ -61,6 +61,7 @@ enum TabManagerUpdateReason {
     case loading
     case thumbnail
     case pageBackgroundColor
+    case readerMode
 }
 
 protocol TabManagerDelegate: AnyObject {

@@ -13,12 +13,14 @@ public protocol ProgressDelegate {
     func onPageStart(session: GeckoSession, url: String)
     func onPageStop(session: GeckoSession, success: Bool)
     func onProgressChange(session: GeckoSession, progress: Int)
+    func onSessionStateChange(session: GeckoSession, sessionState: GeckoSessionState)
 }
 
 extension ProgressDelegate {
     public func onPageStart(session: GeckoSession, url: String) {}
     public func onPageStop(session: GeckoSession, success: Bool) {}
     public func onProgressChange(session: GeckoSession, progress: Int) {}
+    public func onSessionStateChange(session: GeckoSession, sessionState: GeckoSessionState) {}
 }
 
 // MARK: - Progress Events
@@ -60,6 +62,11 @@ func newProgressHandler(_ session: GeckoSession) -> GeckoSessionHandler {
         case .securityChanged:
             return nil
         case .stateUpdated:
+            guard session.historyDelegate == nil,
+                  let data = message?["data"] as? [String: Any] else {
+                return nil
+            }
+            session.handleSessionStateUpdate(data)
             return nil
         }
     }

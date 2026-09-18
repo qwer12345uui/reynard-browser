@@ -556,6 +556,7 @@ final class DownloadsViewController: UIViewController, UITableViewDataSource, UI
         lhs.fileName == rhs.fileName &&
         lhs.fileURL == rhs.fileURL &&
         lhs.state == rhs.state &&
+        lhs.canPause == rhs.canPause &&
         lhs.fileExists == rhs.fileExists &&
         lhs.totalBytes == rhs.totalBytes &&
         lhs.downloadedBytes == rhs.downloadedBytes &&
@@ -605,20 +606,38 @@ final class DownloadsViewController: UIViewController, UITableViewDataSource, UI
         
         switch item.state {
         case .downloading, .paused:
-            let cancelAction = UIContextualAction(style: .destructive, title: NSLocalizedString("Cancel", comment: "")) { [weak self] _, _, completion in
+            let cancelAction = UIContextualAction(style: .destructive, title: NSLocalizedString("Cancel", comment: "Download action")) { [weak self] _, _, completion in
                 self?.confirmCancelDownload(for: item, completion: completion)
             }
-            let configuration = UISwipeActionsConfiguration(actions: [cancelAction])
+            
+            var actions = [cancelAction]
+            if item.state == .paused {
+                let resumeAction = UIContextualAction(style: .normal, title: NSLocalizedString("Resume", comment: "Download action")) { _, _, completion in
+                    DownloadStore.shared.resume(id: item.id)
+                    completion(true)
+                }
+                resumeAction.backgroundColor = .systemBlue
+                actions.append(resumeAction)
+            } else if item.canPause {
+                let pauseAction = UIContextualAction(style: .normal, title: NSLocalizedString("Pause", comment: "Download action")) { _, _, completion in
+                    DownloadStore.shared.pause(id: item.id)
+                    completion(true)
+                }
+                pauseAction.backgroundColor = .systemOrange
+                actions.append(pauseAction)
+            }
+            
+            let configuration = UISwipeActionsConfiguration(actions: actions)
             configuration.performsFirstActionWithFullSwipe = false
             return configuration
             
-        case .completed:
+        case .cancelled, .failed, .completed:
             let deleteAction = UIContextualAction(style: .destructive, title: NSLocalizedString("Delete", comment: "")) { _, _, completion in
                 DownloadStore.shared.removeDownload(id: item.id)
                 completion(true)
             }
             
-            guard item.fileExists else {
+            guard item.state == .completed, item.fileExists else {
                 let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
                 configuration.performsFirstActionWithFullSwipe = true
                 return configuration

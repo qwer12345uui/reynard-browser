@@ -12,6 +12,7 @@ struct PrivacySettingsSection {
         case sitePermissions
         case clearBrowsingData
         case httpsOnlyMode
+        case dnsOverHTTPS
         case trackingProtection
     }
     
@@ -31,6 +32,8 @@ struct PrivacySettingsSection {
             return SettingsViewUtils.disclosureCell(title: NSLocalizedString("Clear Browsing Data", comment: ""))
         case .httpsOnlyMode:
             return SettingsViewUtils.disclosureCell(title: NSLocalizedString("HTTPS-Only Mode", tableName: "SettingsLocalizable", comment: ""))
+        case .dnsOverHTTPS:
+            return SettingsViewUtils.disclosureCell(title: NSLocalizedString("DNS over HTTPS", tableName: "SettingsLocalizable", comment: ""))
         case .trackingProtection:
             return SettingsViewUtils.disclosureCell(title: NSLocalizedString("Tracking Protection", comment: ""))
         }
@@ -50,6 +53,9 @@ struct PrivacySettingsSection {
             viewController.navigationController?.pushViewController(destination, animated: true)
         case .httpsOnlyMode:
             let destination = HTTPSOnlyModePreferencesViewController()
+            viewController.navigationController?.pushViewController(destination, animated: true)
+        case .dnsOverHTTPS:
+            let destination = DNSOverHTTPSPreferencesViewController()
             viewController.navigationController?.pushViewController(destination, animated: true)
         case .trackingProtection:
             let destination = TrackingProtectionPreferencesViewController()

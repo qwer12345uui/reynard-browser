@@ -33,13 +33,72 @@ public enum SlowScriptResponse {
     case resume
 }
 
+// MARK: - External Response Models
+
+public struct ExternalResponseHeader {
+    public let name: String
+    public let value: String
+}
+
+private enum ExternalResponseCommand: String {
+    case cancel = "GeckoView:ExternalResponseCancel"
+    case pause = "GeckoView:ExternalResponsePause"
+    case resume = "GeckoView:ExternalResponseResume"
+}
+
 public struct ExternalResponseInfo {
     public let url: String
     public let localFilePath: String
     public let filename: String?
     public let mimeType: String?
     public let contentLength: Int64?
+    public let headers: [ExternalResponseHeader]
+    public let statusCode: Int
+    private let commandHandler: (ExternalResponseCommand) -> Void
+    
+    init?(session: GeckoSession, payload: [String: Any?]?) {
+        guard let url = payload?["url"] as? String,
+              let localFilePath = payload?["localFilePath"] as? String else {
+            return nil
+        }
+        
+        self.url = url
+        self.localFilePath = localFilePath
+        self.filename = payload?["filename"] as? String
+        self.mimeType = payload?["mimeType"] as? String
+        self.contentLength = PayloadValue.int64(payload?["contentLength"])
+        self.headers = (payload?["headers"] as? [[String: Any]])?.compactMap { header in
+            guard let name = PayloadValue.string(header["name"]),
+                  let value = PayloadValue.string(header["value"]) else {
+                return nil
+            }
+            return ExternalResponseHeader(name: name, value: value)
+        } ?? []
+        self.statusCode = PayloadValue.int(payload?["statusCode"]) ?? 0
+        self.commandHandler = { [weak session] command in
+            DispatchQueue.main.async { [weak session] in
+                session?.dispatcher.dispatch(
+                    type: command.rawValue,
+                    message: ["localFilePath": localFilePath]
+                )
+            }
+        }
+    }
+    
+    public func pause() {
+        commandHandler(.pause)
+    }
+    
+    public func resume() {
+        commandHandler(.resume)
+    }
+    
+    public func cancel() {
+        commandHandler(.cancel)
+    }
 }
+
+// MARK: - PDF Models
 
 public struct SavePdfInfo {
     public let url: String
@@ -198,19 +257,12 @@ func newContentHandler(_ session: GeckoSession) -> GeckoSessionHandler {
             return nil
             
         case .externalResponse:
-            guard let url = message?["url"] as? String,
-                  let localFilePath = message?["localFilePath"] as? String else {
+            guard let response = ExternalResponseInfo(session: session, payload: message) else {
                 return false
             }
             return await delegate?.onExternalResponse(
                 session: session,
-                response: ExternalResponseInfo(
-                    url: url,
-                    localFilePath: localFilePath,
-                    filename: message?["filename"] as? String,
-                    mimeType: message?["mimeType"] as? String,
-                    contentLength: PayloadValue.int64(message?["contentLength"])
-                )
+                response: response
             ) ?? false
             
         case .externalResponseProgress:

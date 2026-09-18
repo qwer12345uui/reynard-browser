@@ -15,15 +15,18 @@ final class ToolbarButtonMenus {
     
     private final class NavigationMenuDelegate: NSObject, UIContextMenuInteractionDelegate {
         private let direction: NavigationDirection
+        private let isReversed: Bool
         private let itemsProvider: (NavigationDirection) -> [NavigationHistoryStore.HistoryItem]
         private let onSelect: (NavigationDirection, Int) -> Void
         
         init(
             direction: NavigationDirection,
+            isReversed: Bool,
             itemsProvider: @escaping (NavigationDirection) -> [NavigationHistoryStore.HistoryItem],
             onSelect: @escaping (NavigationDirection, Int) -> Void
         ) {
             self.direction = direction
+            self.isReversed = isReversed
             self.itemsProvider = itemsProvider
             self.onSelect = onSelect
         }
@@ -37,8 +40,15 @@ final class ToolbarButtonMenus {
                 return nil
             }
             
-            let actions = items.enumerated().reversed().map { index, item in
-                makeAction(for: item, at: index)
+            let actions: [UIAction]
+            if isReversed {
+                actions = items.enumerated().reversed().map { index, item in
+                    makeAction(for: item, at: index)
+                }
+            } else {
+                actions = items.enumerated().map { index, item in
+                    makeAction(for: item, at: index)
+                }
             }
             let menu = UIMenu(title: "", children: actions)
             return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
@@ -242,17 +252,20 @@ final class ToolbarButtonMenus {
         on backButton: ToolbarButton,
         forwardButton: ToolbarButton,
         itemsProvider: @escaping (NavigationDirection) -> [NavigationHistoryStore.HistoryItem],
-        onSelect: @escaping (NavigationDirection, Int) -> Void
+        onSelect: @escaping (NavigationDirection, Int) -> Void,
+        isReversed: Bool = true
     ) {
         installNavigationMenu(
             on: backButton,
             direction: .back,
+            isReversed: isReversed,
             itemsProvider: itemsProvider,
             onSelect: onSelect
         )
         installNavigationMenu(
             on: forwardButton,
             direction: .forward,
+            isReversed: isReversed,
             itemsProvider: itemsProvider,
             onSelect: onSelect
         )
@@ -293,11 +306,13 @@ final class ToolbarButtonMenus {
     private func installNavigationMenu(
         on button: ToolbarButton,
         direction: NavigationDirection,
+        isReversed: Bool,
         itemsProvider: @escaping (NavigationDirection) -> [NavigationHistoryStore.HistoryItem],
         onSelect: @escaping (NavigationDirection, Int) -> Void
     ) {
         let delegate = NavigationMenuDelegate(
             direction: direction,
+            isReversed: isReversed,
             itemsProvider: itemsProvider,
             onSelect: onSelect
         )

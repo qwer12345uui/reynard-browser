@@ -1,8 +1,8 @@
 diff --git a/widget/InputData.h b/widget/InputData.h
-index f6d7713dcc1f..878aef417871 100644
+index 2ad458dad89f..0afedb961e20 100644
 --- a/widget/InputData.h
 +++ b/widget/InputData.h
-@@ -438,6 +438,9 @@ class PanGestureInput : public InputData {
+@@ -444,6 +444,9 @@ class PanGestureInput : public InputData {
      mOverscrollBehaviorAllowsSwipe = aAllows;
    }
    void SetSimulateMomentum(bool aSimulate) { mSimulateMomentum = aSimulate; }
@@ -12,7 +12,7 @@ index f6d7713dcc1f..878aef417871 100644
    void SetIsNoLineOrPageDelta(bool aIsNoLineOrPageDelta) {
      mIsNoLineOrPageDelta = aIsNoLineOrPageDelta;
    }
-@@ -494,6 +497,8 @@ class PanGestureInput : public InputData {
+@@ -500,6 +503,8 @@ class PanGestureInput : public InputData {
    // events.)
    bool mSimulateMomentum : 1;
  

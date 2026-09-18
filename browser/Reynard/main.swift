@@ -97,8 +97,6 @@ private func configureSandboxExtension() {
 }
 
 LocalizationBundle.activate()
-UserDataMigration.shared.run()
-configureRootHideRuntimePolicy()
 JITController.shared.start()
 
 if #unavailable(iOS 14.0),

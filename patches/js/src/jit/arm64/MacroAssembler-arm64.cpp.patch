@@ -1,5 +1,5 @@
 diff --git a/js/src/jit/arm64/MacroAssembler-arm64.cpp b/js/src/jit/arm64/MacroAssembler-arm64.cpp
-index de5ffe4b95dc..047984fdf60e 100644
+index 8f1aba06c8a8..606ac6639e1f 100644
 --- a/js/src/jit/arm64/MacroAssembler-arm64.cpp
 +++ b/js/src/jit/arm64/MacroAssembler-arm64.cpp
 @@ -8,11 +8,13 @@
@@ -36,7 +36,7 @@ index de5ffe4b95dc..047984fdf60e 100644
  enum class Width { _32 = 32, _64 = 64 };
  
  static inline ARMRegister X(Register r) { return ARMRegister(r, 64); }
-@@ -1728,18 +1736,22 @@ void MacroAssembler::patchFarJump(CodeOffset farJump, uint32_t targetOffset) {
+@@ -1730,18 +1738,22 @@ void MacroAssembler::patchFarJump(CodeOffset farJump, uint32_t targetOffset) {
  }
  
  void MacroAssembler::patchFarJump(uint8_t* farJump, uint8_t* target) {
@@ -63,7 +63,7 @@ index de5ffe4b95dc..047984fdf60e 100644
  }
  
  CodeOffset MacroAssembler::nopPatchableToCall() {
-@@ -1751,16 +1763,22 @@ CodeOffset MacroAssembler::nopPatchableToCall() {
+@@ -1753,16 +1765,22 @@ CodeOffset MacroAssembler::nopPatchableToCall() {
  
  void MacroAssembler::patchNopToCall(uint8_t* call, uint8_t* target) {
    uint8_t* inst = call - 4;
@@ -92,7 +92,7 @@ index de5ffe4b95dc..047984fdf60e 100644
  }
  
  CodeOffset MacroAssembler::move32WithPatch(Register dest) {
-@@ -3328,11 +3346,14 @@ void MacroAssembler::patchNearAddressMove(CodeLocationLabel loc,
+@@ -3354,11 +3372,14 @@ void MacroAssembler::patchNearAddressMove(CodeLocationLabel loc,
    ptrdiff_t off = target - loc;
    MOZ_RELEASE_ASSERT(vixl::IsInt21(off));
  

@@ -36,6 +36,7 @@ final class AddressBarGestures: NSObject {
         static let addressBarAutomaticNewTabTranslationRatio: CGFloat = 0.34
         static let addressBarPreviewOutsidePadding: CGFloat = 24
         static let addressBarPreviewCornerRadius: CGFloat = 22
+        static let addressBarPreviewBorderWidth: CGFloat = 0.5
         static let addressBarPreviewShadowOpacity: Float = 0.18
         static let addressBarPreviewShadowRadius: CGFloat = 14
         static let addressBarPreviewShadowOffset = CGSize(width: 0, height: 2)
@@ -254,6 +255,8 @@ final class AddressBarGestures: NSObject {
         }
         container.layer.cornerRadius = UX.addressBarPreviewCornerRadius
         container.layer.cornerCurve = .continuous
+        container.layer.borderWidth = UX.addressBarPreviewBorderWidth
+        container.layer.borderColor = UIColor.separator.withAlphaComponent(0.2).cgColor
         container.layer.shadowColor = UIColor.black.cgColor
         container.layer.shadowOpacity = UX.addressBarPreviewShadowOpacity
         container.layer.shadowRadius = UX.addressBarPreviewShadowRadius
@@ -469,6 +472,7 @@ final class AddressBarGestures: NSObject {
         let shouldCreateNewTab = delegate.chromeMode == .phone
         && horizontalTargetIndex == nil
         && delegate.selectedTabIndex == delegate.activeTabs.count - 1
+        && delegate.activeTabs[safe: delegate.selectedTabIndex]?.url != nil
         && horizontalDirection == 1
         && (passedDistanceThreshold || velocityX < -UX.addressBarTabSwitchVelocityThreshold)
         
@@ -927,6 +931,14 @@ extension AddressBarGestures: UIGestureRecognizerDelegate {
             return false
         }
         
+        var view: UIView? = addressBar
+        while let currentView = view {
+            guard !currentView.isHidden, currentView.alpha > 0.01 else {
+                return false
+            }
+            view = currentView.superview
+        }
+
         guard gestureRecognizer.view !== addressBar,
               let delegate else {
             return true

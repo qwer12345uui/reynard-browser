@@ -1,8 +1,8 @@
 diff --git a/dom/base/ScreenOrientation.cpp b/dom/base/ScreenOrientation.cpp
-index ac29045d1564..a62f457134ce 100644
+index c803dfc7dfcc..fc9c79b883de 100644
 --- a/dom/base/ScreenOrientation.cpp
 +++ b/dom/base/ScreenOrientation.cpp
-@@ -551,7 +551,8 @@ already_AddRefed<Promise> ScreenOrientation::LockInternal(
+@@ -553,7 +553,8 @@ already_AddRefed<Promise> ScreenOrientation::LockInternal(
    // orientation, return a promise rejected with a "NotSupportedError"
    // DOMException and abort these steps.
  

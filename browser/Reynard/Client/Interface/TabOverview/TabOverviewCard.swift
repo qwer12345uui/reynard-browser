@@ -36,6 +36,7 @@ final class TabOverviewCard: UICollectionViewCell {
         static let tabTitleFontSize: CGFloat = 14
         static let reorderLiftAnimationDuration: TimeInterval = 0.18
         static let swipeDismissMaximumFade: CGFloat = 0.35
+        static let borderWidth: CGFloat = 0.5
     }
     
     enum TransitionState {
@@ -66,6 +67,7 @@ final class TabOverviewCard: UICollectionViewCell {
         view.layer.shadowOpacity = UX.webpagePreviewRestingShadowOpacity
         view.layer.shadowRadius = UX.webpagePreviewRestingShadowRadius
         view.layer.shadowOffset = UX.webpagePreviewRestingShadowOffset
+        view.layer.shadowColor = UIColor.black.cgColor
         view.layer.masksToBounds = false
         return view
     }()
@@ -83,6 +85,8 @@ final class TabOverviewCard: UICollectionViewCell {
         view.backgroundColor = .systemBackground
         view.layer.cornerRadius = UX.webpagePreviewCornerRadius
         view.layer.cornerCurve = .continuous
+        view.layer.borderWidth = UX.borderWidth
+        view.layer.borderColor = UIColor.separator.withAlphaComponent(0.2).cgColor
         view.layer.masksToBounds = true
         return view
     }()
@@ -168,7 +172,6 @@ final class TabOverviewCard: UICollectionViewCell {
         configureHierarchy()
         configureConstraints()
         configureActions()
-        updateWebpagePreviewShadowColor()
         applyReorderState(animated: false)
     }
     
@@ -183,10 +186,17 @@ final class TabOverviewCard: UICollectionViewCell {
         webpagePreviewImageView.image = nil
         faviconImageView.image = Self.fallbackFaviconImage
         onClose = nil
-        updateWebpagePreviewShadowColor()
         setTransitionState(.visible)
         setReorderState(.resting, animated: false)
         setSwipeOffset(0, progress: 0)
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        webpagePreviewShadowView.layer.shadowPath = UIBezierPath(
+            roundedRect: webpagePreviewShadowView.bounds,
+            cornerRadius: UX.webpagePreviewCornerRadius
+        ).cgPath
     }
     
     // MARK: - Content
@@ -270,10 +280,12 @@ final class TabOverviewCard: UICollectionViewCell {
         rendererFormat.scale = UIScreen.main.scale
         rendererFormat.opaque = false
         let renderer = UIGraphicsImageRenderer(size: snapshotBounds.size, format: rendererFormat)
+        webpagePreviewRegionView.isHidden = true
         let snapshotImage = renderer.image { context in
             context.cgContext.translateBy(x: UX.cardTransitionSnapshotOutset, y: UX.cardTransitionSnapshotOutset)
             contentView.layer.render(in: context.cgContext)
         }
+        webpagePreviewRegionView.isHidden = false
         
         let snapshotImageView = UIImageView(image: snapshotImage)
         snapshotImageView.contentMode = .scaleToFill
@@ -310,6 +322,11 @@ final class TabOverviewCard: UICollectionViewCell {
     
     func setTransitionState(_ state: TransitionState) {
         contentView.alpha = state == .visible ? 1 : 0
+    }
+    
+    func setPreviewSurfaceHidden(_ hidden: Bool) {
+        webpagePreviewShadowView.isHidden = hidden
+        webpagePreviewClippingView.isHidden = hidden
     }
     
     func setReorderState(_ state: ReorderState, animated: Bool) {
@@ -441,12 +458,6 @@ final class TabOverviewCard: UICollectionViewCell {
         webpagePreviewLeadingConstraint.constant = inset
         webpagePreviewTrailingConstraint.constant = -inset
         webpagePreviewBottomConstraint.constant = -inset
-    }
-    
-    private func updateWebpagePreviewShadowColor() {
-        webpagePreviewShadowView.layer.shadowColor = UITraitCollection.current.userInterfaceStyle == .dark
-        ? UIColor.white.cgColor
-        : UIColor.black.cgColor
     }
     
     // MARK: - Actions

@@ -18,10 +18,10 @@ struct FrequentlyVisitedSiteActions {
         return UIContextMenuConfiguration(identifier: site.url as NSURL, previewProvider: nil) { _ in
             UIMenu(title: "", children: [
                 UIMenu(title: "", options: .displayInline, children: [
-                    UIAction(title: NSLocalizedString("Open in New Tab", comment: ""), image: UIImage(named: "reynard.plus.square")) { _ in
+                    UIAction(title: NSLocalizedString("Open in New Tab", comment: ""), image: UIImage(named: "reynard.plus.square.on.square")) { _ in
                         openInNewTab()
                     },
-                    UIAction(title: NSLocalizedString("Open in New Private Tab", comment: ""), image: UIImage(named: "reynard.plus.square.fill")) { _ in
+                    UIAction(title: NSLocalizedString("Open in New Private Tab", comment: ""), image: UIImage(named: "reynard.plus.square.fill.on.square.fill")) { _ in
                         openInNewPrivateTab()
                     },
                 ]),

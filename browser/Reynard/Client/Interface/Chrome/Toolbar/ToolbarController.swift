@@ -21,9 +21,12 @@ final class ToolbarController {
     }
     
     private enum UX {
-        static let toolbarScrollFactor: CGFloat = 0.5
+        static let toolbarScrollFactor: CGFloat = 0.8
+        static let maximumTransitionSpeed: CGFloat = 600
+        static let manualCollapseSpeedMultiplier: CGFloat = 2
+        static let maxTextCenterDuration: TimeInterval = 0.2
         static let snapDelay: TimeInterval = 0.1
-        static let snapDuration: TimeInterval = 0.15
+        static let snapDuration: TimeInterval = 0.2
     }
     
     private unowned let browserChrome: BrowserChrome
@@ -32,15 +35,21 @@ final class ToolbarController {
     private unowned let rootView: UIView
     
     private var chromeMode: BrowserChromeMode = .phone
-    private var toolbarOffset: CGFloat = 0
+    private var transitionOffset: CGFloat = 0
+    private var textCenterProgress: CGFloat = 0
     private var maxToolbarOffset: CGFloat = 0
     private var maxTopToolbarOffset: CGFloat = 0
+    private var scrollPosition: CGFloat = 0
     private var snapOrigin: CGFloat = 0
     private var targetOffset: CGFloat = 0
-    private var snapStartTime: CFTimeInterval = 0
+    private var snapStartTime: CFTimeInterval?
+    private var snapTextCenterOrigin: CGFloat = 0
+    private var lastAnimationTime: CFTimeInterval = 0
     private var pendingSnap: DispatchWorkItem?
-    private var snapDisplayLink: CADisplayLink?
+    private var animationDisplayLink: CADisplayLink?
     private var isBottomToolbarCollapsed = false
+    private var isCollapsedUntilReset = false
+    private var resizesPage = false
     private var lockReasons = Set<LockReason>()
     
     // MARK: - Lifecycle
@@ -56,6 +65,11 @@ final class ToolbarController {
         self.contentView = contentView
         self.rootView = rootView
         
+        browserChrome.onToolbarExpansionRequested = { [weak self] in
+            self?.contentView.resetScrollTracking()
+            self?.reset()
+        }
+        
         let historySwipeHandler = contentView.onHistorySwipeBegan
         contentView.onHistorySwipeBegan = { [weak self] in
             self?.lock(for: .historyNavigation)
@@ -66,13 +80,13 @@ final class ToolbarController {
             self?.unlock(for: .historyNavigation)
         }
         
-        contentView.onVerticalScroll = { [weak self] scrollDelta in
-            self?.handleScroll(delta: scrollDelta)
+        contentView.onVerticalScroll = { [weak self] scrollDelta, position in
+            self?.handleScroll(delta: scrollDelta, position: position)
         }
     }
     
     deinit {
-        cancelSnap()
+        cancelAnimation()
     }
     
     // MARK: - Layout
@@ -85,16 +99,14 @@ final class ToolbarController {
         let offsetLimits = toolbarOffsetLimits(for: chromeMode)
         let canHideToolbar = isToolbarEnabled
         && Prefs.AppearanceSettings.scrollToHideToolbarEnabled
-        let maxToolbarOffset = canHideToolbar ? offsetLimits.total : 0
-        let maxTopToolbarOffset = canHideToolbar ? offsetLimits.top : 0
+        let minimizedHeight = browserChrome.minimizedToolbarHeight(for: chromeMode)
+        let retainedTopHeight = chromeMode == .phone ? 0 : minimizedHeight
+        let maxToolbarOffset = canHideToolbar ? max(0, offsetLimits.total - minimizedHeight) : 0
+        let maxTopToolbarOffset = canHideToolbar ? max(0, offsetLimits.top - retainedTopHeight) : 0
         
-        var webContentBottomOffset: CGFloat = 0
-        if isToolbarEnabled {
-            webContentBottomOffset = offsetLimits.top
-            if !canHideToolbar && !extendsContentBehindToolbar {
-                webContentBottomOffset -= offsetLimits.total
-            }
-        }
+        let webContentBottomOffset = isToolbarEnabled && !canHideToolbar && !extendsContentBehindToolbar
+        ? offsetLimits.top - offsetLimits.total
+        : 0
         
         if self.chromeMode != chromeMode
             || abs(maxToolbarOffset - self.maxToolbarOffset) > 0.5
@@ -105,7 +117,9 @@ final class ToolbarController {
             self.maxTopToolbarOffset = maxTopToolbarOffset
         }
         contentView.setToolbarLimits(
-            maxHeight: maxToolbarOffset,
+            maxHeight: canHideToolbar ? offsetLimits.total : 0,
+            contentTopInset: canHideToolbar ? offsetLimits.top : 0,
+            contentBottomInset: canHideToolbar && chromeMode == .phone ? minimizedHeight : 0,
             webContentBottomOffset: webContentBottomOffset
         )
     }
@@ -119,70 +133,56 @@ final class ToolbarController {
         case .phone:
             return (bottomToolbarHeight, 0)
         case .compact:
-            let topContentHeight = max(0, topToolbarHeight - rootView.safeAreaInsets.top)
-            return (topContentHeight + bottomToolbarHeight, topContentHeight)
+            return (topToolbarHeight + bottomToolbarHeight, topToolbarHeight)
         case .pad:
             let topChromeHeight = topToolbarHeight + (tabBar.visibility != .hidden ? tabBar.bounds.height : 0)
-            let maxOffset = max(0, topChromeHeight - rootView.safeAreaInsets.top)
-            return (maxOffset, maxOffset)
+            return (topChromeHeight, topChromeHeight)
         }
     }
     
-    private func setToolbarOffset(_ requestedOffset: CGFloat, refresh: Bool = false) {
-        let clampedToolbarOffset = min(max(0, requestedOffset), maxToolbarOffset)
-        guard refresh || clampedToolbarOffset != toolbarOffset else {
+    private var maxTransitionOffset: CGFloat {
+        return maxToolbarOffset
+    }
+    
+    private func setTransitionOffset(
+        _ requestedOffset: CGFloat,
+        refresh: Bool = false,
+        animatesContent: Bool = true,
+        textCenterProgress requestedTextCenterProgress: CGFloat? = nil
+    ) {
+        let clampedOffset = min(max(0, requestedOffset), maxTransitionOffset)
+        let textCenterChanged = requestedTextCenterProgress.map { $0 != textCenterProgress } ?? false
+        guard refresh || clampedOffset != transitionOffset || textCenterChanged else {
             return
         }
-        toolbarOffset = clampedToolbarOffset
-        let topToolbarHeight = browserChrome.topToolbarTransitionFrame(in: rootView).height
-        let bottomToolbarHeight = browserChrome.bottomToolbarTransitionFrame(in: rootView).height
-        let topToolbarOffset: CGFloat
-        let topContentOffset: CGFloat
-        let topToolbarContentAlpha: CGFloat
-        var bottomToolbarOffset: CGFloat
-        var bottomToolbarContentAlpha: CGFloat
-        let tabBarOffset: CGFloat
-        switch chromeMode {
-        case .phone:
-            topToolbarOffset = 0
-            topContentOffset = 0
-            topToolbarContentAlpha = 1
-            bottomToolbarOffset = toolbarOffset
-            bottomToolbarContentAlpha = 1 - (bottomToolbarOffset / max(bottomToolbarHeight, 1))
-            tabBarOffset = 0
-        case .compact:
-            let progress = toolbarOffset / max(maxToolbarOffset, 1)
-            topToolbarOffset = min(topToolbarHeight * progress, maxTopToolbarOffset)
-            topContentOffset = topToolbarOffset
-            topToolbarContentAlpha = 1 - (topToolbarOffset / max(maxTopToolbarOffset, 1))
-            bottomToolbarOffset = bottomToolbarHeight * progress
-            bottomToolbarContentAlpha = 1 - (bottomToolbarOffset / max(bottomToolbarHeight, 1))
-            tabBarOffset = 0
-        case .pad:
-            topToolbarOffset = toolbarOffset
-            topContentOffset = toolbarOffset
-            topToolbarContentAlpha = 1 - (topToolbarOffset / max(maxTopToolbarOffset, 1))
-            bottomToolbarOffset = 0
-            bottomToolbarContentAlpha = 1
-            tabBarOffset = toolbarOffset
-        }
-        if isBottomToolbarCollapsed {
-            bottomToolbarOffset = chromeMode == .pad ? 0 : bottomToolbarHeight
-            bottomToolbarContentAlpha = bottomToolbarHeight > 0 ? 0 : 1
+        transitionOffset = clampedOffset
+        resizesPage = isCollapsedUntilReset || (resizesPage && transitionOffset > 0)
+        let tabBarHeight = chromeMode == .pad && tabBar.visibility != .hidden ? tabBar.bounds.height : 0
+        let collapseProgress = max(0, transitionOffset - tabBarHeight) / max(maxTransitionOffset - tabBarHeight, 1)
+        textCenterProgress = requestedTextCenterProgress ?? collapseProgress
+        let tabBarCollapseOffset = min(transitionOffset, tabBarHeight)
+        let topToolbarOffset = max(0, maxTopToolbarOffset - tabBarHeight) * collapseProgress
+        let topContentOffset = topToolbarOffset + tabBarCollapseOffset
+        var bottomToolbarOffset = (maxToolbarOffset - maxTopToolbarOffset) * collapseProgress
+        if isBottomToolbarCollapsed && chromeMode != .pad {
+            bottomToolbarOffset = browserChrome.bottomToolbarTransitionFrame(in: rootView).height
         }
         browserChrome.setToolbarTransition(
             topOffset: -topToolbarOffset,
             bottomOffset: bottomToolbarOffset,
-            topContentAlpha: topToolbarContentAlpha,
-            bottomContentAlpha: bottomToolbarContentAlpha
+            tabBarCollapseOffset: tabBarCollapseOffset,
+            collapseProgress: isBottomToolbarCollapsed && chromeMode == .phone ? 0 : collapseProgress,
+            textCenterProgress: textCenterProgress,
+            isBottomToolbarCollapsed: isBottomToolbarCollapsed,
+            animatesContent: animatesContent
         )
-        if chromeMode == .pad {
-            tabBar.setPresentationAlpha(topToolbarContentAlpha)
-        }
+        tabBar.setCollapseOffset(tabBarCollapseOffset)
+        let tabBarOffset = chromeMode == .pad ? topToolbarOffset : 0
         tabBar.transform = CGAffineTransform(translationX: 0, y: -tabBarOffset)
         contentView.applyToolbarOffsets(
             top: topContentOffset,
-            bottom: topToolbarOffset + bottomToolbarOffset,
+            bottom: bottomToolbarOffset,
+            resizesPage: resizesPage,
             refresh: refresh
         )
     }
@@ -191,7 +191,9 @@ final class ToolbarController {
     
     func lock(for reason: LockReason) {
         guard lockReasons.insert(reason).inserted else { return }
-        reset()
+        reset(
+            preserveManualCollapse: reason == .pageNavigation || reason == .historyNavigation
+        )
     }
     
     func unlock(for reason: LockReason) {
@@ -200,24 +202,34 @@ final class ToolbarController {
     
     // MARK: - Scroll Handling
     
-    private func handleScroll(delta: CGFloat) {
-        guard Prefs.BrowsingSettings.hidesChromeOnScroll,
-              Prefs.AppearanceSettings.scrollToHideToolbarEnabled,
+    private func handleScroll(delta: CGFloat, position: CGFloat) {
+        scrollPosition = max(0, position)
+        guard Prefs.AppearanceSettings.scrollToHideToolbarEnabled,
               maxToolbarOffset > 0,
+              !isCollapsedUntilReset,
               lockReasons.isEmpty else {
             return
         }
-        cancelSnap()
-        setToolbarOffset(toolbarOffset + delta * UX.toolbarScrollFactor)
+        
+        // Resume from the visible position when scrolling takes over or changes direction.
+        if animationDisplayLink == nil || snapStartTime != nil || delta * (targetOffset - transitionOffset) < 0 {
+            targetOffset = transitionOffset
+        }
+        snapStartTime = nil
+        
+        var maximumOffset = maxTransitionOffset
+        if scrollPosition < maxTopToolbarOffset {
+            maximumOffset *= scrollPosition / maxTopToolbarOffset
+        }
+        targetOffset = min(max(targetOffset + delta * UX.toolbarScrollFactor, 0), maximumOffset)
+        startAnimation()
         scheduleSnap()
     }
     
-    // MARK: - Snapping
+    // MARK: - Animation And Snapping
     
     private func scheduleSnap() {
-        guard chromeMode == .phone else {
-            return
-        }
+        pendingSnap?.cancel()
         let snap = DispatchWorkItem { [weak self] in
             self?.beginSnap()
         }
@@ -227,66 +239,111 @@ final class ToolbarController {
     
     private func beginSnap(to destination: CGFloat? = nil) {
         pendingSnap = nil
-        snapOrigin = toolbarOffset
-        targetOffset = destination ?? (snapOrigin < maxToolbarOffset / 2 ? 0 : maxToolbarOffset)
+        snapOrigin = transitionOffset
+        let shouldExpand = scrollPosition < maxTopToolbarOffset || targetOffset < maxTransitionOffset / 2
+        targetOffset = destination ?? (shouldExpand ? 0 : maxTransitionOffset)
         guard snapOrigin != targetOffset else {
-            setToolbarOffset(targetOffset, refresh: true)
+            setTransitionOffset(targetOffset, refresh: true)
             return
         }
+        snapTextCenterOrigin = textCenterProgress
         snapStartTime = CACurrentMediaTime()
-        let snapDisplayLink = CADisplayLink(target: self, selector: #selector(updateSnap))
-        snapDisplayLink.add(to: .main, forMode: .common)
-        self.snapDisplayLink = snapDisplayLink
+        startAnimation()
     }
     
-    @objc private func updateSnap() {
-        let elapsed = CACurrentMediaTime() - snapStartTime
-        let progress = min(CGFloat(elapsed / UX.snapDuration), 1)
-        let easedProgress = 1 - pow(1 - progress, 2)
-        let requestedOffset = snapOrigin + (targetOffset - snapOrigin) * easedProgress
-        setToolbarOffset(requestedOffset)
-        if progress == 1 {
-            snapDisplayLink?.invalidate()
-            snapDisplayLink = nil
+    private func startAnimation() {
+        guard animationDisplayLink == nil, transitionOffset != targetOffset else { return }
+        lastAnimationTime = CACurrentMediaTime()
+        let displayLink = CADisplayLink(target: self, selector: #selector(updateAnimation))
+        displayLink.add(to: .main, forMode: .common)
+        animationDisplayLink = displayLink
+    }
+    
+    @objc private func updateAnimation() {
+        let time = CACurrentMediaTime()
+        let speedMultiplier = isCollapsedUntilReset ? UX.manualCollapseSpeedMultiplier : 1
+        let maximumStep = UX.maximumTransitionSpeed * speedMultiplier * CGFloat(time - lastAnimationTime)
+        lastAnimationTime = time
+        var requestedOffset = targetOffset
+        var requestedTextCenterProgress: CGFloat?
+        if let snapStartTime {
+            let progress = min(CGFloat((time - snapStartTime) / UX.snapDuration) * speedMultiplier, 1)
+            let easedProgress = 1 - pow(1 - progress, 2)
+            requestedOffset = snapOrigin + (targetOffset - snapOrigin) * easedProgress
+            if targetOffset > snapOrigin {
+                let centerProgress = min(
+                    CGFloat((time - snapStartTime) / UX.maxTextCenterDuration) * speedMultiplier,
+                    1
+                )
+                let easedCenterProgress = 1 - pow(1 - centerProgress, 2)
+                requestedTextCenterProgress = snapTextCenterOrigin
+                + (1 - snapTextCenterOrigin) * easedCenterProgress
+            }
+        }
+        let step = min(max(requestedOffset - transitionOffset, -maximumStep), maximumStep)
+        setTransitionOffset(
+            transitionOffset + step,
+            textCenterProgress: requestedTextCenterProgress
+        )
+        let isTextCentered = targetOffset <= snapOrigin || textCenterProgress == 1
+        if transitionOffset == targetOffset && isTextCentered {
+            animationDisplayLink?.invalidate()
+            animationDisplayLink = nil
+            snapStartTime = nil
         }
     }
     
-    private func cancelSnap() {
+    private func cancelAnimation() {
         pendingSnap?.cancel()
         pendingSnap = nil
-        snapDisplayLink?.invalidate()
-        snapDisplayLink = nil
+        animationDisplayLink?.invalidate()
+        animationDisplayLink = nil
+        snapStartTime = nil
     }
     
     // MARK: - Reset
     
     func collapseBottomToolbar() {
-        cancelSnap()
+        cancelAnimation()
         isBottomToolbarCollapsed = true
-        setToolbarOffset(toolbarOffset, refresh: true)
+        setTransitionOffset(transitionOffset, refresh: true, animatesContent: false)
     }
     
     func restoreBottomToolbar() {
-        cancelSnap()
+        guard isBottomToolbarCollapsed else { return }
+        cancelAnimation()
         isBottomToolbarCollapsed = false
-        setToolbarOffset(toolbarOffset, refresh: true)
+        UIView.animate(
+            withDuration: UIAccessibility.isReduceMotionEnabled ? 0 : UX.snapDuration,
+            delay: 0,
+            options: [.beginFromCurrentState, .allowUserInteraction, .curveEaseOut]
+        ) {
+            self.setTransitionOffset(self.transitionOffset, refresh: true, animatesContent: false)
+        }
     }
     
     func collapse(animated: Bool = true) {
-        cancelSnap()
+        cancelAnimation()
         isBottomToolbarCollapsed = false
         guard animated else {
-            setToolbarOffset(maxToolbarOffset, refresh: true)
+            setTransitionOffset(maxTransitionOffset, refresh: true, animatesContent: false)
             return
         }
-        beginSnap(to: maxToolbarOffset)
+        beginSnap(to: maxTransitionOffset)
     }
     
-    func reset(animated: Bool = true) {
-        cancelSnap()
+    func collapseUntilReset() {
+        isCollapsedUntilReset = true
+        collapse()
+    }
+    
+    func reset(animated: Bool = true, preserveManualCollapse: Bool = false) {
+        guard !preserveManualCollapse || !isCollapsedUntilReset else { return }
+        cancelAnimation()
         isBottomToolbarCollapsed = false
+        isCollapsedUntilReset = false
         guard animated else {
-            setToolbarOffset(0, refresh: true)
+            setTransitionOffset(0, refresh: true, animatesContent: false)
             return
         }
         beginSnap(to: 0)

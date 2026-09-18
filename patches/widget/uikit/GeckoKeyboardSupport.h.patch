@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoKeyboardSupport.h b/widget/uikit/GeckoKeyboardSupport.h
 new file mode 100644
-index 000000000000..d5d9b24671f9
+index 000000000000..e36569c7018b
 --- /dev/null
 +++ b/widget/uikit/GeckoKeyboardSupport.h
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,121 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -43,14 +43,14 @@ index 000000000000..d5d9b24671f9
 +  WebEventFlagMaskRightOptionKey = 1 << 22,
 +  WebEventFlagMaskRightControlKey = 1 << 23,
 +  WebEventFlagMaskRightCommandKey = 1 << 24,
-+  WebEventFlagMaskCommandKey =
-+      WebEventFlagMaskLeftCommandKey | WebEventFlagMaskRightCommandKey,
-+  WebEventFlagMaskShiftKey =
-+      WebEventFlagMaskLeftShiftKey | WebEventFlagMaskRightShiftKey,
-+  WebEventFlagMaskOptionKey =
-+      WebEventFlagMaskLeftOptionKey | WebEventFlagMaskRightOptionKey,
-+  WebEventFlagMaskControlKey =
-+      WebEventFlagMaskLeftControlKey | WebEventFlagMaskRightControlKey,
++  WebEventFlagMaskCommandKey = WebEventFlagMaskLeftCommandKey |
++      WebEventFlagMaskRightCommandKey,
++  WebEventFlagMaskShiftKey = WebEventFlagMaskLeftShiftKey |
++      WebEventFlagMaskRightShiftKey,
++  WebEventFlagMaskOptionKey = WebEventFlagMaskLeftOptionKey |
++      WebEventFlagMaskRightOptionKey,
++  WebEventFlagMaskControlKey = WebEventFlagMaskLeftControlKey |
++      WebEventFlagMaskRightControlKey,
 +};
 +
 +enum : WebKeyboardInputFlags {
@@ -86,6 +86,7 @@ index 000000000000..d5d9b24671f9
 +  bool HandleKeyEvent(WebEvent* aEvent);
 +  void HandleModifierFlagsChanged(UIKeyModifierFlags aOldFlags,
 +                                  UIKeyModifierFlags aNewFlags);
++  void ReleasePhysicalKey(uint16_t aNativeKeyCode);
 +  void ReleasePhysicalKeys();
 +
 + private:

@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoEditableSupport.mm b/widget/uikit/GeckoEditableSupport.mm
 new file mode 100644
-index 000000000000..0342c6bb08fc
+index 000000000000..24eeaa8bd3a6
 --- /dev/null
 +++ b/widget/uikit/GeckoEditableSupport.mm
-@@ -0,0 +1,4285 @@
+@@ -0,0 +1,4250 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -32,11 +32,6 @@ index 000000000000..0342c6bb08fc
 +using namespace mozilla;
 +using namespace mozilla::widget;
 +using mozilla::widget::UIKitUtils;
-+
-+@interface UIKeyboardImpl : NSObject
-++ (instancetype)sharedInstance;
-+- (BOOL)isInHardwareKeyboardMode;
-+@end
 +
 +@class UITextInputArrowKeyHistory;
 +
@@ -460,7 +455,6 @@ index 000000000000..0342c6bb08fc
 +- (NSRange)deleteBackwardRangeWithHandler:(widget::TextInputHandler*)aHandler;
 +- (void)configureTextInteractionForTouchInput:(UITextInteraction*)aInteraction;
 +- (void)updateTextInteractions;
-+- (void)updateInputAssistantItem;
 +- (void)scheduleResponderBlur;
 +- (void)cancelResponderBlur;
 +- (void)applyResponderBlur;
@@ -602,10 +596,6 @@ index 000000000000..0342c6bb08fc
 +  Class textInputTraitsClass = NSClassFromString(@"UITextInputTraits");
 +  MOZ_RELEASE_ASSERT(textInputTraitsClass);
 +  mEditable.mTextInputTraits = [[textInputTraitsClass alloc] init];
-+  mEditable.mLeadingInputAssistantButtonGroups =
-+      [self.inputAssistantItem.leadingBarButtonGroups copy];
-+  mEditable.mTrailingInputAssistantButtonGroups =
-+      [self.inputAssistantItem.trailingBarButtonGroups copy];
 +  mEditable.mSeenHardwareKeyDownInNonEditableContent = NO;
 +  mEditable.mTextInputDelegate = nil;
 +  mEditable.mCredentialDelegate = nil;
@@ -644,10 +634,6 @@ index 000000000000..0342c6bb08fc
 +  mEditable.mTokenizer = nil;
 +  [mEditable.mTextInputTraits release];
 +  mEditable.mTextInputTraits = nil;
-+  [mEditable.mLeadingInputAssistantButtonGroups release];
-+  mEditable.mLeadingInputAssistantButtonGroups = nil;
-+  [mEditable.mTrailingInputAssistantButtonGroups release];
-+  mEditable.mTrailingInputAssistantButtonGroups = nil;
 +  [mEditable.mMarkedTextStyle release];
 +  mEditable.mMarkedTextStyle = nil;
 +  [mEditable.mEditableTextInteraction release];
@@ -1959,8 +1945,6 @@ index 000000000000..0342c6bb08fc
 +// Toggle between editable and non-editable UITextInteraction
 +// based on the current input context so native selection handles appear.
 +- (void)updateTextInteractions {
-+  [self updateInputAssistantItem];
-+
 +  if (mEditable.mSelectionDisplayInteraction != nil) {
 +    [self updateModernTextInteractions];
 +    return;
@@ -2422,26 +2406,7 @@ index 000000000000..0342c6bb08fc
 +  return self;
 +}
 +
-+- (void)updateInputAssistantItem {
-+  Class keyboardClass = NSClassFromString(@"UIKeyboardImpl");
-+  MOZ_RELEASE_ASSERT(keyboardClass);
-+  UIKeyboardImpl* keyboard = [keyboardClass sharedInstance];
-+  MOZ_RELEASE_ASSERT(keyboard);
-+
-+  const bool softwareKeyboardInactive =
-+      mGeckoChild && (mGeckoChild->IsVirtualKeyboardDisabled() ||
-+                      mGeckoChild->IsSoftwareKeyboardSuppressed());
-+  const bool shouldHide =
-+      [keyboard isInHardwareKeyboardMode] || softwareKeyboardInactive;
-+  self.inputAssistantItem.leadingBarButtonGroups =
-+      shouldHide ? @[] : mEditable.mLeadingInputAssistantButtonGroups;
-+  self.inputAssistantItem.trailingBarButtonGroups =
-+      shouldHide ? @[] : mEditable.mTrailingInputAssistantButtonGroups;
-+}
-+
 +- (UIView*)inputView {
-+  [self updateInputAssistantItem];
-+
 +  if (mGeckoChild && (mGeckoChild->IsVirtualKeyboardDisabled() ||
 +                      mGeckoChild->IsSoftwareKeyboardSuppressed())) {
 +    static UIView* sHiddenInputView = nil;

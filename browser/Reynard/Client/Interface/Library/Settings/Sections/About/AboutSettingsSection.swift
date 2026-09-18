@@ -82,7 +82,7 @@ final class AboutSettingsSection {
         }
         
         if let url = url(for: row) {
-            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            LibrarySharedUtils.openLinkInBrowser(url.absoluteString, from: viewController)
         }
     }
     

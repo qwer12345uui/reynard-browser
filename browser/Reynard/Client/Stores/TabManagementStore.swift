@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GeckoView
 import SQLite3
 import UIKit
 
@@ -31,6 +32,7 @@ final class TabManagementStore {
         let title: String
         let url: String?
         let createdAt: Date?
+        let tabSessionState: String?
         let thumbnail: UIImage?
         let isPrivate: Bool
     }
@@ -39,6 +41,7 @@ final class TabManagementStore {
         let id: UUID
         let title: String
         let url: String?
+        let tabSessionState: String?
     }
     
     private struct StorageURLs {
@@ -52,6 +55,7 @@ final class TabManagementStore {
         let title: String
         let url: String?
         let createdAt: Date?
+        let tabSessionState: String?
     }
     
     private struct PersistedState {
@@ -154,10 +158,22 @@ final class TabManagementStore {
         selectedTabMode: TabMode
     ) {
         let persistedRegularTabs = regularTabs.map {
-            PersistedTab(id: $0.id, title: $0.title, url: $0.url, createdAt: $0.createdAt)
+            PersistedTab(
+                id: $0.id,
+                title: $0.title,
+                url: $0.url,
+                createdAt: $0.createdAt,
+                tabSessionState: $0.state.tabSessionState?.serializedString()
+            )
         }
         let persistedPrivateTabs = privateTabs.map {
-            PersistedTab(id: $0.id, title: $0.title, url: $0.url, createdAt: $0.createdAt)
+            PersistedTab(
+                id: $0.id,
+                title: $0.title,
+                url: $0.url,
+                createdAt: $0.createdAt,
+                tabSessionState: nil
+            )
         }
         
         stateQueue.async {
@@ -187,6 +203,10 @@ final class TabManagementStore {
             
             self.pruneThumbCacheLocked(validTabIDs: Set((persistedRegularTabs + persistedPrivateTabs).map(\.id)))
         }
+    }
+    
+    func flushPendingWrites() {
+        stateQueue.sync {}
     }
     
     func persistLastOverview(_ lastTabOverview: LastTabOverview) {
@@ -232,13 +252,18 @@ final class TabManagementStore {
         }
     }
     
-    func saveRecentlyClosedTab(id: UUID, title: String, url: String?) {
+    func saveRecentlyClosedTab(id: UUID, title: String, url: String?, tabSessionState: String?) {
         stateQueue.async {
             guard self.executeLocked("BEGIN IMMEDIATE TRANSACTION;") else {
                 return
             }
             
-            guard self.insertRecentlyClosedTabLocked(id: id, title: title, url: url) else {
+            guard self.insertRecentlyClosedTabLocked(
+                id: id,
+                title: title,
+                url: url,
+                tabSessionState: tabSessionState
+            ) else {
                 _ = self.executeLocked("ROLLBACK TRANSACTION;")
                 return
             }
@@ -392,6 +417,7 @@ final class TabManagementStore {
             title TEXT NOT NULL,
             url TEXT,
             created_at REAL,
+            tab_session_state TEXT,
             is_private INTEGER NOT NULL,
             position INTEGER NOT NULL
         );
@@ -401,12 +427,15 @@ final class TabManagementStore {
         CREATE TABLE IF NOT EXISTS recently_closed_tabs (
             id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
-            url TEXT
+            url TEXT,
+            tab_session_state TEXT
         );
         """
         
         _ = executeLocked(sql)
         ensureColumnLocked(name: "created_at", table: "tabs", definition: "REAL")
+        ensureColumnLocked(name: "tab_session_state", table: "tabs", definition: "TEXT")
+        ensureColumnLocked(name: "tab_session_state", table: "recently_closed_tabs", definition: "TEXT")
     }
     
     // MARK: - Schema Migration
@@ -515,7 +544,7 @@ final class TabManagementStore {
     private func fetchTabsLocked(isPrivate: Bool) -> [TabSnapshot] {
         guard let statement = prepareStatementLocked(
             """
-            SELECT id, title, url, created_at
+            SELECT id, title, url, created_at, tab_session_state
             FROM tabs
             WHERE is_private = ?
             ORDER BY position ASC;
@@ -542,6 +571,7 @@ final class TabManagementStore {
                     title: string(from: statement, at: 1),
                     url: optionalString(from: statement, at: 2),
                     createdAt: optionalDate(from: statement, at: 3),
+                    tabSessionState: optionalString(from: statement, at: 4),
                     thumbnail: loadThumbnailLocked(for: id),
                     isPrivate: isPrivate
                 )
@@ -617,7 +647,7 @@ final class TabManagementStore {
         guard limit > 0,
               let statement = prepareStatementLocked(
                 """
-                SELECT id, title, url
+                SELECT id, title, url, tab_session_state
                 FROM recently_closed_tabs
                 ORDER BY rowid DESC
                 LIMIT ?;
@@ -642,7 +672,8 @@ final class TabManagementStore {
                 RecentlyClosedTabSnapshot(
                     id: id,
                     title: string(from: statement, at: 1),
-                    url: optionalString(from: statement, at: 2)
+                    url: optionalString(from: statement, at: 2),
+                    tabSessionState: optionalString(from: statement, at: 3)
                 )
             )
         }
@@ -653,7 +684,7 @@ final class TabManagementStore {
     private func fetchRecentlyClosedTabLocked(id: UUID) -> RecentlyClosedTabSnapshot? {
         guard let statement = prepareStatementLocked(
             """
-            SELECT id, title, url
+            SELECT id, title, url, tab_session_state
             FROM recently_closed_tabs
             WHERE id = ?
             LIMIT 1;
@@ -676,7 +707,8 @@ final class TabManagementStore {
         return RecentlyClosedTabSnapshot(
             id: id,
             title: string(from: statement, at: 1),
-            url: optionalString(from: statement, at: 2)
+            url: optionalString(from: statement, at: 2),
+            tabSessionState: optionalString(from: statement, at: 3)
         )
     }
     
@@ -711,8 +743,8 @@ final class TabManagementStore {
     private func insertTabsLocked(_ tabs: [PersistedTab], isPrivate: Bool) -> Bool {
         guard let statement = prepareStatementLocked(
             """
-            INSERT INTO tabs (id, title, url, created_at, is_private, position)
-            VALUES (?, ?, ?, ?, ?, ?);
+            INSERT INTO tabs (id, title, url, created_at, tab_session_state, is_private, position)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
             """
         ) else {
             return false
@@ -729,8 +761,9 @@ final class TabManagementStore {
             bind(tab.title, to: statement, at: 2)
             bindOptional(tab.url, to: statement, at: 3)
             bindOptional(tab.createdAt, to: statement, at: 4)
-            sqlite3_bind_int64(statement, 5, isPrivate ? 1 : 0)
-            sqlite3_bind_int64(statement, 6, Int64(index))
+            bindOptional(tab.tabSessionState, to: statement, at: 5)
+            sqlite3_bind_int64(statement, 6, isPrivate ? 1 : 0)
+            sqlite3_bind_int64(statement, 7, Int64(index))
             
             guard sqlite3_step(statement) == SQLITE_DONE else {
                 return false
@@ -740,14 +773,20 @@ final class TabManagementStore {
         return true
     }
     
-    private func insertRecentlyClosedTabLocked(id: UUID, title: String, url: String?) -> Bool {
+    private func insertRecentlyClosedTabLocked(
+        id: UUID,
+        title: String,
+        url: String?,
+        tabSessionState: String?
+    ) -> Bool {
         guard let statement = prepareStatementLocked(
             """
-            INSERT INTO recently_closed_tabs (id, title, url)
-            VALUES (?, ?, ?)
+            INSERT INTO recently_closed_tabs (id, title, url, tab_session_state)
+            VALUES (?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 title = excluded.title,
-                url = excluded.url;
+                url = excluded.url,
+                tab_session_state = excluded.tab_session_state;
             """
         ) else {
             return false
@@ -760,6 +799,7 @@ final class TabManagementStore {
         bind(id.uuidString, to: statement, at: 1)
         bind(title, to: statement, at: 2)
         bindOptional(url, to: statement, at: 3)
+        bindOptional(tabSessionState, to: statement, at: 4)
         return sqlite3_step(statement) == SQLITE_DONE
     }
     

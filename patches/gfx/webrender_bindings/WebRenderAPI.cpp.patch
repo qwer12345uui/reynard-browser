@@ -1,8 +1,8 @@
 diff --git a/gfx/webrender_bindings/WebRenderAPI.cpp b/gfx/webrender_bindings/WebRenderAPI.cpp
-index 4a72a0eecf16..55abd300d9c0 100644
+index 8f7928c42afc..1092ac5d3d5a 100644
 --- a/gfx/webrender_bindings/WebRenderAPI.cpp
 +++ b/gfx/webrender_bindings/WebRenderAPI.cpp
-@@ -1128,8 +1128,10 @@ void TransactionBuilder::AddRawFont(wr::FontKey aKey, wr::Vec<uint8_t>& aBytes,
+@@ -1144,8 +1144,10 @@ void TransactionBuilder::AddRawFont(wr::FontKey aKey, wr::Vec<uint8_t>& aBytes,
  
  void TransactionBuilder::AddFontDescriptor(wr::FontKey aKey,
                                             wr::Vec<uint8_t>& aBytes,

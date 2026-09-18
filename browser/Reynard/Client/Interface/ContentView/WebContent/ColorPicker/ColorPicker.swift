@@ -13,7 +13,6 @@ final class ColorPicker: NSObject, UIPopoverPresentationControllerDelegate {
     private weak var geckoView: UIView?
     
     private var continuation: CheckedContinuation<String?, Never>?
-    private var currentColor: UIColor = .black
     private weak var presentedController: UIViewController?
     
     init(anchorRect: CGRect, geckoView: UIView) {
@@ -24,7 +23,6 @@ final class ColorPicker: NSObject, UIPopoverPresentationControllerDelegate {
     // MARK: - Presentation
     
     func present(initialColor: UIColor) async -> String? {
-        currentColor = initialColor
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
             showColorPicker(initialColor: initialColor)
@@ -70,11 +68,10 @@ final class ColorPicker: NSObject, UIPopoverPresentationControllerDelegate {
         return .none
     }
     
-    nonisolated func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            finish(currentColor.toHexString())
-        }
+    func presentationControllerWillDismiss(_ presentationController: UIPresentationController) {
+        guard #available(iOS 14.0, *),
+              let controller = presentationController.presentedViewController as? UIColorPickerViewController else { return }
+        finish(controller.selectedColor.toHexString())
     }
     
     // MARK: - Completion
@@ -94,11 +91,8 @@ final class ColorPicker: NSObject, UIPopoverPresentationControllerDelegate {
 
 @available(iOS 14.0, *)
 extension ColorPicker: UIColorPickerViewControllerDelegate {
-    nonisolated func colorPickerViewControllerDidSelectColor(_ viewController: UIColorPickerViewController) {
-        Task { @MainActor [weak self, weak viewController] in
-            guard let viewController else { return }
-            self?.currentColor = viewController.selectedColor
-        }
+    func colorPickerViewControllerDidFinish(_ viewController: UIColorPickerViewController) {
+        finish(viewController.selectedColor.toHexString())
     }
     
 }

@@ -1,5 +1,5 @@
 diff --git a/widget/ContentCache.cpp b/widget/ContentCache.cpp
-index 7cc937275587..418674f25554 100644
+index 348e3b6718bd..657cb5574185 100644
 --- a/widget/ContentCache.cpp
 +++ b/widget/ContentCache.cpp
 @@ -38,6 +38,33 @@ static const char* GetNotificationName(const IMENotification* aNotification) {
@@ -81,7 +81,7 @@ index 7cc937275587..418674f25554 100644
    mEditorRect = queryEditorRectEvent.mReply->mRect;
    MOZ_LOG(sContentCacheLog, LogLevel::Info,
            ("0x%p   CacheEditorRect(), Succeeded, mEditorRect=%s", this,
-@@ -448,6 +485,42 @@ bool ContentCacheInChild::CacheTextRects(nsIWidget* aWidget,
+@@ -451,6 +488,42 @@ bool ContentCacheInChild::CacheTextRects(nsIWidget* aWidget,
    } else {
      mCompositionStart.reset();
      mTextRectArray.reset();
@@ -124,7 +124,7 @@ index 7cc937275587..418674f25554 100644
    }
  
    if (mSelection.isSome()) {
-@@ -699,6 +772,7 @@ void ContentCacheInParent::AssignContent(const ContentCache& aOther,
+@@ -705,6 +778,7 @@ void ContentCacheInParent::AssignContent(const ContentCache& aOther,
    mCaret = aOther.mCaret;
    mTextRectArray = aOther.mTextRectArray;
    mLastCommitStringTextRectArray = aOther.mLastCommitStringTextRectArray;
@@ -132,7 +132,7 @@ index 7cc937275587..418674f25554 100644
    mEditorRect = aOther.mEditorRect;
  
    // Only when there is one composition, the TextComposition instance in this
-@@ -1006,6 +1080,7 @@ bool ContentCacheInParent::HandleQueryContentEvent(
+@@ -1012,6 +1086,7 @@ bool ContentCacheInParent::HandleQueryContentEvent(
        aEvent.EmplaceReply();
        aEvent.mReply->mFocusedWidget = aWidget;
        aEvent.mReply->mRect = mEditorRect;

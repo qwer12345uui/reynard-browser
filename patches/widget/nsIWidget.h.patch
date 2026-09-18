@@ -1,8 +1,8 @@
 diff --git a/widget/nsIWidget.h b/widget/nsIWidget.h
-index 3690e1a7b5e9..ec2f1df90b50 100644
+index 1c1e4d5a1c2e..5bfa19dd7f77 100644
 --- a/widget/nsIWidget.h
 +++ b/widget/nsIWidget.h
-@@ -2321,12 +2321,12 @@ class nsIWidget : public nsSupportsWeakReference {
+@@ -2313,12 +2313,12 @@ class nsIWidget : public nsSupportsWeakReference {
     * @param aMessage message being sent to Android UI thread.
     */
    virtual void RecvToolbarAnimatorMessageFromCompositor(int32_t aMessage) {}

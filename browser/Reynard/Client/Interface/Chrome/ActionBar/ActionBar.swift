@@ -7,24 +7,41 @@
 
 import UIKit
 
+enum ActionBarStyle {
+    case compact
+    case standard
+    
+    var height: CGFloat {
+        if #available(iOS 26.0, *) { return 68 }
+        switch self {
+        case .compact:
+            return 41
+        case .standard:
+            return 62
+        }
+    }
+}
+
 final class ActionBar: UIView {
     private enum UX {
         static let closeButtonSize: CGFloat = 28
         static let closeButtonCornerRadius: CGFloat = 14
         static let horizontalInset: CGFloat = 13
         static let closeSymbolPointSize: CGFloat = 10
-        static let backgroundAlpha: CGFloat = 0.34
         static let shadowOpacity: Float = 0.14
         static let shadowRadius: CGFloat = 8
         static let shadowOffset = CGSize(width: 0, height: 3)
         static let borderWidth: CGFloat = 0.5
     }
     
-    static let height: CGFloat = 62
-    
     enum Item: Equatable {
         case findInPage
         case pageZoom
+        case keyboardDismissal
+        
+        var style: ActionBarStyle {
+            return self == .keyboardDismissal ? .compact : .standard
+        }
     }
     
     var onFindInPage: ((_ query: String?, _ backwards: Bool) async -> (current: Int, total: Int)?)? {
@@ -53,6 +70,7 @@ final class ActionBar: UIView {
     }
     
     var onClose: (() -> Void)?
+    var onKeyboardDismissal: (() -> Void)?
     
     private(set) var item: Item?
     
@@ -60,9 +78,23 @@ final class ActionBar: UIView {
         return item == .findInPage && !isHidden
     }
     
+    var isShowingKeyboardDismissal: Bool {
+        return item == .keyboardDismissal && !isHidden && alpha > 0
+    }
+    
+    var isKeyboardDocked = false {
+        didSet {
+            if #available(iOS 26.0, *) { updateHeight() }
+        }
+    }
+    
     private let findInPageActionBar = FindInPageActionBar()
     private let pageZoomActionBar = PageZoomActionBar()
+    private let keyboardDismissalActionBar = KeyboardDismissalActionBar()
     private var hasPreparedFindInPageDismissal = false
+    private var hasDismissedModernContent = false
+    private var heightConstraint: NSLayoutConstraint!
+    private var findInPageBottomConstraint: NSLayoutConstraint!
     
     private let closeShadowView: UIView = {
         let view = UIView()
@@ -70,6 +102,7 @@ final class ActionBar: UIView {
         view.backgroundColor = .clear
         view.layer.cornerCurve = .continuous
         view.layer.cornerRadius = UX.closeButtonCornerRadius
+        view.layer.shadowColor = UIColor.black.cgColor
         view.layer.shadowOpacity = UX.shadowOpacity
         view.layer.shadowRadius = UX.shadowRadius
         view.layer.shadowOffset = UX.shadowOffset
@@ -79,10 +112,16 @@ final class ActionBar: UIView {
     private let closeBackground: UIVisualEffectView = {
         let view = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.contentView.backgroundColor = UIColor.systemBackground.withAlphaComponent(UX.backgroundAlpha)
+        view.contentView.backgroundColor = UIColor { traitCollection in
+            let backgroundColor: UIColor = traitCollection.userInterfaceStyle == .dark
+            ? .tertiarySystemBackground.withAlphaComponent(0.8)
+            : .systemBackground.withAlphaComponent(0.8)
+            return backgroundColor.resolvedColor(with: traitCollection)
+        }
         view.layer.cornerCurve = .continuous
         view.layer.cornerRadius = UX.closeButtonCornerRadius
         view.layer.borderWidth = UX.borderWidth
+        view.layer.borderColor = UIColor.separator.withAlphaComponent(0.2).cgColor
         view.clipsToBounds = true
         return view
     }()
@@ -112,17 +151,23 @@ final class ActionBar: UIView {
         configureAppearance()
         configureHierarchy()
         configureConstraints()
-        updateShadowColor()
-        updateBorderColor()
         setItem(nil)
         
         findInPageActionBar.onDismiss = { [weak self] in
             self?.onClose?()
         }
+        keyboardDismissalActionBar.onDone = { [weak self] in
+            self?.onKeyboardDismissal?()
+        }
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func safeAreaInsetsDidChange() {
+        super.safeAreaInsetsDidChange()
+        if #available(iOS 26.0, *) { updateHeight() }
     }
     
     override func layoutSubviews() {
@@ -133,19 +178,26 @@ final class ActionBar: UIView {
         ).cgPath
     }
     
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        guard previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle else {
-            return
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if #available(iOS 26.0, *), item == .pageZoom {
+            guard !isHidden, alpha > 0, isUserInteractionEnabled else { return nil }
+            return pageZoomActionBar.hitTest(pageZoomActionBar.convert(point, from: self), with: event)
         }
-        
-        updateShadowColor()
-        updateBorderColor()
+        return super.hitTest(point, with: event)
     }
     
     // MARK: - Presentation
     
     func setItem(_ item: Item?) {
+        if #available(iOS 26.0, *), hasDismissedModernContent {
+            UIView.performWithoutAnimation {
+                pageZoomActionBar.setModernContentHidden(false)
+                findInPageActionBar.setModernContentHidden(false)
+                pageZoomActionBar.transform = .identity
+                findInPageActionBar.transform = .identity
+            }
+            hasDismissedModernContent = false
+        }
         if item != .findInPage {
             prepareForDismissal()
         }
@@ -154,9 +206,42 @@ final class ActionBar: UIView {
             findInPageActionBar.prepareForPresentation()
         }
         self.item = item
+        updateHeight()
         isHidden = item == nil
         findInPageActionBar.isHidden = item != .findInPage
         pageZoomActionBar.isHidden = item != .pageZoom
+        keyboardDismissalActionBar.isHidden = item != .keyboardDismissal
+        if #unavailable(iOS 26.0) {
+            closeShadowView.isHidden = item == .keyboardDismissal
+        }
+    }
+    
+    @available(iOS 26.0, *)
+    func dismissModernContent(translationY: CGFloat, fadeDuration: TimeInterval) {
+        hasDismissedModernContent = true
+        UIView.animate(
+            withDuration: fadeDuration,
+            delay: 0,
+            options: [.overrideInheritedDuration, .beginFromCurrentState]
+        ) {
+            switch self.item {
+            case .pageZoom:
+                self.pageZoomActionBar.setModernContentHidden(true)
+            case .findInPage:
+                self.findInPageActionBar.setModernContentHidden(true)
+            default:
+                break
+            }
+        }
+        let transform = CGAffineTransform(translationX: 0, y: translationY)
+        switch item {
+        case .pageZoom:
+            pageZoomActionBar.transform = transform
+        case .findInPage:
+            findInPageActionBar.transform = transform
+        default:
+            break
+        }
     }
     
     func prepareForDismissal() {
@@ -191,20 +276,36 @@ final class ActionBar: UIView {
     private func configureAppearance() {
         translatesAutoresizingMaskIntoConstraints = false
         backgroundColor = .clear
+        if #available(iOS 26.0, *) {
+            closeShadowView.isHidden = true
+            topBorderView.isHidden = true
+        }
     }
     
     private func configureHierarchy() {
         addSubview(findInPageActionBar)
         addSubview(pageZoomActionBar)
+        addSubview(keyboardDismissalActionBar)
         addSubview(closeShadowView)
         closeShadowView.addSubview(closeBackground)
         closeShadowView.addSubview(closeButton)
         addSubview(topBorderView)
     }
     
+    private func updateHeight() {
+        var bottomInset: CGFloat = 0
+        if #available(iOS 26.0, *), item == .findInPage, !isKeyboardDocked {
+            bottomInset = safeAreaInsets.bottom
+        }
+        heightConstraint.constant = (item?.style.height ?? ActionBarStyle.standard.height) + bottomInset
+        findInPageBottomConstraint.constant = -bottomInset
+    }
+    
     private func configureConstraints() {
+        findInPageBottomConstraint = findInPageActionBar.bottomAnchor.constraint(equalTo: bottomAnchor)
+        heightConstraint = heightAnchor.constraint(equalToConstant: ActionBarStyle.standard.height)
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: ActionBar.height),
+            heightConstraint,
             
             pageZoomActionBar.topAnchor.constraint(equalTo: topAnchor),
             pageZoomActionBar.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -214,7 +315,12 @@ final class ActionBar: UIView {
             findInPageActionBar.topAnchor.constraint(equalTo: topAnchor),
             findInPageActionBar.leadingAnchor.constraint(equalTo: leadingAnchor),
             findInPageActionBar.trailingAnchor.constraint(equalTo: trailingAnchor),
-            findInPageActionBar.bottomAnchor.constraint(equalTo: bottomAnchor),
+            findInPageBottomConstraint,
+            
+            keyboardDismissalActionBar.topAnchor.constraint(equalTo: topAnchor),
+            keyboardDismissalActionBar.leadingAnchor.constraint(equalTo: leadingAnchor),
+            keyboardDismissalActionBar.trailingAnchor.constraint(equalTo: trailingAnchor),
+            keyboardDismissalActionBar.bottomAnchor.constraint(equalTo: bottomAnchor),
             
             closeShadowView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -UX.horizontalInset),
             closeShadowView.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -236,15 +342,5 @@ final class ActionBar: UIView {
             topBorderView.trailingAnchor.constraint(equalTo: trailingAnchor),
             topBorderView.heightAnchor.constraint(equalToConstant: UX.borderWidth),
         ])
-    }
-    
-    private func updateShadowColor() {
-        let color: UIColor = traitCollection.userInterfaceStyle == .dark ? .white : .black
-        closeShadowView.layer.shadowColor = color.cgColor
-    }
-    
-    private func updateBorderColor() {
-        let color = UIColor.separator.withAlphaComponent(0.2)
-        closeBackground.layer.borderColor = color.cgColor
     }
 }

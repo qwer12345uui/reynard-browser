@@ -38,6 +38,7 @@ extension BrowserViewController: TabManagerDelegate {
             return
         }
         
+        toolbarController.reset()
         contentView.showPageError(for: tab.url)
         captureThumbnail(
             forTabAt: tabManager.selectedTabIndex,
@@ -70,12 +71,6 @@ extension BrowserViewController: TabManagerDelegate {
         browserChrome.updatePageZoomLevel(selectedTab.session.settings.pageZoom.level)
         updateNavigationButtons()
         
-        contentView.setTab(
-            selectedTab,
-            pageBackgroundColor: sessionManager.pageBackgroundColor(for: selectedTab.session)
-        )
-        addonCoordinator.handleTabSelectionChange(selectedIndex: index, previousIndex: previousIndex)
-        
         if !tabOverview.isPresented && !tabOverview.isTransitionRunning {
             tabOverview.setMode(TabOverview.Mode(tabMode: tabManager.selectedTabMode), animated: false)
             tabOverview.reloadTabs()
@@ -84,6 +79,12 @@ extension BrowserViewController: TabManagerDelegate {
         tabBar.reloadTabs()
         homepageOverlayCoordinator.updatePresentation(animated: false)
         updateBrowserLayout(animated: animateTabBarVisibility)
+        
+        contentView.setTab(
+            selectedTab,
+            pageBackgroundColor: sessionManager.pageBackgroundColor(for: selectedTab.session)
+        )
+        addonCoordinator.handleTabSelectionChange(selectedIndex: index, previousIndex: previousIndex)
         
         if isShowingFullscreenMedia,
            fullscreenSession !== selectedTab.session {
@@ -171,7 +172,7 @@ extension BrowserViewController: TabManagerDelegate {
         case .location:
             if index == tabManager.selectedTabIndex {
                 contentView.resetScrollTracking()
-                toolbarController.reset()
+                toolbarController.reset(preserveManualCollapse: true)
                 let tab = tabManager.activeTabs[index]
                 contentView.noteHistoryLocationChange()
                 refreshAddressBar()
@@ -230,6 +231,11 @@ extension BrowserViewController: TabManagerDelegate {
             }
             let tab = tabManager.activeTabs[index]
             contentView.setPageBackgroundColor(sessionManager.pageBackgroundColor(for: tab.session))
+            
+        case .readerMode:
+            if index == tabManager.selectedTabIndex {
+                refreshAddressBar()
+            }
         }
     }
     
@@ -263,7 +269,7 @@ extension BrowserViewController: TabManagerDelegate {
         if addonCoordinator.handleExternalResponse(response) {
             return true
         }
-        guard let download = DownloadStore.shared.pendingDownload(from: response) else {
+        guard let download = DownloadStore.shared.pendingDownload(from: response, session: session) else {
             return false
         }
         return await downloadsCoordinator.confirm(download)
@@ -372,10 +378,24 @@ extension BrowserViewController {
         )
     }
     
+    func prepareThumbnailForNavigation() {
+        guard let url = tabManager.selectedTab?.url else {
+            return
+        }
+        
+        captureHistoryThumbnail(
+            forTabAt: tabManager.selectedTabIndex,
+            mode: tabManager.selectedTabMode,
+            url: url,
+            isPreparedForNavigation: true
+        )
+    }
+    
     private func captureHistoryThumbnail(
         forTabAt index: Int,
         mode: TabMode,
-        url: String
+        url: String,
+        isPreparedForNavigation: Bool = false
     ) {
         guard mode == tabManager.selectedTabMode,
               index == tabManager.selectedTabIndex,
@@ -391,6 +411,11 @@ extension BrowserViewController {
         }
         
         tabManager.updateThumbnail(thumbnail, forTabAt: index, mode: mode)
-        tabManager.updateHistoryThumbnail(thumbnail, for: tab, url: url)
+        tabManager.updateHistoryThumbnail(
+            thumbnail,
+            for: tab,
+            url: url,
+            isPreparedForNavigation: isPreparedForNavigation
+        )
     }
 }

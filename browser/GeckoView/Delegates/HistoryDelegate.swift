@@ -32,6 +32,7 @@ public protocol HistoryDelegate {
         flags: HistoryVisitFlags
     ) async -> Bool
     func getVisited(session: GeckoSession, urls: [String]) async -> [Bool]?
+    func onHistoryStateChange(session: GeckoSession, sessionState: GeckoSessionState)
 }
 
 public extension HistoryDelegate {
@@ -47,6 +48,8 @@ public extension HistoryDelegate {
     func getVisited(session: GeckoSession, urls: [String]) async -> [Bool]? {
         return nil
     }
+    
+    func onHistoryStateChange(session: GeckoSession, sessionState: GeckoSessionState) {}
 }
 
 // MARK: - History Events
@@ -54,6 +57,7 @@ public extension HistoryDelegate {
 enum HistoryEvents: String, CaseIterable {
     case onVisited = "GeckoView:OnVisited"
     case getVisited = "GeckoView:GetVisited"
+    case stateUpdated = "GeckoView:StateUpdated"
 }
 
 // MARK: - History Handler
@@ -85,6 +89,12 @@ func newHistoryHandler(_ session: GeckoSession) -> GeckoSessionHandler {
         case .getVisited:
             let urls = PayloadValue.strings(message?["urls"])
             return await delegate?.getVisited(session: session, urls: urls)
+        case .stateUpdated:
+            guard let data = message?["data"] as? [String: Any] else {
+                return nil
+            }
+            session.handleSessionStateUpdate(data)
+            return nil
         }
     }
 }

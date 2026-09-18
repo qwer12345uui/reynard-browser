@@ -52,6 +52,13 @@ final class SidebarViewController: UISplitViewController, UISplitViewControllerD
         return navigationController
     }()
     
+    private lazy var primaryNavigationController: UINavigationController = {
+        let container = SidebarNavigationContainerViewController(navigationController: menuNavigationController)
+        let navigationController = UINavigationController(rootViewController: container)
+        navigationController.setNavigationBarHidden(true, animated: false)
+        return navigationController
+    }()
+    
     // MARK: - Lifecycle
     
     override var childForStatusBarHidden: UIViewController? {
@@ -224,12 +231,12 @@ final class SidebarViewController: UISplitViewController, UISplitViewControllerD
             if #available(iOS 14.5, *) {
                 displayModeButtonVisibility = .never
             }
-            setViewController(menuNavigationController, for: .primary)
+            setViewController(primaryNavigationController, for: .primary)
             setViewController(browserNavigationController, for: .secondary)
             menuNavigationController.loadViewIfNeeded()
         } else {
             preferredDisplayMode = .primaryHidden
-            viewControllers = [menuNavigationController, browserNavigationController]
+            viewControllers = [primaryNavigationController, browserNavigationController]
         }
     }
     

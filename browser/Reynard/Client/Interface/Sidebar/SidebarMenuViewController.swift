@@ -5,7 +5,7 @@
 //  Created by Minh Ton on 11/6/26.
 //
 
-final class SidebarMenuViewController: UIViewController, UICollectionViewDelegate, UINavigationControllerDelegate {
+final class SidebarMenuViewController: UIViewController, UICollectionViewDelegateFlowLayout, UINavigationControllerDelegate {
     private enum UX {
         static let topContentInset: CGFloat = 32
         static let legacyItemHeight: CGFloat = 48
@@ -33,7 +33,6 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
             layout = UICollectionViewCompositionalLayout.list(using: configuration)
         } else {
             let flowLayout = UICollectionViewFlowLayout()
-            flowLayout.itemSize = CGSize(width: 1, height: UX.legacyItemHeight)
             flowLayout.minimumLineSpacing = 0
             flowLayout.sectionInset = .zero
             layout = flowLayout
@@ -100,6 +99,14 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
         }
         
         showSection(section, animated: true)
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
+        return CGSize(width: collectionView.bounds.width, height: UX.legacyItemHeight)
     }
     
     // MARK: - Sections

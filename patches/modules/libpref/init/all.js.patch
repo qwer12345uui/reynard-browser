@@ -1,5 +1,5 @@
 diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
-index b3f11dd9c895..3b9a6a39a270 100644
+index 37cba58e2091..435aa3e864d9 100644
 --- a/modules/libpref/init/all.js
 +++ b/modules/libpref/init/all.js
 @@ -66,6 +66,10 @@ pref("security.crash_tracking.js_load_1.maxCrashes", 1);
@@ -13,29 +13,12 @@ index b3f11dd9c895..3b9a6a39a270 100644
  pref("general.config.obscure_value", 13); // for MCD .cfg files
  
  // Whether middle button click with a modifier key starts to autoscroll or
-@@ -2538,6 +2542,11 @@ pref("font.size.monospace.x-math", 13);
-   // For non-Latin/Greek/Cyrillic scripts, there may not be any serif/sans-serif
-   // distinction available, so both generics resolve to the same font.
+@@ -1896,7 +1900,7 @@ pref("dom.ipc.processCount.privilegedabout", 1);
+ pref("dom.ipc.processCount.privilegedmozilla", 1);
  
-+  // Default to sans-serif on iOS so generic resolution uses
-+  // -apple-system first for SF-based text rendering.
-+  pref("font.default.x-unicode", "sans-serif");
-+  pref("font.default.x-western", "sans-serif");
-+
-   pref("font.name-list.emoji", "Apple Color Emoji");
- 
-   pref("font.name-list.serif.ar", "Al Nile");
-@@ -2636,11 +2645,11 @@ pref("font.size.monospace.x-math", 13);
-   pref("font.name-list.monospace.x-tibt", "Menlo, Kailasa");
- 
-   pref("font.name-list.serif.x-unicode", "Times New Roman");
--  pref("font.name-list.sans-serif.x-unicode", "Arial");
-+  pref("font.name-list.sans-serif.x-unicode", "-apple-system, Arial");
-   pref("font.name-list.monospace.x-unicode", "Menlo");
- 
-   pref("font.name-list.serif.x-western", "Times New Roman");
--  pref("font.name-list.sans-serif.x-western", "Arial");
-+  pref("font.name-list.sans-serif.x-western", "-apple-system, Arial");
-   pref("font.name-list.monospace.x-western", "Menlo");
- 
-   // XXX Is there an alternative that would be better for 'serif'?
+ // Maximum number of isolated content processes per-origin.
+-#ifdef ANDROID
++#if defined(ANDROID) || defined(XP_IOS)
+ pref("dom.ipc.processCount.webIsolated", 1);
+ #else
+ pref("dom.ipc.processCount.webIsolated", 4);

@@ -152,6 +152,14 @@ final class TopToolbar: UIView {
         return safeAreaLayoutGuide
     }()
     
+    private var compactAddressBarHorizontalInset: CGFloat {
+        if #available(iOS 26.0, *) {
+            return 0
+        }
+        
+        return UX.topToolbarHorizontalInset
+    }
+    
     private var heightConstraint: NSLayoutConstraint!
     private var contentTopConstraint: NSLayoutConstraint!
     private var backgroundBottomConstraint: NSLayoutConstraint!
@@ -207,8 +215,14 @@ final class TopToolbar: UIView {
                 addressBar.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -UX.topToolbarAddressBarVerticalSpacing),
             ]
             compactAddressBarConstraints = [
-                addressBar.leadingAnchor.constraint(equalTo: contentLayoutGuide.leadingAnchor),
-                addressBar.trailingAnchor.constraint(equalTo: contentLayoutGuide.trailingAnchor),
+                addressBar.leadingAnchor.constraint(
+                    equalTo: contentLayoutGuide.leadingAnchor,
+                    constant: compactAddressBarHorizontalInset
+                ),
+                addressBar.trailingAnchor.constraint(
+                    equalTo: contentLayoutGuide.trailingAnchor,
+                    constant: -compactAddressBarHorizontalInset
+                ),
                 addressBar.topAnchor.constraint(equalTo: contentView.topAnchor, constant: UX.topToolbarAddressBarVerticalSpacing),
                 addressBar.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -UX.topToolbarAddressBarVerticalSpacing),
             ]
@@ -228,6 +242,10 @@ final class TopToolbar: UIView {
         backgroundBottomConstraint.isActive = false
         backgroundBottomConstraint = backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor)
         backgroundBottomConstraint.isActive = true
+    }
+    
+    func setBackgroundCollapseOffset(_ offset: CGFloat) {
+        backgroundBottomConstraint.constant = -offset
     }
     
     func apply(
@@ -305,7 +323,8 @@ final class TopToolbar: UIView {
             on: backButton,
             forwardButton: forwardButton,
             itemsProvider: itemsProvider,
-            onSelect: onSelect
+            onSelect: onSelect,
+            isReversed: false
         )
     }
     

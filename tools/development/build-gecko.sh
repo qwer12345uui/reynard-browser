@@ -26,14 +26,11 @@ for arg in "$@"; do
 	esac
 done
 
-restore_mozconfig() {
-	if [ -f "$MOZCONFIG_BACKUP" ]; then
-		rm -f "$MOZCONFIG_PATH"
-		mv "$MOZCONFIG_BACKUP" "$MOZCONFIG_PATH"
-	elif [ "$HAD_MOZCONFIG" -eq 0 ]; then
-		rm -f "$MOZCONFIG_PATH"
-	fi
-}
+if [ "$USE_SCCACHE" = true ]; then
+	SCCACHE_BIN="${SCCACHE_PATH:-$(command -v sccache)}"
+fi
+
+cd "$ROOT_DIR"
 
 cd "$ROOT_DIR"
 if [ ! -d "$FIREFOX_DIR" ]; then
@@ -67,7 +64,8 @@ trap restore_mozconfig EXIT HUP INT TERM
 	echo "ac_add_options --without-wasm-sandboxed-libraries"
 	echo "ac_add_options --enable-bootstrap"
 	if [ "$USE_SCCACHE" = true ]; then
-		echo "ac_add_options --with-ccache=sccache"
+		echo "mk_add_options 'export RUSTC_WRAPPER=$SCCACHE_BIN'"
+		echo "ac_add_options --with-ccache=$SCCACHE_BIN"
 	fi
 	if [ "$DISABLE_JEMALLOC" = true ]; then
 		echo "ac_add_options --disable-jemalloc"

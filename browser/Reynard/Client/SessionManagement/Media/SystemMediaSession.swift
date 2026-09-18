@@ -5,6 +5,7 @@
 //  Created by Minh Ton on 9/4/26.
 //
 
+import AVFoundation
 import Foundation
 import GeckoView
 import MediaPlayer
@@ -77,11 +78,22 @@ final class SystemMediaSession: MediaSessionDelegate {
     
     init(playbackObserver: SystemMediaSessionPlaybackObserver) {
         self.playbackObserver = playbackObserver
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioSessionInterruption(_:)),
+            name: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance()
+        )
         registerRemoteCommands()
         apply(MediaSessionFeatures())
     }
     
     deinit {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance()
+        )
         if activeSession != nil {
             nowPlayingCenter.nowPlayingInfo = nil
         }
@@ -280,6 +292,16 @@ final class SystemMediaSession: MediaSessionDelegate {
         activeSession = nil
         nowPlayingCenter.nowPlayingInfo = nil
         apply(MediaSessionFeatures())
+    }
+    
+    @objc private func handleAudioSessionInterruption(_ notification: Notification) {
+        guard let typeValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              AVAudioSession.InterruptionType(rawValue: typeValue) == .began else {
+            return
+        }
+        for state in sessionStates.values where state.playbackState == .playing {
+            state.session?.mediaSession.pause()
+        }
     }
     
     private func apply(_ features: MediaSessionFeatures) {

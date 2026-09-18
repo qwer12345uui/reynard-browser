@@ -16,7 +16,7 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
     
     private enum UX {
         static let mediumHeightMultiplier: CGFloat = 0.7
-        static let popoverMaximumWidth: CGFloat = 430
+        static let popoverMaximumWidth: CGFloat = 380
         static let sheetCornerRadius: CGFloat = 16
         static let closeButtonTopInset: CGFloat = 8
         static let closeButtonTrailingInset: CGFloat = 12

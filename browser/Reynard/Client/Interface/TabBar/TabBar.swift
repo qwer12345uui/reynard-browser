@@ -44,8 +44,15 @@ final class TabBar: UIView {
     
     private(set) var visibility: Visibility = .hidden
     private(set) var reorderState: ReorderState = .idle
-    private(set) var pendingExpandedTabIndex: Int?
+    private var pendingExpandedTabID: UUID?
     private var displayedTabIDs: [UUID]?
+    
+    var pendingExpandedTabIndex: Int? {
+        guard let pendingExpandedTabID else {
+            return nil
+        }
+        return dataSource?.tabs.firstIndex { $0.id == pendingExpandedTabID }
+    }
     
     var standardHeight: CGFloat {
         return UX.tabBarHeight + UX.tabBarBottomPadding
@@ -70,10 +77,20 @@ final class TabBar: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let hitView = super.hitTest(point, with: event)
+        return hitView === self && tabCollection.transform.ty < 0 ? nil : hitView
+    }
+    
     // MARK: - Layout
     
     func setVisibility(_ visibility: Visibility, animated: Bool) {
         presentation.setVisibility(visibility, animated: animated)
+    }
+    
+    func setCollapseOffset(_ offset: CGFloat) {
+        alpha = 1 - offset / max(bounds.height, 1)
+        tabCollection.transform = CGAffineTransform(translationX: 0, y: -offset)
     }
     
     func invalidateLayout() {
@@ -146,7 +163,7 @@ final class TabBar: UIView {
     }
     
     func setPendingExpansion(at index: Int?) {
-        pendingExpandedTabIndex = index
+        pendingExpandedTabID = index.flatMap { dataSource?.tabs[safe: $0]?.id }
         if index != nil {
             tabCollection.reloadTabs()
         }
@@ -166,7 +183,9 @@ final class TabBar: UIView {
             return false
         }
         
-        let selectedTabID = pendingExpandedTabIndex.flatMap { tabs[safe: $0]?.id }
+        let selectedTabID = pendingExpandedTabID.flatMap { pendingTabID in
+            tabs.first { $0.id == pendingTabID }?.id
+        }
         ?? dataSource?.selectedTabID
         return id == selectedTabID
     }
@@ -212,7 +231,7 @@ final class TabBar: UIView {
     }
     
     func requestCloseTab(at index: Int) {
-        pendingExpandedTabIndex = nil
+        pendingExpandedTabID = nil
         guard let dataSource else {
             return
         }
@@ -259,12 +278,12 @@ final class TabBar: UIView {
     // MARK: - Layout State
     
     private func clearInvalidPendingExpansion() {
-        guard let pendingExpandedTabIndex else {
+        guard pendingExpandedTabID != nil else {
             return
         }
         
-        if dataSource?.tabs.indices.contains(pendingExpandedTabIndex) != true {
-            self.pendingExpandedTabIndex = nil
+        if pendingExpandedTabIndex == nil {
+            pendingExpandedTabID = nil
         }
     }
     

@@ -369,6 +369,10 @@
 				fr,
 				ru,
 				ja,
+				cs,
+				pl,
+				"zh-Hant",
+				de,
 			);
 			mainGroup = 018C67952F2F289C001F0BBB;
 			minimizedProjectReferenceProxies = 1;

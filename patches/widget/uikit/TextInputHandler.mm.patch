@@ -1,8 +1,8 @@
 diff --git a/widget/uikit/TextInputHandler.mm b/widget/uikit/TextInputHandler.mm
-index e8f05ad59f6f..e2c56935e9b9 100644
+index e8f05ad59f6f..d88782d134d5 100644
 --- a/widget/uikit/TextInputHandler.mm
 +++ b/widget/uikit/TextInputHandler.mm
-@@ -2,15 +2,21 @@
+@@ -2,16 +2,22 @@
   * License, v. 2.0. If a copy of the MPL was not distributed with this
   * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
@@ -20,11 +20,12 @@ index e8f05ad59f6f..e2c56935e9b9 100644
  #include "mozilla/MiscEvents.h"
 +#include "mozilla/RefPtr.h"
  #include "mozilla/TextEventDispatcher.h"
-+#include "mozilla/TextRange.h"
  #include "mozilla/TextEvents.h"
++#include "mozilla/TextRange.h"
  #include "mozilla/WidgetUtils.h"
  #include "nsIWidget.h"
-@@ -20,21 +26,474 @@
+ #include "nsObjCExceptions.h"
+@@ -20,21 +26,478 @@
  
  mozilla::LazyLogModule gIMELog("TextInputHandler");
  
@@ -232,6 +233,10 @@ index e8f05ad59f6f..e2c56935e9b9 100644
 +void TextInputHandler::HandleModifierFlagsChanged(
 +    UIKeyModifierFlags aOldFlags, UIKeyModifierFlags aNewFlags) {
 +  mKeyboardSupport->HandleModifierFlagsChanged(aOldFlags, aNewFlags);
++}
++
++void TextInputHandler::ReleasePhysicalKey(uint16_t aNativeKeyCode) {
++  mKeyboardSupport->ReleasePhysicalKey(aNativeKeyCode);
 +}
 +
 +void TextInputHandler::ReleasePhysicalKeys() {
@@ -501,7 +506,7 @@ index e8f05ad59f6f..e2c56935e9b9 100644
  }
  
  void TextInputHandler::OnRemovedFrom(
-@@ -43,7 +502,37 @@
+@@ -43,7 +506,37 @@
  void TextInputHandler::WillDispatchKeyboardEvent(
      TextEventDispatcher* aTextEventDispatcher,
      WidgetKeyboardEvent& aKeyboardEvent, uint32_t aIndexOfKeypress,
@@ -540,7 +545,7 @@ index e8f05ad59f6f..e2c56935e9b9 100644
  
  bool TextInputHandler::InsertText(NSString* aText) {
    nsString str;
-@@ -57,6 +546,68 @@
+@@ -57,6 +550,68 @@
      return false;
    }
  
@@ -609,7 +614,7 @@ index e8f05ad59f6f..e2c56935e9b9 100644
    if (str.Length() == 1) {
      char16_t charCode = str[0];
      if (charCode == 0x0a) {
-@@ -91,6 +642,129 @@
+@@ -91,6 +646,129 @@
    return true;
  }
  
@@ -739,7 +744,7 @@ index e8f05ad59f6f..e2c56935e9b9 100644
  bool TextInputHandler::HandleCommand(Command aCommand) {
    MOZ_LOG(gIMELog, LogLevel::Info,
            ("%p   TextInputHandler::HandleCommand, aCommand=%s", this,
-@@ -100,6 +774,15 @@
+@@ -100,6 +778,15 @@
      return false;
    }
  
@@ -755,7 +760,7 @@ index e8f05ad59f6f..e2c56935e9b9 100644
    if (aCommand != Command::DeleteCharBackward) {
      return false;
    }
-@@ -128,6 +811,23 @@
+@@ -128,6 +815,23 @@
    return true;
  }
  
@@ -779,7 +784,7 @@ index e8f05ad59f6f..e2c56935e9b9 100644
  static uint32_t ComputeKeyModifiers(uint32_t aCharCode) {
    if (aCharCode >= 'A' && aCharCode <= 'Z') {
      return MODIFIER_SHIFT;
-@@ -233,6 +933,10 @@ static void InitKeyEvent(WidgetKeyboardEvent& aEvent, uint32_t aKeyCode,
+@@ -233,6 +937,10 @@ static void InitKeyEvent(WidgetKeyboardEvent& aEvent, uint32_t aKeyCode,
    return true;
  }
  

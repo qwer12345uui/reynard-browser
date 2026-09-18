@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoKeyboardSupport.mm b/widget/uikit/GeckoKeyboardSupport.mm
 new file mode 100644
-index 000000000000..5a024cb02fd1
+index 000000000000..36cdbc8b2c47
 --- /dev/null
 +++ b/widget/uikit/GeckoKeyboardSupport.mm
-@@ -0,0 +1,865 @@
+@@ -0,0 +1,937 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -402,6 +402,27 @@ index 000000000000..5a024cb02fd1
 +  return keyRepeatInterval();
 +}
 +
++static uint16_t NativeKeyCodeForHIDUsage(NSUInteger aUsage) {
++  enum : NSUInteger {
++    kHIDUsageRightArrow = 0x4F,
++    kHIDUsageLeftArrow = 0x50,
++    kHIDUsageDownArrow = 0x51,
++    kHIDUsageUpArrow = 0x52,
++  };
++  switch (aUsage) {
++    case kHIDUsageRightArrow:
++      return kVKRight;
++    case kHIDUsageLeftArrow:
++      return kVKLeft;
++    case kHIDUsageDownArrow:
++      return kVKDown;
++    case kHIDUsageUpArrow:
++      return kVKUp;
++    default:
++      return 0;
++  }
++}
++
 +}  // namespace
 +
 +struct GeckoKeyboardSupport::HeldKey {
@@ -598,6 +619,22 @@ index 000000000000..5a024cb02fd1
 +                                                      status);
 +}
 +
++void GeckoKeyboardSupport::ReleasePhysicalKey(uint16_t aNativeKeyCode) {
++  for (size_t index = 0; index < mHeldKeys.Length(); ++index) {
++    if (mHeldKeys[index]->mNativeKeyCode != aNativeKeyCode) {
++      continue;
++    }
++
++    if (mRepeatingEvent && mRepeatingEvent.keyCode == aNativeKeyCode) {
++      StopKeyRepeat();
++    }
++    UniquePtr<HeldKey> heldKey = std::move(mHeldKeys[index]);
++    mHeldKeys.RemoveElementAt(index);
++    DispatchHeldKeyUp(*heldKey, mCurrentModifiers);
++    return;
++  }
++}
++
 +void GeckoKeyboardSupport::ReleasePhysicalKeys() {
 +  StopKeyRepeat();
 +  nsTArray<UniquePtr<HeldKey>> heldKeys;
@@ -786,6 +823,7 @@ index 000000000000..5a024cb02fd1
 +        (void (^)(WebEvent* event, BOOL wasHandled))completionHandler;
 +- (void)modifierFlagsDidChangeFrom:(UIKeyModifierFlags)oldFlags
 +                                to:(UIKeyModifierFlags)newFlags;
++- (void)pressesEnded:(NSSet<UIPress*>*)presses withEvent:(UIPressesEvent*)event;
 +- (void)pressesCancelled:(NSSet<UIPress*>*)presses
 +               withEvent:(UIPressesEvent*)event;
 +@end
@@ -854,6 +892,40 @@ index 000000000000..5a024cb02fd1
 +  if (mozilla::widget::TextInputHandler* handler =
 +          mGeckoChild->GetTextInputHandler()) {
 +    handler->HandleModifierFlagsChanged(oldFlags, newFlags);
++  }
++}
++
++- (void)pressesEnded:(NSSet<UIPress*>*)presses
++           withEvent:(UIPressesEvent*)event {
++  [super pressesEnded:presses withEvent:event];
++
++  if (!mGeckoChild || mGeckoChild->Destroyed()) {
++    return;
++  }
++  mozilla::widget::TextInputHandler* handler =
++      mGeckoChild->GetTextInputHandler();
++  if (!handler) {
++    return;
++  }
++
++  SEL keySelector = sel_registerName("key");
++  SEL keyCodeSelector = sel_registerName("keyCode");
++  using KeyFunction = id (*)(id, SEL);
++  using KeyCodeFunction = NSUInteger (*)(id, SEL);
++  for (UIPress* press in presses) {
++    if (![press respondsToSelector:keySelector]) {
++      continue;
++    }
++    id key = reinterpret_cast<KeyFunction>(objc_msgSend)(press, keySelector);
++    if (![key respondsToSelector:keyCodeSelector]) {
++      continue;
++    }
++    NSUInteger usage =
++        reinterpret_cast<KeyCodeFunction>(objc_msgSend)(key, keyCodeSelector);
++    uint16_t nativeKeyCode = mozilla::widget::NativeKeyCodeForHIDUsage(usage);
++    if (nativeKeyCode) {
++      handler->ReleasePhysicalKey(nativeKeyCode);
++    }
 +  }
 +}
 +

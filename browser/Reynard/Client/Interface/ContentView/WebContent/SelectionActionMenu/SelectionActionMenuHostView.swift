@@ -106,6 +106,7 @@ final class SelectionActionMenuHostView: UIView {
         
         let menuController = UIMenuController.shared
         menuController.hideMenu(from: self)
+        menuController.arrowDirection = .down
         menuController.showMenu(from: self, rect: bounds)
     }
     

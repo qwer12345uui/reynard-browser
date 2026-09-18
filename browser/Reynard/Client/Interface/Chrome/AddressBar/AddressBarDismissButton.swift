@@ -57,9 +57,7 @@ final class AddressBarDismissButton: UIButton {
         }
         tintColor = .label
         layer.cornerCurve = .continuous
-        layer.shadowColor = UITraitCollection.current.userInterfaceStyle == .dark
-        ? UIColor.white.withAlphaComponent(UX.dismissButtonDarkModeShadowAlpha).cgColor
-        : UIColor.black.cgColor
+        layer.shadowColor = UIColor.black.cgColor
         layer.shadowRadius = UX.dismissButtonShadowRadius
         layer.shadowOffset = UX.dismissButtonShadowOffset
         layer.masksToBounds = false

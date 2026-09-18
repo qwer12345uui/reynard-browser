@@ -95,9 +95,20 @@ final class ContextMenuCoordinator: NSObject {
         host.captureSourceTabThumbnail { [weak self] in
             guard let self,
                   let host = self.host,
-                  let preview = self.linkPreview,
-                  let session = preview.releaseSession() else {
+                  let preview = self.linkPreview else {
                 self?.isCommitting = false
+                return
+            }
+            if preview.navigationHistoryState != nil && !preview.hasCommittedPage {
+                preview.closeSession()
+                host.contextMenuOpenLink(preview.targetURL, disposition: disposition)
+                self.linkPreview = nil
+                return
+            }
+            guard let session = preview.releaseSession(
+                purgingHistory: disposition == .newTab || disposition == .backgroundTab
+            ) else {
+                self.isCommitting = false
                 return
             }
             
@@ -175,11 +186,15 @@ extension ContextMenuCoordinator: UIContextMenuInteractionDelegate {
             return nil
         }
         isPresenting = false
+        let newTabDisposition = Prefs.BrowsingSettings.openLinksInNewTabsBehavior == .openInBackground
+        ? TabOpenDisposition.backgroundTab
+        : .newTab
         
         if case let .image(url, _) = context.target,
            let imageConfiguration = ImagePreviewMenu.configuration(
             for: context,
             showsPreview: context.allowsPreview && Prefs.BrowsingSettings.showImagePreviews,
+            isPrivate: host.contextMenuSelectedTabIsPrivate,
             sourceView: host.contextMenuSourceView,
             shareImage: { [weak host] image, sourceView, sourceRect in
                 host?.contextMenuPresentShareSheet(
@@ -189,13 +204,10 @@ extension ContextMenuCoordinator: UIContextMenuInteractionDelegate {
                 )
             },
             openLinkInNewTab: { [weak host] url in
-                host?.contextMenuOpenLink(url, disposition: .newTab)
+                host?.contextMenuOpenLink(url, disposition: newTabDisposition)
             },
             openLinkInNewPrivateTab: { [weak host] url in
                 host?.contextMenuOpenLink(url, disposition: .newPrivateTab)
-            },
-            openLinkInBackground: { [weak host] url in
-                host?.contextMenuOpenLink(url, disposition: .backgroundTab)
             },
             openImageInNewTab: { [weak host] in
                 host?.contextMenuOpenLink(url, disposition: .newTab)
@@ -209,18 +221,16 @@ extension ContextMenuCoordinator: UIContextMenuInteractionDelegate {
             showsPreview: context.allowsPreview && Prefs.BrowsingSettings.showLinkPreviews,
             isPrivate: host.contextMenuSelectedTabIsPrivate,
             sessionManager: sessionManager,
+            sourceSessionState: host.contextMenuSelectedSession?.currentSessionState,
             sourceView: host.contextMenuSourceView,
             onPreviewCreated: { [weak self] preview in
                 self?.linkPreview = preview
             },
             openInNewTab: { [weak self] in
-                self?.openLinkPreview(disposition: .newTab)
+                self?.openLinkPreview(disposition: newTabDisposition)
             },
             openInNewPrivateTab: { [weak self] in
                 self?.openLinkPreview(disposition: .newPrivateTab)
-            },
-            openInBackground: { [weak self] in
-                self?.openLinkPreview(disposition: .backgroundTab)
             },
             shareLink: { [weak host] url, sourceView, sourceRect in
                 host?.contextMenuPresentShareSheet(
@@ -240,18 +250,24 @@ extension ContextMenuCoordinator: UIContextMenuInteractionDelegate {
         animator.preferredCommitStyle = .pop
         guard interaction === self.interaction,
               let host,
-              let preview = animator.previewViewController as? LinkPreviewViewController,
-              let session = preview.releaseSession() else {
+              let preview = animator.previewViewController as? LinkPreviewViewController else {
             return
         }
         
         isCommitting = true
-        host.contextMenuTabActions.openPreviewSession(
-            session,
-            url: preview.pageURL,
-            title: preview.pageTitle,
-            disposition: .currentTab
-        )
+        if preview.navigationHistoryState != nil,
+           preview.hasCommittedPage,
+           let session = preview.releaseSession(purgingHistory: false) {
+            host.contextMenuTabActions.openPreviewSession(
+                session,
+                url: preview.pageURL,
+                title: preview.pageTitle,
+                disposition: .currentTab
+            )
+        } else {
+            preview.closeSession()
+            host.contextMenuOpenLink(preview.targetURL, disposition: .currentTab)
+        }
         linkPreview = nil
         
         animator.addCompletion { [weak self] in

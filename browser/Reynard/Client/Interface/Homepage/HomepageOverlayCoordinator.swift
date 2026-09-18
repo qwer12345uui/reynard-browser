@@ -73,18 +73,6 @@ final class HomepageOverlayCoordinator {
         presentHomepage(presentation, animated: animated)
     }
     
-    func updatePresentedLayout() {
-        guard let presentation = homepagePresentation,
-              overlayCoordinator.contains(.homepage, on: presentation.host) else {
-            return
-        }
-        
-        homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
-        homepageViewController.setContentMode(presentation.contentMode)
-        homepageViewController.setShowsBackground(presentation.showsBackground)
-        configureOverlay(for: presentation)
-    }
-    
     func updateVisibleContentInsets() {
         guard let delegate,
               let presentation = homepagePresentation,
@@ -219,6 +207,8 @@ final class HomepageOverlayCoordinator {
         }
         
         guard presentation.host == .detached else {
+            delegate.homepageContentView.superview?.layoutIfNeeded()
+            homepageViewController.setVisibleContentInsets(visibleContentInsets(in: delegate.homepageContentView))
             return
         }
         

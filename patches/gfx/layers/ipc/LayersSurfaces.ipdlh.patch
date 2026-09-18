@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/ipc/LayersSurfaces.ipdlh b/gfx/layers/ipc/LayersSurfaces.ipdlh
-index e716f03cd955..ab550b5ee67a 100644
+index bb79f0a3aee2..9ed1938d75d7 100644
 --- a/gfx/layers/ipc/LayersSurfaces.ipdlh
 +++ b/gfx/layers/ipc/LayersSurfaces.ipdlh
 @@ -31,6 +31,7 @@ using mozilla::layers::RemoteTextureOwnerId from "mozilla/layers/LayersTypes.h";

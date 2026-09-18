@@ -1,5 +1,5 @@
 diff --git a/gfx/thebes/IOSPlatformFontList.mm b/gfx/thebes/IOSPlatformFontList.mm
-index b44b28d1d070..d99fefaf1957 100644
+index b44b28d1d070..ce6859cac607 100644
 --- a/gfx/thebes/IOSPlatformFontList.mm
 +++ b/gfx/thebes/IOSPlatformFontList.mm
 @@ -4,15 +4,68 @@
@@ -51,9 +51,9 @@ index b44b28d1d070..d99fefaf1957 100644
 +                          : mozilla::FontWeight::NORMAL;
 +
 +  float width = widthTrait ? widthTrait.floatValue : 0.0f;
-+  aFontStyle.stretch = width > 0.1f    ? mozilla::FontStretch::EXPANDED
-+                       : width < -0.1f ? mozilla::FontStretch::CONDENSED
-+                                       : mozilla::FontStretch::NORMAL;
++  aFontStyle.width = width > 0.1f    ? mozilla::FontWidth::EXPANDED
++                     : width < -0.1f ? mozilla::FontWidth::CONDENSED
++                                     : mozilla::FontWidth::NORMAL;
 +  aFontStyle.size = aFont.pointSize;
 +  aFontStyle.systemFont = true;
 +}

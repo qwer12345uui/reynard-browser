@@ -14,6 +14,8 @@ final class PromptAlertController: UIAlertController {
         super.viewDidDisappear(animated)
         let handler = onDismissed
         onDismissed = nil
-        handler?()
+        DispatchQueue.main.async {
+            handler?()
+        }
     }
 }

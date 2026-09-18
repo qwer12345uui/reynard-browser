@@ -5,6 +5,7 @@
 //  Created by Minh Ton on 16/6/26.
 //
 
+import GeckoView
 import UIKit
 
 struct LinkPreviewMenu {
@@ -13,11 +14,11 @@ struct LinkPreviewMenu {
         showsPreview: Bool,
         isPrivate: Bool,
         sessionManager: SessionManager,
+        sourceSessionState: GeckoSessionState?,
         sourceView: UIView,
         onPreviewCreated: @escaping (LinkPreviewViewController) -> Void,
         openInNewTab: @escaping () -> Void,
         openInNewPrivateTab: @escaping () -> Void,
-        openInBackground: @escaping () -> Void,
         shareLink: @escaping (URL, UIView, CGRect) -> Void
     ) -> UIContextMenuConfiguration? {
         guard case .link(let url) = context.target else {
@@ -28,25 +29,28 @@ struct LinkPreviewMenu {
             let viewController = LinkPreviewViewController(
                 url: url,
                 isPrivate: isPrivate,
-                sessionManager: sessionManager
+                sessionManager: sessionManager,
+                sourceSessionState: sourceSessionState
             )
             onPreviewCreated(viewController)
             return viewController
         } : nil
         
         return UIContextMenuConfiguration(identifier: url as NSURL, previewProvider: previewProvider) { _ in
-            UIMenu(title: "", children: [
-                UIMenu(title: "", options: .displayInline, children: [
-                    UIAction(title: NSLocalizedString("Open Link in New Tab", comment: ""), image: UIImage(named: "reynard.plus.square")) { _ in
-                        openInNewTab()
-                    },
-                    UIAction(title: NSLocalizedString("Open Link in New Private Tab", comment: ""), image: UIImage(named: "reynard.plus.square.fill")) { _ in
+            var linkActions: [UIMenuElement] = [
+                UIAction(title: NSLocalizedString("Open Link in New Tab", comment: ""), image: UIImage(named: "reynard.plus.square.on.square")) { _ in
+                    openInNewTab()
+                },
+            ]
+            if !isPrivate {
+                linkActions.append(
+                    UIAction(title: NSLocalizedString("Open Link in New Private Tab", comment: ""), image: UIImage(named: "reynard.plus.square.fill.on.square.fill")) { _ in
                         openInNewPrivateTab()
-                    },
-                    UIAction(title: NSLocalizedString("Open Link in Background", comment: ""), image: UIImage(named: "reynard.plus.square.dashed")) { _ in
-                        openInBackground()
-                    },
-                ]),
+                    }
+                )
+            }
+            return UIMenu(title: "", children: [
+                UIMenu(title: "", options: .displayInline, children: linkActions),
                 UIMenu(title: "", options: .displayInline, children: [
                     UIAction(title: NSLocalizedString("Copy Link", comment: ""), image: UIImage(named: "reynard.document.on.document")) { _ in
                         UIPasteboard.general.string = url.absoluteString

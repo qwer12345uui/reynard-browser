@@ -18,7 +18,6 @@ final class SelectPicker: NSObject, UIAdaptivePresentationControllerDelegate {
     private var continuation: CheckedContinuation<[String]?, Never>?
     private var anchorButton: SelectPickerMenuAnchorButton?
     private var presentedController: UIViewController?
-    private var selectedMenuChoiceIds: [String]?
     
     init(mode: String, choices: [PromptChoice], sourceRect: CGRect, geckoView: UIView) {
         self.mode = mode
@@ -53,7 +52,6 @@ final class SelectPicker: NSObject, UIAdaptivePresentationControllerDelegate {
     func cancelAndDismiss() {
         anchorButton?.removeFromSuperview()
         anchorButton = nil
-        selectedMenuChoiceIds = nil
         presentedController?.dismiss(animated: false)
         presentedController = nil
         if let continuation {
@@ -82,7 +80,13 @@ final class SelectPicker: NSObject, UIAdaptivePresentationControllerDelegate {
         button.menu = UIMenu(children: menuElements)
         button.showsMenuAsPrimaryAction = true
         
-        button.onMenuDismissed = { [weak self] in
+        if #available(iOS 16.0, *) {
+            button.onMenuWillDismiss = { [weak self] in
+                self?.finish(nil)
+            }
+        }
+        button.onMenuDismissed = { [weak self, weak button] in
+            button?.removeFromSuperview()
             self?.handleMenuDismissed()
         }
         
@@ -117,15 +121,14 @@ final class SelectPicker: NSObject, UIAdaptivePresentationControllerDelegate {
             return
         }
         
-        var result: [String]?
         let alert = PromptAlertController(title: NSLocalizedString("Select Option", comment: ""), message: nil, preferredStyle: .actionSheet)
         alert.onDismissed = { [weak self] in
-            self?.finish(result)
+            self?.finish(nil)
         }
         for item in selectableChoices(from: choices) {
             let title = item.label.isEmpty ? NSLocalizedString("Option", comment: "") : item.label
-            alert.addAction(UIAlertAction(title: title, style: .default) { _ in
-                result = [item.id]
+            alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                self?.finish([item.id])
             })
         }
         alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
@@ -177,12 +180,22 @@ final class SelectPicker: NSObject, UIAdaptivePresentationControllerDelegate {
                 elements.append(submenu)
             } else {
                 let choiceId = item.id
+                var attributes: UIMenuElement.Attributes = item.disabled ? .disabled : []
+                if #available(iOS 16.0, *) {
+                    // Run the action before starting UIKit's dismissal transition.
+                    attributes.insert(.keepsMenuPresented)
+                }
                 let action = UIAction(
                     title: item.label,
-                    attributes: item.disabled ? .disabled : [],
+                    attributes: attributes,
                     state: item.selected ? .on : .off
                 ) { [weak self] _ in
-                    self?.selectedMenuChoiceIds = [choiceId]
+                    guard let self, continuation != nil else { return }
+                    finish([choiceId])
+                    if #available(iOS 16.0, *) {
+                        let interaction = anchorButton?.interactions.compactMap { $0 as? UIContextMenuInteraction }.first
+                        interaction?.dismissMenu()
+                    }
                 }
                 pendingItems.append(action)
             }
@@ -202,9 +215,9 @@ final class SelectPicker: NSObject, UIAdaptivePresentationControllerDelegate {
     // MARK: - Menu Dismissal
     
     private func handleMenuDismissed() {
-        let result = selectedMenuChoiceIds
-        selectedMenuChoiceIds = nil
-        finish(result)
+        anchorButton?.removeFromSuperview()
+        anchorButton = nil
+        finish(nil)
     }
     
     // MARK: - Multi Select
@@ -243,8 +256,6 @@ final class SelectPicker: NSObject, UIAdaptivePresentationControllerDelegate {
     // MARK: - Completion
     
     private func finish(_ result: [String]?) {
-        anchorButton?.removeFromSuperview()
-        anchorButton = nil
         guard let continuation else { return }
         self.continuation = nil
         continuation.resume(returning: result)

@@ -9,15 +9,26 @@ import UIKit
 
 final class PageZoomActionBar: UIView {
     private enum UX {
-        static let backgroundHeight: CGFloat = 62
-        static let controlsHeight: CGFloat = 38
-        static let controlsWidth: CGFloat = 184
-        static let controlButtonWidth: CGFloat = 55
+        static var controlsHeight: CGFloat {
+            if #available(iOS 26.0, *) { return 48 }
+            return 38
+        }
+        static var controlsWidth: CGFloat {
+            if #available(iOS 26.0, *) { return 222 }
+            return 184
+        }
+        static var controlButtonWidth: CGFloat {
+            if #available(iOS 26.0, *) { return (controlsWidth - separatorWidth * 2) / 3 }
+            return 55
+        }
         static let separatorWidth: CGFloat = 1
-        static let controlsCornerRadius: CGFloat = 19
+        static var controlsCornerRadius: CGFloat { return controlsHeight / 2 }
         static let percentFontSize: CGFloat = 16
         static let controlSymbolPointSize: CGFloat = 14
         static let animationDuration: TimeInterval = 0.12
+        static let bounceScale: CGFloat = 1.3
+        static let bounceReturnDuration: TimeInterval = 0.75
+        static let bounceDamping: CGFloat = 0.5
         static let backgroundAlpha: CGFloat = 0.34
         static let disabledAlpha: CGFloat = 0.32
         static let shadowOpacity: Float = 0.14
@@ -50,16 +61,23 @@ final class PageZoomActionBar: UIView {
         view.layer.shadowOpacity = UX.shadowOpacity
         view.layer.shadowRadius = UX.shadowRadius
         view.layer.shadowOffset = UX.shadowOffset
+        view.layer.shadowColor = UIColor.black.cgColor
         return view
     }()
     
     private let controlsBackground: UIVisualEffectView = {
         let view = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.contentView.backgroundColor = UIColor.systemBackground.withAlphaComponent(UX.backgroundAlpha)
+        view.contentView.backgroundColor = UIColor { traitCollection in
+            let backgroundColor: UIColor = traitCollection.userInterfaceStyle == .dark
+            ? .tertiarySystemBackground.withAlphaComponent(0.8)
+            : .systemBackground.withAlphaComponent(0.8)
+            return backgroundColor.resolvedColor(with: traitCollection)
+        }
         view.layer.cornerCurve = .continuous
         view.layer.cornerRadius = UX.controlsCornerRadius
         view.layer.borderWidth = UX.borderWidth
+        view.layer.borderColor = UIColor.separator.withAlphaComponent(0.2).cgColor
         view.clipsToBounds = true
         return view
     }()
@@ -86,8 +104,6 @@ final class PageZoomActionBar: UIView {
         configureAppearance()
         configureHierarchy()
         configureConstraints()
-        updateShadowColor()
-        updateBorderColor()
         setZoomLevel(zoomLevel)
     }
     
@@ -103,14 +119,17 @@ final class PageZoomActionBar: UIView {
         ).cgPath
     }
     
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        guard previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle else {
-            return
-        }
-        
-        updateShadowColor()
-        updateBorderColor()
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if #available(iOS 26.0, *), !controlsShadowView.frame.contains(point) { return nil }
+        return super.hitTest(point, with: event)
+    }
+    
+    // MARK: - Presentation
+    
+    @available(iOS 26.0, *)
+    func setModernContentHidden(_ hidden: Bool) {
+        controlsBackground.effect = hidden ? nil : UIGlassEffect.nonAdaptive(style: .regular)
+        controlsBackground.contentView.alpha = hidden ? 0 : 1
     }
     
     // MARK: - Updates
@@ -141,15 +160,40 @@ final class PageZoomActionBar: UIView {
     // MARK: - Actions
     
     @objc private func zoomOutTapped() {
+        animatePillTap()
         onZoomOut?()
     }
     
     @objc private func zoomInTapped() {
+        animatePillTap()
         onZoomIn?()
     }
     
     @objc private func resetTapped() {
+        animatePillTap()
         onReset?()
+    }
+    
+    private func animatePillTap() {
+        guard #available(iOS 26.0, *), !UIAccessibility.isReduceMotionEnabled else { return }
+        UIView.animate(
+            withDuration: UX.animationDuration,
+            delay: 0,
+            options: [.beginFromCurrentState, .allowUserInteraction]
+        ) {
+            self.controlsShadowView.transform = CGAffineTransform(scaleX: UX.bounceScale, y: UX.bounceScale)
+        } completion: { finished in
+            guard finished else { return }
+            UIView.animate(
+                withDuration: UX.bounceReturnDuration,
+                delay: 0,
+                usingSpringWithDamping: UX.bounceDamping,
+                initialSpringVelocity: 0,
+                options: [.beginFromCurrentState, .allowUserInteraction]
+            ) {
+                self.controlsShadowView.transform = .identity
+            }
+        }
     }
     
     // MARK: - View Setup
@@ -157,6 +201,13 @@ final class PageZoomActionBar: UIView {
     private func configureAppearance() {
         translatesAutoresizingMaskIntoConstraints = false
         backgroundColor = .clear
+        if #available(iOS 26.0, *) {
+            backgroundView.isHidden = true
+            controlsBackground.effect = UIGlassEffect.nonAdaptive(style: .regular)
+            controlsBackground.contentView.backgroundColor = .clear
+            controlsBackground.layer.borderWidth = 0
+            controlsShadowView.layer.shadowOpacity = 0
+        }
     }
     
     private func configureHierarchy() {
@@ -170,8 +221,6 @@ final class PageZoomActionBar: UIView {
     
     private func configureConstraints() {
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: UX.backgroundHeight),
-            
             backgroundView.topAnchor.constraint(equalTo: topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
             backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -213,16 +262,6 @@ final class PageZoomActionBar: UIView {
             zoomInButton.widthAnchor.constraint(equalToConstant: UX.controlButtonWidth),
             
         ])
-    }
-    
-    private func updateShadowColor() {
-        let color: UIColor = traitCollection.userInterfaceStyle == .dark ? .white : .black
-        controlsShadowView.layer.shadowColor = color.cgColor
-    }
-    
-    private func updateBorderColor() {
-        let color = UIColor.separator.withAlphaComponent(0.2)
-        controlsBackground.layer.borderColor = color.cgColor
     }
     
     private func makeControlButton(named: String, action: Selector) -> UIButton {
