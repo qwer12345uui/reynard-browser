@@ -1,0 +1,95 @@
+name: Publish RootHide IPA release
+
+# Workflow artifacts can only be downloaded by a signed-in GitHub user, which
+# makes them awkward to hand out. Publishing the verified IPA as a release
+# asset gives a stable download URL that needs no login, and this workflow
+# runs whenever the packaging workflow finishes so the published build always
+# tracks the newest successful one.
+on:
+  workflow_run:
+    workflows: ["Build RootHide IPA"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Build RootHide IPA run to publish"
+        required: true
+
+permissions:
+  actions: read
+  contents: write
+
+# Publishing is cheap and idempotent, so never cancel a publish in flight.
+concurrency:
+  group: publish-roothide-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish the built IPA as a release asset
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Resolve the source run
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id || github.event.inputs.run_id }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "$RUN_ID" ]; then
+            echo "::error title=No source run::Pass a run id when dispatching manually."
+            exit 1
+          fi
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          if [ -n "$HEAD_SHA" ]; then
+            echo "sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          else
+            sha="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" --jq .head_sha)"
+            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download the verified IPA artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run download "${{ steps.source.outputs.run_id }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "Reynard-RootHide-IPA-${{ steps.source.outputs.sha }}" \
+            --dir ipa
+          ipa_file="$(find ipa -type f -name 'Reynard-Jailbroken.ipa' | head -n 1)"
+          if [ -z "$ipa_file" ]; then
+            echo "::error title=IPA not found::The artifact did not contain the packaged IPA."
+            find ipa -type f | head -n 20
+            exit 1
+          fi
+          mkdir -p out
+          cp "$ipa_file" out/Reynard-Jailbroken.ipa
+          if [ -f "${ipa_file}.sha256" ]; then
+            cp "${ipa_file}.sha256" out/Reynard-Jailbroken.ipa.sha256
+          else
+            shasum -a 256 out/Reynard-Jailbroken.ipa > out/Reynard-Jailbroken.ipa.sha256
+          fi
+          ls -l out
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="roothide-latest"
+          short="${{ steps.source.outputs.sha }}"
+          short="${short:0:7}"
+          # Recreate the tag in place so the download URL stays stable across
+          # builds instead of accumulating one release per commit.
+          gh release delete "$tag" --yes --cleanup-tag >/dev/null 2>&1 || true
+          gh release create "$tag" \
+            out/Reynard-Jailbroken.ipa \
+            out/Reynard-Jailbroken.ipa.sha256 \
+            --target "${{ steps.source.outputs.sha }}" \
+            --title "Reynard RootHide IPA ($short)" \
+            --notes "RootHide jailbreak build of ${{ steps.source.outputs.sha }}, unsigned. Install with TrollStore or a RootHide capable package manager. Built by run ${{ steps.source.outputs.run_id }}."
+          echo "Published $tag for $short"
