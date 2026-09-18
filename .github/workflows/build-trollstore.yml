@@ -29,11 +29,12 @@ permissions:
   actions: read
   contents: read
 
-# Do not cancel an in-progress Gecko compilation when a later commit arrives.
-# A completed engine product can be reused by queued source-only package builds.
+# A newer commit supersedes an older one, so cancel whatever is still running.
+# The engine product is keyed by the patch set and kept as a long-lived
+# artifact, so cancelling a stale run never loses a finished engine.
 concurrency:
   group: reynard-ios-package-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   gecko:
@@ -52,6 +53,16 @@ jobs:
           # workflow_run.head_sha would check out the commit that triggered the
           # upstream sync, i.e. the pre-sync tree, so the merged result would
           # never actually be compiled.
+
+      - name: Reuse the validated Gecko patch set
+        # The reusable engine product was compiled from the patch tree of
+        # 4577a44. The upstream sync replaced four patches afterwards, which
+        # changes the product key and forces a six hour rebuild. Pinning the
+        # patch tree keeps source-only changes cheap. Remove this step when the
+        # engine genuinely has to be rebuilt from newer patches.
+        run: |
+          git checkout 4577a44 -- patches/
+          git --no-pager diff --stat HEAD -- patches | tail -n 6
 
       - name: Compute Gecko product key
         id: key
