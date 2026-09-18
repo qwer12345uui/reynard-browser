@@ -20,7 +20,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 # The preference merge is large enough to live in its own module next to this
 # script, so it can be reviewed on its own.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from prefs_merge import merge_preferences
+from prefs_merge import extract_brace_block, merge_preferences
 
 # Files that must keep the fork's local version instead of upstream's.
 # main.swift carries the RootHide runtime policy hook, which upstream does not
@@ -235,7 +235,7 @@ static bool IsRootHideInjectionActive() {
   static bool sActive = [] {
     uint32_t imageCount = _dyld_image_count();
     for (uint32_t index = 0; index < imageCount; index++) {
-      const char* imagePath = _dyld_image_name(index);
+      const char* imagePath = _dyld_get_image_name(index);
       if (imagePath && strstr(imagePath, "/usr/lib/roothideinit.dylib")) {
         return true;
       }
@@ -338,6 +338,34 @@ NETWORK_START_NEW = (
 )
 
 
+def strip_roothide_helpers(body):
+    """Remove any injected copy of the RootHide probe helpers.
+
+    The helpers are appended to a fixed anchor, so applying them again on a
+    tree that already has a different copy leaves two definitions behind,
+    which does not compile. Removing first makes the injection idempotent and
+    lets a bad copy be repaired by the next run.
+    """
+    import re
+
+    marker = "// RootHide injects roothideinit.dylib"
+    while marker in body:
+        start = body.index(marker)
+        match = re.search(r"^static bool ProbeNetworkReachability\(\) \{",
+                          body[start:], re.MULTILINE)
+        if not match:
+            break
+        block_start = start + match.end() - 1
+        block = extract_brace_block(body, block_start)
+        if block is None:
+            break
+        end = block_start + len(block)
+        while end < len(body) and body[end] == "\n":
+            end += 1
+        body = body[:start] + body[end:]
+    return body
+
+
 def apply_network_fix():
     """Make the Gecko link service reliable under RootHide.
 
@@ -355,6 +383,7 @@ def apply_network_fix():
     ]
 
     body = "\n".join(content)
+    body = strip_roothide_helpers(body)
     for old, new, what in [
         (NETWORK_INCLUDES_OLD, NETWORK_INCLUDES_NEW, "includes"),
         (NETWORK_HELPERS_ANCHOR, NETWORK_HELPERS, "RootHide probe helpers"),
