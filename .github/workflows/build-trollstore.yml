@@ -10,6 +10,12 @@ on:
         description: "Force a full Gecko engine rebuild"
         type: boolean
         default: false
+  # A commit pushed by the upstream sync job carries GITHUB_TOKEN, and such a
+  # commit does not raise push events. Listen for the sync workflow instead so
+  # every merged upstream change is rebuilt automatically.
+  workflow_run:
+    workflows: ["Sync upstream into RootHide fork"]
+    types: [completed]
   push:
     paths:
       - ".github/workflows/build-trollstore.yml"
@@ -42,6 +48,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: false
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Compute Gecko product key
         id: key
@@ -94,14 +101,17 @@ jobs:
 
       - name: Synchronize Gecko source
         if: steps.gecko-product.outputs.found != 'true'
-        run: ./tools/development/update-gecko.sh
+        # Every script is invoked through its interpreter on purpose: files
+        # updated through the API lose their executable bit, and a direct
+        # ./script call then fails with "Permission denied" (exit 126).
+        run: zsh ./tools/development/update-gecko.sh
 
       - name: Apply Reynard patches
         if: steps.gecko-product.outputs.found != 'true'
         shell: bash
         run: |
           set +e
-          ./tools/development/apply-patches.sh </dev/null 2>&1 | tee patch-apply.log
+          zsh ./tools/development/apply-patches.sh </dev/null 2>&1 | tee patch-apply.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             message="$(tail -n 40 patch-apply.log | cut -c1-400)"
@@ -153,7 +163,7 @@ jobs:
           export SDKROOT="$macos_sdk"
           # RootHide injection commonly uses libhooker. Avoid jemalloc so its
           # allocator hooks do not cause helper-process CPU spikes or stalls.
-          ./tools/development/build-gecko.sh --disable-jemalloc 2>&1 | tee gecko-build.log
+          sh ./tools/development/build-gecko.sh --disable-jemalloc 2>&1 | tee gecko-build.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             failed_line="$(grep -n -m1 'failed to run custom build command' gecko-build.log | cut -d: -f1)"
@@ -206,6 +216,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: recursive
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       # Layer 2: package-time Rust registry, git sources and idevice output.
       # This key is independent of Gecko so UI and Swift-only changes reuse it.
@@ -253,7 +264,7 @@ jobs:
           rustup target add aarch64-apple-ios
 
       - name: Build idevice dependency
-        run: ./tools/development/build-idevice.sh
+        run: zsh ./tools/development/build-idevice.sh
 
       - name: Save application dependency cache
         if: steps.app-dependencies.outputs.cache-hit != 'true'
