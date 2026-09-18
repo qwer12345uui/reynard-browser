@@ -47,6 +47,21 @@ jobs:
       - name: Merge upstream and re-apply RootHide changes
         run: python3 tools/ci/sync_roothide.py
 
+      # The merge can leave BrowserPreferences.swift structurally damaged and
+      # SceneDelegate calling download entry points upstream has removed.
+      # Repairing before the push means the tree handed to the IPA build already
+      # compiles, instead of pushing damage that only surfaces an hour later in
+      # the Xcode archive step.
+      - name: Repair merged browser sources
+        run: |
+          python3 tools/ci/repair_preferences.py
+          if git diff --quiet; then
+            echo "Nothing left to repair; the merged tree is already healthy."
+          else
+            git add browser
+            git commit -m "fix: 合并后自愈 browser 源文件"
+          fi
+
       - name: Push to main
         run: git push origin HEAD:main
 
