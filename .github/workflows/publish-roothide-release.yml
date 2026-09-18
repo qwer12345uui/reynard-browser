@@ -37,6 +37,14 @@ jobs:
     timeout-minutes: 20
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     steps:
+      # gh release create shells out to git to resolve --target, so it needs a
+      # checkout even though this job only moves files around.
+      - name: Check out source
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          submodules: false
+
       - name: Resolve the source run
         id: source
         env:
