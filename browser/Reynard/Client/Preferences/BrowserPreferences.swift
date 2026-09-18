@@ -243,6 +243,12 @@ key("BrowsingSettings", "readerViewFontSizeStep"): 3,
 key("BrowsingSettings", "readerViewFontType"): ReaderViewFontType.serif.rawValue,
 key("DeveloperSettings", "remoteDebuggingEnabled"): false,
 key("DeveloperSettings", "remoteDebuggingPort"): 6000,
+key("CompatibilitySettings", "useAndroidUserAgent"): true,
+key("CompatibilitySettings", "customUserAgent"): "",
+key("CompatibilitySettings", "customPlatform"): "",
+key("CompatibilitySettings", "customAppVersion"): "",
+key("CompatibilitySettings", "customOscpu"): "",
+key("CompatibilitySettings", "customBuildID"): "",
         ])
     }
     
@@ -1182,7 +1188,52 @@ key("DeveloperSettings", "remoteDebuggingPort"): 6000,
                 prefs.set(newValue, forSetting: "CompatibilitySettings", key: "useAndroidUserAgent")
             }
         }
-    }
+    
+        static var customAppVersion: String {
+            get {
+                return prefs.string(forSetting: "CompatibilitySettings", key: "customAppVersion") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "CompatibilitySettings", key: "customAppVersion")
+            }
+        }
+
+        static var customBuildID: String {
+            get {
+                return prefs.string(forSetting: "CompatibilitySettings", key: "customBuildID") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "CompatibilitySettings", key: "customBuildID")
+            }
+        }
+
+        static var customOscpu: String {
+            get {
+                return prefs.string(forSetting: "CompatibilitySettings", key: "customOscpu") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "CompatibilitySettings", key: "customOscpu")
+            }
+        }
+
+        static var customPlatform: String {
+            get {
+                return prefs.string(forSetting: "CompatibilitySettings", key: "customPlatform") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "CompatibilitySettings", key: "customPlatform")
+            }
+        }
+
+        static var customUserAgent: String {
+            get {
+                return prefs.string(forSetting: "CompatibilitySettings", key: "customUserAgent") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "CompatibilitySettings", key: "customUserAgent")
+            }
+        }
+}
     
     // MARK: - Appearance
     struct AppearanceSettings {
