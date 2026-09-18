@@ -19,7 +19,7 @@ final class AddressBarTextField: UITextField {
     var onSubmit: (() -> Void)?
     var onMoveCursor: ((CursorBoundary) -> Void)?
     var onDismissEditing: (() -> Void)?
-    var onTextInteraction: (() -> Void)?
+    private var suppressTextActions = false
     
     private lazy var cursorToStartCommand = makeKeyCommand(
         input: UIKeyCommand.inputLeftArrow,
@@ -105,9 +105,14 @@ final class AddressBarTextField: UITextField {
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // Clear the visual suggestion before UIKit calculates the insertion
-        // point, then pass through the original touch for native caret control.
-        onTextInteraction?()
+        if isAutocompleteActive {
+            suppressTextActions = true
+            DispatchQueue.main.async { [weak self] in
+                self?.suppressTextActions = false
+            }
+            return
+        }
+        
         super.touchesBegan(touches, with: event)
     }
     
@@ -119,7 +124,7 @@ final class AddressBarTextField: UITextField {
             action == #selector(moveCursorToEnd(_:)) {
             return isAutocompleteActive
         }
-        if isAutocompleteActive {
+        if isAutocompleteActive || suppressTextActions {
             return false
         }
         

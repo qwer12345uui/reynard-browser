@@ -28,11 +28,6 @@ final class BrowserChrome: UIView, UIGestureRecognizerDelegate {
         case fullscreenMedia
     }
     
-    enum OverlayDirection {
-        case aboveAddressBar
-        case belowAddressBar
-    }
-
     enum SearchState {
         case inactive
         case focused
@@ -66,13 +61,10 @@ final class BrowserChrome: UIView, UIGestureRecognizerDelegate {
     var onBack: (() -> Void)?
     var onForward: (() -> Void)?
     var onShare: (() -> Void)?
-    var onBasket: (() -> Void)?
-    var onToolbox: (() -> Void)?
-    var onReload: (() -> Void)?
+    var onLibrary: (() -> Void)?
     var onDownloads: (() -> Void)?
     var onNewTab: (() -> Void)?
     var onTabOverview: (() -> Void)?
-    var onBottomToolbarQuickAction: ((BottomToolbar.QuickAction) -> Void)?
     var onOverlayDismiss: (() -> Void)?
     var onPageZoomOut: (() -> Void)?
     var onPageZoomIn: (() -> Void)?
@@ -124,9 +116,7 @@ final class BrowserChrome: UIView, UIGestureRecognizerDelegate {
     private var overlayWidthConstraint: NSLayoutConstraint!
     private var overlayHeightConstraint: NSLayoutConstraint!
     private var overlayTopConstraint: NSLayoutConstraint?
-    private var overlayBottomConstraint: NSLayoutConstraint?
     private var overlayCenterXConstraint: NSLayoutConstraint?
-    private var overlayDirection: OverlayDirection = .belowAddressBar
     private var actionBarTopConstraint: NSLayoutConstraint?
     private var actionBarBottomConstraint: NSLayoutConstraint?
     private var actionBarKeyboardBottomConstraint: NSLayoutConstraint?
@@ -404,15 +394,6 @@ final class BrowserChrome: UIView, UIGestureRecognizerDelegate {
     
     // MARK: - Overlay Content
     
-    func setOverlayDirection(_ direction: OverlayDirection) {
-        guard overlayDirection != direction else {
-            return
-        }
-        overlayDirection = direction
-        configureOverlayPositioningIfNeeded(force: true)
-        setNeedsLayout()
-    }
-
     func setOverlayPresentation(
         _ presentation: ChromeOverlayContentView.PresentationState,
         animated: Bool,
@@ -473,35 +454,20 @@ final class BrowserChrome: UIView, UIGestureRecognizerDelegate {
         }
     }
     
-    private func configureOverlayPositioningIfNeeded(force: Bool = false) {
-        guard force || overlayCenterXConstraint?.isActive != true else {
+    private func configureOverlayPositioningIfNeeded() {
+        guard overlayTopConstraint?.isActive != true,
+              overlayCenterXConstraint?.isActive != true else {
             return
         }
         
-        NSLayoutConstraint.deactivate([
-            overlayTopConstraint,
-            overlayBottomConstraint,
-            overlayCenterXConstraint,
-        ].compactMap { $0 })
-        let verticalConstraint: NSLayoutConstraint
-        switch overlayDirection {
-        case .aboveAddressBar:
-            verticalConstraint = overlayContentView.bottomAnchor.constraint(
-                equalTo: addressBar.topAnchor,
-                constant: -UX.overlayTopSpacing
-            )
-            overlayTopConstraint = nil
-            overlayBottomConstraint = verticalConstraint
-        case .belowAddressBar:
-            verticalConstraint = overlayContentView.topAnchor.constraint(
-                equalTo: addressBar.bottomAnchor,
-                constant: UX.overlayTopSpacing
-            )
-            overlayTopConstraint = verticalConstraint
-            overlayBottomConstraint = nil
-        }
+        NSLayoutConstraint.deactivate([overlayTopConstraint, overlayCenterXConstraint].compactMap { $0 })
+        let topConstraint = overlayContentView.topAnchor.constraint(
+            equalTo: addressBar.bottomAnchor,
+            constant: UX.overlayTopSpacing
+        )
         let centerXConstraint = overlayContentView.centerXAnchor.constraint(equalTo: addressBar.centerXAnchor)
-        NSLayoutConstraint.activate([verticalConstraint, centerXConstraint])
+        NSLayoutConstraint.activate([topConstraint, centerXConstraint])
+        overlayTopConstraint = topConstraint
         overlayCenterXConstraint = centerXConstraint
     }
     
@@ -674,9 +640,7 @@ final class BrowserChrome: UIView, UIGestureRecognizerDelegate {
         topToolbar.onBack = { [weak self] in self?.onBack?() }
         topToolbar.onForward = { [weak self] in self?.onForward?() }
         topToolbar.onShare = { [weak self] in self?.onShare?() }
-        topToolbar.onBasket = { [weak self] in self?.onBasket?() }
-        topToolbar.onToolbox = { [weak self] in self?.onToolbox?() }
-        topToolbar.onReload = { [weak self] in self?.onReload?() }
+        topToolbar.onLibrary = { [weak self] in self?.onLibrary?() }
         topToolbar.onDownloads = { [weak self] in self?.onDownloads?() }
         topToolbar.onNewTab = { [weak self] in self?.onNewTab?() }
         topToolbar.onTabOverview = { [weak self] in self?.onTabOverview?() }
@@ -684,10 +648,9 @@ final class BrowserChrome: UIView, UIGestureRecognizerDelegate {
         bottomToolbar.onBack = { [weak self] in self?.onBack?() }
         bottomToolbar.onForward = { [weak self] in self?.onForward?() }
         bottomToolbar.onShare = { [weak self] in self?.onShare?() }
-        bottomToolbar.onBasket = { [weak self] in self?.onBasket?() }
+        bottomToolbar.onLibrary = { [weak self] in self?.onLibrary?() }
         bottomToolbar.onDownloads = { [weak self] in self?.onDownloads?() }
         bottomToolbar.onTabOverview = { [weak self] in self?.onTabOverview?() }
-        bottomToolbar.onQuickAction = { [weak self] action in self?.onBottomToolbarQuickAction?(action) }
         
         actionBar.onPageZoomOut = { [weak self] in self?.onPageZoomOut?() }
         actionBar.onPageZoomIn = { [weak self] in self?.onPageZoomIn?() }
@@ -861,10 +824,10 @@ final class BrowserChrome: UIView, UIGestureRecognizerDelegate {
             bottomToolbar.trailingAnchor.constraint(equalTo: trailingAnchor),
             bottomToolbar.bottomAnchor.constraint(equalTo: bottomAnchor),
             
-            overlayDismissView.topAnchor.constraint(equalTo: topAnchor),
+            overlayDismissView.topAnchor.constraint(equalTo: tabBar.bottomAnchor),
             overlayDismissView.leadingAnchor.constraint(equalTo: leadingAnchor),
             overlayDismissView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            overlayDismissView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            overlayDismissView.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor),
             
             overlayWidthConstraint,
             overlayHeightConstraint,

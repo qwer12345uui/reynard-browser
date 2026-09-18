@@ -123,16 +123,8 @@ final class HomepagePreferencesViewController: SettingsTableViewController {
             }
             
             let openingScreen = HomepageOpeningScreen.allCases[indexPath.row]
-            let cell = UITableViewCell(
-                style: openingScreen == .customURL ? .subtitle : .default,
-                reuseIdentifier: nil
-            )
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = openingScreen.title
-            if openingScreen == .customURL {
-                let configuredURL = Prefs.HomepageSettings.startupURL
-                cell.detailTextLabel?.text = configuredURL.isEmpty ? "轻点以设置网址" : configuredURL
-                cell.detailTextLabel?.textColor = .secondaryLabel
-            }
             cell.accessoryType = Prefs.HomepageSettings.openingScreen == openingScreen ? .checkmark : .none
             return cell
         case .includeOnHomepage:
@@ -141,7 +133,7 @@ final class HomepagePreferencesViewController: SettingsTableViewController {
             }
             
             let row = HomepageSectionPreferencesViewController.OverviewRow.allCases[indexPath.row]
-            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .value1, reuseIdentifier: nil)
             cell.textLabel?.text = row.title
             cell.detailTextLabel?.text = row.isEnabled ? NSLocalizedString("On", comment: "Enabled state") : NSLocalizedString("Off", comment: "Disabled state")
             cell.accessoryType = .disclosureIndicator
@@ -151,7 +143,7 @@ final class HomepagePreferencesViewController: SettingsTableViewController {
                 return UITableViewCell()
             }
             
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             cell.selectionStyle = .none
             switch HomepageBannerRow.allCases[indexPath.row] {
             case .recommendations:
@@ -167,7 +159,7 @@ final class HomepagePreferencesViewController: SettingsTableViewController {
                 return UITableViewCell()
             }
             
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = SettingsTableViewCell(style: .default, reuseIdentifier: nil)
             switch WallpaperRow.allCases[indexPath.row] {
             case .showWallpaper:
                 cell.textLabel?.text = NSLocalizedString("Show Wallpaper", comment: "")
@@ -195,13 +187,8 @@ final class HomepagePreferencesViewController: SettingsTableViewController {
                 return
             }
             
-            let openingScreen = HomepageOpeningScreen.allCases[indexPath.row]
-            Prefs.HomepageSettings.openingScreen = openingScreen
-            if openingScreen == .customURL {
-                presentStartupURLEditor()
-            } else {
-                tableView.reloadSections(IndexSet(integer: indexPath.section), with: .none)
-            }
+            Prefs.HomepageSettings.openingScreen = HomepageOpeningScreen.allCases[indexPath.row]
+            tableView.reloadSections(IndexSet(integer: indexPath.section), with: .none)
         case .includeOnHomepage:
             guard HomepageSectionPreferencesViewController.OverviewRow.allCases.indices.contains(indexPath.row) else {
                 return
@@ -227,46 +214,6 @@ final class HomepagePreferencesViewController: SettingsTableViewController {
         }
     }
     
-    private func presentStartupURLEditor() {
-        let controller = UIAlertController(
-            title: "启动时打开指定网页",
-            message: "请输入 HTTP 或 HTTPS 网址。",
-            preferredStyle: .alert
-        )
-        controller.addTextField { textField in
-            textField.text = Prefs.HomepageSettings.startupURL
-            textField.placeholder = "https://example.com"
-            textField.keyboardType = .URL
-            textField.autocapitalizationType = .none
-            textField.autocorrectionType = .no
-        }
-        controller.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel) { [weak self] _ in
-            self?.tableView.reloadData()
-        })
-        controller.addAction(UIAlertAction(title: NSLocalizedString("Save", comment: ""), style: .default) { [weak self, weak controller] _ in
-            let value = controller?.textFields?.first?.text ?? ""
-            guard let url = URLUtils.normalizedCustomURL(from: value) else {
-                self?.presentInvalidStartupURLAlert()
-                return
-            }
-            Prefs.HomepageSettings.startupURL = url.absoluteString
-            self?.tableView.reloadData()
-        })
-        present(controller, animated: true)
-    }
-
-    private func presentInvalidStartupURLAlert() {
-        let alert = UIAlertController(
-            title: "网址无效",
-            message: "请输入有效的 HTTP 或 HTTPS 网址。",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default) { [weak self] _ in
-            self?.presentStartupURLEditor()
-        })
-        present(alert, animated: true)
-    }
-
     private func configureSwitches() {
         recommendationsSwitch.addTarget(self, action: #selector(recommendationsSwitchDidChange(_:)), for: .valueChanged)
         newUpdatesSwitch.addTarget(self, action: #selector(newUpdatesSwitchDidChange(_:)), for: .valueChanged)

@@ -12,23 +12,14 @@ enum Haptics {
     private static let notificationGenerator = UINotificationFeedbackGenerator()
     
     static func prepareRigid() {
-        guard Prefs.BrowserFeatureSettings.touchFeedbackEnabled else {
-            return
-        }
         impactGenerator.prepare()
     }
     
     static func rigid() {
-        guard Prefs.BrowserFeatureSettings.touchFeedbackEnabled else {
-            return
-        }
         impactGenerator.impactOccurred()
     }
     
     static func success() {
-        guard Prefs.BrowserFeatureSettings.touchFeedbackEnabled else {
-            return
-        }
         notificationGenerator.notificationOccurred(.success)
     }
 }

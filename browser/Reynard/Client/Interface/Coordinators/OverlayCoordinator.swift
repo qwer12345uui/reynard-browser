@@ -17,7 +17,6 @@ final class OverlayCoordinator {
     enum Page: Hashable {
         case homepage
         case search
-        case toolbox
     }
     
     enum Host: Hashable {
@@ -352,7 +351,6 @@ final class OverlayCoordinator {
         switch page {
         case .homepage: return .homepage
         case .search: return .search
-        case .toolbox: return .toolbox
         }
     }
     
@@ -360,7 +358,6 @@ final class OverlayCoordinator {
         switch page {
         case .homepage: return .homepage
         case .search: return .search
-        case .toolbox: return .toolbox
         }
     }
 }

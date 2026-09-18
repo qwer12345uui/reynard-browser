@@ -11,10 +11,7 @@ final class TopToolbar: UIView {
     private enum UX {
         static let topToolbarContentHeight: CGFloat = 60
         static let topToolbarButtonStackHeight: CGFloat = 30
-        static let topToolbarStandardButtonStackWidth: CGFloat = 166
-        static let topToolbarTrailingButtonStackWidth: CGFloat = 206
-        static let compactLeadingButtonStackWidth: CGFloat = 30
-        static let compactTrailingButtonStackWidth: CGFloat = 70
+        static let topToolbarStandardButtonStackWidth: CGFloat = 126
         static let topToolbarHorizontalInset: CGFloat = 12
         static let topToolbarButtonSpacing: CGFloat = 10
         static let topToolbarAddressBarSpacing: CGFloat = 12
@@ -33,9 +30,7 @@ final class TopToolbar: UIView {
     var onSidebar: (() -> Void)?
     var onBack: (() -> Void)?
     var onForward: (() -> Void)?
-    var onBasket: (() -> Void)?
-    var onToolbox: (() -> Void)?
-    var onReload: (() -> Void)?
+    var onLibrary: (() -> Void)?
     var onDownloads: (() -> Void)?
     var onShare: (() -> Void)?
     var onNewTab: (() -> Void)?
@@ -85,24 +80,11 @@ final class TopToolbar: UIView {
         target: self,
         action: #selector(forwardTapped)
     )
-    private lazy var basketButton: ToolbarButton = {
-        let button = ToolbarButton(buttonType: .library, target: self, action: #selector(basketTapped))
-        button.setImage(UIImage(systemName: "tray.full"), for: .normal)
-        button.accessibilityLabel = NSLocalizedString("Quick actions", comment: "")
-        return button
-    }()
-    private lazy var toolboxButton: ToolbarButton = {
-        let button = ToolbarButton(buttonType: .library, target: self, action: #selector(toolboxTapped))
-        button.setImage(UIImage(systemName: "wrench.and.screwdriver"), for: .normal)
-        button.accessibilityLabel = NSLocalizedString("Toolbox", comment: "")
-        return button
-    }()
-    private lazy var reloadButton: ToolbarButton = {
-        let button = ToolbarButton(buttonType: .library, target: self, action: #selector(reloadTapped))
-        button.setImage(UIImage(systemName: "arrow.clockwise"), for: .normal)
-        button.accessibilityLabel = NSLocalizedString("Reload", comment: "")
-        return button
-    }()
+    private lazy var libraryButton = ToolbarButton(
+        buttonType: .library,
+        target: self,
+        action: #selector(libraryTapped)
+    )
     private lazy var downloadButton = ToolbarButton(
         buttonType: .download,
         target: self,
@@ -127,7 +109,7 @@ final class TopToolbar: UIView {
     
     private lazy var leadingButtons: UIStackView = {
         downloadButton.isHidden = true
-        let stack = UIStackView(arrangedSubviews: [sidebarButton, downloadButton, backButton, forwardButton, basketButton])
+        let stack = UIStackView(arrangedSubviews: [sidebarButton, downloadButton, backButton, forwardButton, libraryButton])
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .horizontal
         stack.spacing = UX.topToolbarButtonSpacing
@@ -136,7 +118,7 @@ final class TopToolbar: UIView {
     }()
     
     private lazy var trailingButtons: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [shareButton, newTabButton, tabOverviewButton, toolboxButton, reloadButton])
+        let stack = UIStackView(arrangedSubviews: [shareButton, newTabButton, tabOverviewButton])
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .horizontal
         stack.spacing = UX.topToolbarButtonSpacing
@@ -265,37 +247,23 @@ final class TopToolbar: UIView {
             guard state != .hidden else { return }
             
             let isCompact = state == .compact
-            let showsCompactActions = isCompact && interfaceIdiom == .phone
-            leadingButtons.isHidden = isCompact && !showsCompactActions
-            trailingButtons.isHidden = isCompact && !showsCompactActions
-            leadingWidthConstraint.constant = isCompact
-            ? (showsCompactActions ? UX.compactLeadingButtonStackWidth : 0)
-            : leadingWidth(
+            leadingButtons.isHidden = isCompact
+            trailingButtons.isHidden = isCompact
+            leadingWidthConstraint.constant = isCompact ? 0 : leadingWidth(
                 interfaceIdiom: interfaceIdiom,
                 sidebarButtonVisible: sidebarButtonVisible,
                 showsDownloads: downloadButton.isShowingDownloads
             )
-            trailingWidthConstraint.constant = isCompact
-            ? (showsCompactActions ? UX.compactTrailingButtonStackWidth : 0)
-            : UX.topToolbarTrailingButtonStackWidth
+            trailingWidthConstraint.constant = isCompact ? 0 : UX.topToolbarStandardButtonStackWidth
             
             sidebarButton.isHidden = interfaceIdiom != .pad || !sidebarButtonVisible
-            backButton.isHidden = isCompact
-            forwardButton.isHidden = isCompact
-            basketButton.isHidden = isCompact && !showsCompactActions
+            libraryButton.isHidden = interfaceIdiom == .pad
             downloadButton.isHidden = isCompact || !downloadButton.isShowingDownloads
-            shareButton.isHidden = isCompact
-            newTabButton.isHidden = isCompact
-            tabOverviewButton.isHidden = isCompact
-            toolboxButton.isHidden = isCompact && !showsCompactActions
-            reloadButton.isHidden = isCompact && !showsCompactActions
             
             NSLayoutConstraint.deactivate(standardAddressBarConstraints + widthLimitedStandardAddressBarConstraints + compactAddressBarConstraints)
             isUsingStandardAddressBarWidthLimit = false
-            if isCompact && !showsCompactActions {
+            if isCompact {
                 NSLayoutConstraint.activate(compactAddressBarConstraints)
-            } else if isCompact {
-                NSLayoutConstraint.activate(standardAddressBarConstraints)
             } else {
                 setStandardAddressBarWidthLimitEnabled(shouldLimitStandardAddressBarWidth)
             }
@@ -343,7 +311,7 @@ final class TopToolbar: UIView {
     
     func configureLibraryMenus(onSelect: @escaping (LibrarySection) -> Void) {
         buttonMenus.installLibraryMenus(
-            on: [sidebarButton, basketButton],
+            on: [sidebarButton, libraryButton],
             onSelect: onSelect
         )
     }
@@ -371,7 +339,10 @@ final class TopToolbar: UIView {
     }
     
     func setMenuButtonIndicatesUpdate(_ hasUpdate: Bool) {
-        basketButton.setImage(UIImage(systemName: hasUpdate ? "tray.full.fill" : "tray.full"), for: .normal)
+        libraryButton.setImage(
+            hasUpdate ? UIImage(named: "reynard.ellipsis.circle.badge") : UIImage(named: "reynard.ellipsis.circle"),
+            for: .normal
+        )
     }
     
     func syncSidebarButton(splitViewController: UISplitViewController?) {
@@ -393,9 +364,7 @@ final class TopToolbar: UIView {
     @objc private func sidebarTapped() { onSidebar?() }
     @objc private func backTapped() { onBack?() }
     @objc private func forwardTapped() { onForward?() }
-    @objc private func basketTapped() { onBasket?() }
-    @objc private func toolboxTapped() { onToolbox?() }
-    @objc private func reloadTapped() { onReload?() }
+    @objc private func libraryTapped() { onLibrary?() }
     @objc private func downloadsTapped() { onDownloads?() }
     @objc private func shareTapped() { onShare?() }
     @objc private func newTabTapped() { onNewTab?() }
@@ -421,7 +390,7 @@ final class TopToolbar: UIView {
         contentTopConstraint = contentView.topAnchor.constraint(equalTo: topAnchor)
         backgroundBottomConstraint = backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor)
         leadingWidthConstraint = leadingButtons.widthAnchor.constraint(equalToConstant: UX.topToolbarStandardButtonStackWidth)
-        trailingWidthConstraint = trailingButtons.widthAnchor.constraint(equalToConstant: UX.topToolbarTrailingButtonStackWidth)
+        trailingWidthConstraint = trailingButtons.widthAnchor.constraint(equalToConstant: UX.topToolbarStandardButtonStackWidth)
         
         NSLayoutConstraint.activate([
             backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: -UX.backgroundViewHorizontalExtension),
@@ -458,7 +427,7 @@ final class TopToolbar: UIView {
         showsDownloads: Bool
     ) -> CGFloat {
         guard interfaceIdiom == .pad else { return UX.topToolbarStandardButtonStackWidth }
-        let visibleButtonCount = (sidebarButtonVisible ? 4 : 3) + (showsDownloads ? 1 : 0)
+        let visibleButtonCount = (sidebarButtonVisible ? 3 : 2) + (showsDownloads ? 1 : 0)
         return (CGFloat(visibleButtonCount) * UX.topToolbarButtonStackHeight)
         + (CGFloat(max(visibleButtonCount - 1, 0)) * UX.topToolbarButtonSpacing)
     }

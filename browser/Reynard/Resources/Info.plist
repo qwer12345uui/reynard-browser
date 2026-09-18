@@ -17,7 +17,7 @@
 			</array>
 		</dict>
 	</array>
-		<key>UIApplicationSceneManifest</key>
+	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>

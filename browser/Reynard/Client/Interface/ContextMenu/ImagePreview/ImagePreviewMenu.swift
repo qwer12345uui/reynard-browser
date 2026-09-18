@@ -62,7 +62,7 @@ struct ImagePreviewMenu {
                     },
                     UIAction(title: NSLocalizedString("Save to Photos", comment: ""), image: UIImage(named: "reynard.square.and.arrow.down")) { _ in
                         loadImage(from: url) { image in
-                            DownloadStore.shared.saveImage(image)
+                            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
                         }
                     },
                     UIAction(title: NSLocalizedString("Copy Image", comment: ""), image: UIImage(named: "reynard.document.on.document")) { _ in

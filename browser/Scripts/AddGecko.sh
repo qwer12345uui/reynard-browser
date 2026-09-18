@@ -12,6 +12,7 @@ SIGN_IDENTITY="${EXPANDED_CODE_SIGN_IDENTITY:-}"
 if [ "${CODE_SIGNING_ALLOWED:-YES}" = "NO" ] || [ -z "${SIGN_IDENTITY}" ]; then
 	SIGN_IDENTITY=-
 fi
+
 DEFAULT_THEME_SRC="${SRCROOT}/../engine/firefox/toolkit/mozapps/extensions/default-theme"
 
 mkdir -p "${FRAMEWORKS_DIR}"

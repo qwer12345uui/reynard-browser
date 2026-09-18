@@ -74,6 +74,5 @@ typedef NS_ERROR_ENUM(ErrorDomain, ErrorCode){
 NSString *ErrorDescription(ErrorCode code);
 ErrorGroup ErrorGroupForCode(ErrorCode code);
 NSError *MakeError(ErrorCode code);
-BOOL IsTSPtraceHelperError(NSError *error);
 
 NS_ASSUME_NONNULL_END

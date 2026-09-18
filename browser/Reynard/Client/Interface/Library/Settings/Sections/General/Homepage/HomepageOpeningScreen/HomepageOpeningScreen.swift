@@ -8,16 +8,13 @@
 enum HomepageOpeningScreen: String, CaseIterable {
     case homepage
     case lastTab
-    case customURL
     
     var title: String {
         switch self {
         case .homepage:
             return NSLocalizedString("Homepage", comment: "")
         case .lastTab:
-            return "启动时打开上次页面"
-        case .customURL:
-            return "启动时打开指定网页"
+            return NSLocalizedString("Last Tab", comment: "")
         }
     }
 }

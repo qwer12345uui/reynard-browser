@@ -59,7 +59,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         browserViewController.sessionManager.setApplicationForeground(true)
         browserViewController.sessionManager.applicationDidBecomeActive()
         browserViewController.tabManager.applicationDidBecomeActive()
-        browserViewController.handleClipboardURLIfNeeded()
     }
     
     func sceneWillResignActive(_ scene: UIScene) {

@@ -12,17 +12,18 @@ extension FilePicker: UIDocumentPickerDelegate {
     nonisolated func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            presentedController = nil
-            let result = await prepareDocumentResult(from: urls)
-            finish(with: result?.promptResult)
+            dismissPicker(controller) { picker in
+                let result = await picker.prepareDocumentResult(from: urls)
+                picker.finish(with: result?.promptResult)
+            }
         }
     }
     
     nonisolated func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         Task { @MainActor [weak self] in
-            guard let self else { return }
-            presentedController = nil
-            finish(with: nil)
+            self?.dismissPicker(controller) { picker in
+                picker.finish(with: nil)
+            }
         }
     }
 }
@@ -32,10 +33,10 @@ extension FilePicker: PHPickerViewControllerDelegate {
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            picker.dismiss(animated: true)
-            presentedController = nil
-            let result = await preparePhotoLibraryResult(from: results)
-            finish(with: result?.promptResult)
+            dismissPicker(picker) { filePicker in
+                let result = await filePicker.preparePhotoLibraryResult(from: results)
+                filePicker.finish(with: result?.promptResult)
+            }
         }
     }
 }
@@ -43,10 +44,9 @@ extension FilePicker: PHPickerViewControllerDelegate {
 extension FilePicker: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     nonisolated func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         Task { @MainActor [weak self] in
-            guard let self else { return }
-            picker.dismiss(animated: true)
-            presentedController = nil
-            finish(with: nil)
+            self?.dismissPicker(picker) { filePicker in
+                filePicker.finish(with: nil)
+            }
         }
     }
     
@@ -60,10 +60,10 @@ extension FilePicker: UIImagePickerControllerDelegate, UINavigationControllerDel
         
         Task { @MainActor [weak self] in
             guard let self else { return }
-            picker.dismiss(animated: true)
-            presentedController = nil
-            let result = await prepareMediaResult(mediaURL: mediaURL, imageURL: imageURL, imageData: imageData)
-            finish(with: result?.promptResult)
+            dismissPicker(picker) { filePicker in
+                let result = await filePicker.prepareMediaResult(mediaURL: mediaURL, imageURL: imageURL, imageData: imageData)
+                filePicker.finish(with: result?.promptResult)
+            }
         }
     }
 }
@@ -72,6 +72,7 @@ extension FilePicker: UIAdaptivePresentationControllerDelegate {
     nonisolated func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         Task { @MainActor [weak self] in
             guard let self else { return }
+            guard !isCompletingPicker else { return }
             presentedController = nil
             finish(with: nil)
         }

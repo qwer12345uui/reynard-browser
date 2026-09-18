@@ -280,7 +280,7 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
         guard let presentation = presentation(for: controller) else {
             return
         }
-        if !sessionManager.isForeground && !Prefs.PlaybackSettings.allowsBackgroundPlayback {
+        if !sessionManager.isForeground {
             presentation.session.mediaSession.pause()
         }
         finishPresentation(presentation)
@@ -336,9 +336,6 @@ extension PictureInPictureCoordinator: SessionManagerApplicationStateObserver {
     }
     
     func sessionManagerWillResignActive(_ sessionManager: SessionManager) {
-        guard Prefs.PlaybackSettings.startsPictureInPictureOnBackground else {
-            return
-        }
         updatePresentation()
         guard case let .prepared(presentation) = state,
               presentation.controller.isPictureInPicturePossible else {
