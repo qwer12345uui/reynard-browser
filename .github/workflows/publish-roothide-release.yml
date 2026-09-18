@@ -2,18 +2,24 @@ name: Publish RootHide IPA release
 
 # Workflow artifacts can only be downloaded by a signed-in GitHub user, which
 # makes them awkward to hand out. Publishing the verified IPA as a release
-# asset gives a stable download URL that needs no login, and this workflow
-# runs whenever the packaging workflow finishes so the published build always
-# tracks the newest successful one.
+# asset gives a stable download URL that needs no login.
+#
+# Three triggers on purpose:
+#   workflow_run      - fires right after every successful packaging build
+#   push (this file)  - lets a fix be retried without rebuilding the app
+#   workflow_dispatch - republish any past build by run id
 on:
   workflow_run:
     workflows: ["Build RootHide IPA"]
     types: [completed]
+  push:
+    paths:
+      - ".github/workflows/publish-roothide-release.yml"
   workflow_dispatch:
     inputs:
       run_id:
-        description: "Build RootHide IPA run to publish"
-        required: true
+        description: "Build RootHide IPA run to publish (defaults to the newest successful one)"
+        required: false
 
 permissions:
   actions: read
@@ -40,16 +46,20 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "$RUN_ID" ]; then
-            echo "::error title=No source run::Pass a run id when dispatching manually."
+            # No triggering run: fall back to the newest successful package build.
+            RUN_ID="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/build-trollstore.yml/runs?status=success&per_page=10" \
+              --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id // empty')"
+          fi
+          if [ -z "$RUN_ID" ]; then
+            echo "::error title=No source run::No successful Build RootHide IPA run was found."
             exit 1
           fi
-          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          if [ -n "$HEAD_SHA" ]; then
-            echo "sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
-          else
-            sha="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" --jq .head_sha)"
-            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          if [ -z "$HEAD_SHA" ]; then
+            HEAD_SHA="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" --jq .head_sha)"
           fi
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "Publishing artifacts of run $RUN_ID (${HEAD_SHA:0:7})"
 
       - name: Download the verified IPA artifact
         env:
@@ -86,10 +96,24 @@ jobs:
           # Recreate the tag in place so the download URL stays stable across
           # builds instead of accumulating one release per commit.
           gh release delete "$tag" --yes --cleanup-tag >/dev/null 2>&1 || true
+          set +e
           gh release create "$tag" \
             out/Reynard-Jailbroken.ipa \
             out/Reynard-Jailbroken.ipa.sha256 \
             --target "${{ steps.source.outputs.sha }}" \
             --title "Reynard RootHide IPA ($short)" \
-            --notes "RootHide jailbreak build of ${{ steps.source.outputs.sha }}, unsigned. Install with TrollStore or a RootHide capable package manager. Built by run ${{ steps.source.outputs.run_id }}."
+            --notes "RootHide jailbreak build of ${{ steps.source.outputs.sha }}, unsigned. Install with TrollStore or a RootHide capable package manager. Built by run ${{ steps.source.outputs.run_id }}." \
+            > release.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            # The run log needs admin rights to read, so surface the failure
+            # as a check annotation instead.
+            msg="$(head -n 8 release.log | cut -c1-300)"
+            msg="${msg//'%'/'%25'}"
+            msg="${msg//$'\n'/'%0A'}"
+            msg="${msg//$'\r'/'%0D'}"
+            echo "::error title=Release publish failed (exit $status)::$msg"
+            exit "$status"
+          fi
+          cat release.log
           echo "Published $tag for $short"
