@@ -25,11 +25,19 @@ UPSTREAM_REF = "upstream/main"
 SEARCH_PATH = "browser"
 
 # Files this fork owns outright. Resetting them would drop the RootHide
-# runtime policy, the helper process and the fork's settings file.
+# runtime policy, the helper process, the fork's settings file, or a
+# declaration that fork code still references but upstream removed.
 FORK_OWNED = (
     "browser/Helper/Helper.swift",
     "browser/Reynard/main.swift",
     "browser/Reynard/Client/Preferences/BrowserPreferences.swift",
+    # These three still declare symbols the fork's sources call:
+    # the preference change notifications posted by BrowserPreferences,
+    # isHelperFailure(error:) used by JITController, and
+    # IsTSPtraceHelperError used by JITEnabler.m.
+    "browser/Reynard/Client/Extensions/Notifications.swift",
+    "browser/Reynard/JIT/JITEnabler.h",
+    "browser/Reynard/JIT/JITErrors.h",
 )
 
 # Markers that identify a fork-side change as RootHide work worth keeping.
