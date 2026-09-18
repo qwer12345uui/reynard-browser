@@ -4,9 +4,9 @@ name: Sync upstream into RootHide fork
 # RootHide-specific changes that cannot survive a plain merge are restored and
 # re-applied by tools/ci/sync_roothide.py.
 #
-# Pushing the result to main changes browser/** and patches/**, which triggers
-# "Build RootHide IPA" automatically, so the engine and app are rebuilt once
-# this job finishes.
+# Pushing the result to main changes browser/** and patches/**, so the job then
+# requests "Build RootHide IPA" and the engine and app are rebuilt once this
+# job finishes.
 
 on:
   workflow_dispatch:
@@ -22,6 +22,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: reynard-sync-upstream
@@ -48,3 +49,11 @@ jobs:
 
       - name: Push to main
         run: git push origin HEAD:main
+
+      # A commit pushed with GITHUB_TOKEN does not start other workflows, so
+      # the package build is requested explicitly. workflow_dispatch is not
+      # subject to that restriction.
+      - name: Start the RootHide IPA build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run build-trollstore.yml --ref main
