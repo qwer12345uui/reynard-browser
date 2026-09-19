@@ -33,6 +33,69 @@ if [ -f "$REPAIR_SCRIPT" ]; then
 	python3 "$REPAIR_SCRIPT"
 fi
 
+# The registered defaults are one Swift dictionary literal. Repeating a key
+# inside it is not a compile error, it is a runtime trap: the app dies with
+# EXC_BREAKPOINT while BrowserPreferences.shared is built, i.e. it crashes on
+# launch on every device. Upstream merges and the CI repair script can both
+# leave such a repeat behind, so drop the repeats here and then verify. A
+# launch crash is far more expensive to diagnose than a failed job.
+python3 - <<'PY'
+import collections
+import re
+import sys
+
+path = "browser/Reynard/Client/Preferences/BrowserPreferences.swift"
+try:
+    text = open(path, encoding="utf-8").read()
+except OSError as error:
+    sys.exit("BrowserPreferences: cannot read %s (%s)" % (path, error))
+
+marker = "UserDefaults.standard.register(defaults: [\n"
+if text.count(marker) != 1:
+    sys.exit("BrowserPreferences: expected exactly one register(defaults:) block")
+head, tail = text.split(marker, 1)
+end = tail.find("\n        ])")
+if end == -1:
+    sys.exit("BrowserPreferences: could not find the end of register(defaults:)")
+body, rest = tail[:end], tail[end:]
+
+entry = re.compile(
+    r'^\s*key\("(?P<setting>[^"]+)",\s*"(?P<name>[^"]+)"\)\s*:\s*(?P<value>.*?),?\s*$'
+)
+seen = set()
+dropped = []
+lines = []
+for line in body.split("\n"):
+    match = entry.match(line)
+    if not match:
+        lines.append(line)
+        continue
+    identity = (match.group("setting"), match.group("name"))
+    if identity in seen:
+        dropped.append("%s.%s" % identity)
+        continue
+    seen.add(identity)
+    lines.append(
+        '            key("%s", "%s"): %s,'
+        % (match.group("setting"), match.group("name"), match.group("value"))
+    )
+
+if dropped:
+    open(path, "w", encoding="utf-8").write(head + marker + "\n".join(lines) + rest)
+    print("BrowserPreferences: dropped duplicate registrations: %s" % ", ".join(dropped))
+    text = open(path, encoding="utf-8").read()
+
+start = text.find(marker)
+keys = re.findall(r'key\("([^"]+)",\s*"([^"]+)"\)', text[start:text.find("\n        ])", start)])
+duplicates = sorted(name for name, count in collections.Counter(keys).items() if count > 1)
+if duplicates:
+    sys.exit(
+        "BrowserPreferences: duplicate registered defaults would crash on launch: %s"
+        % ", ".join(duplicates)
+    )
+print("BrowserPreferences: %d registered defaults, no duplicates" % len(keys))
+PY
+
 rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
