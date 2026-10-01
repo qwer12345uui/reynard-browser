@@ -34,9 +34,29 @@ private func configureRootHideRuntimePolicy() {
         // even though sockets connect normally. Let real connection
         // attempts decide reachability instead of letting a link-status
         // change flip Gecko into offline mode and fail every request.
-        "network.manage-offline-status": false
+        "network.manage-offline-status": false,
+        // CPU and memory budget for a jailed handset. A phone has far less
+        // headroom than a desktop, and every injected helper process adds to
+        // it, so trim the work Gecko does speculatively:
+        //   * no speculative connections or DNS prefetch for navigations that
+        //     may never happen, which keeps idle sockets and their buffers
+        //     from accumulating;
+        //   * throttle timers on pages the user is not looking at, so an
+        //     abandoned tab cannot keep the CPU awake in the background;
+        //   * decode images when they are drawn rather than when they finish
+        //     downloading, so a picture-heavy page does not hold every
+        //     decoded bitmap in memory at once;
+        //   * cap the HTTP disk cache, since a multi-hundred-megabyte cache on
+        //     a device that is routinely near full only adds I/O and cleanup.
+        "network.http.speculative-parallel-limit": 0,
+        "network.dns.disablePrefetch": true,
+        "network.prefetch-next": false,
+        "dom.min_background_timeout_value": 1000,
+        "dom.timeout.background_throttling_max_budget": 15000,
+        "image.mem.decodeondraw": true,
+        "browser.cache.disk.capacity": 51200
     ])
-    NSLog("RootHide injection detected; disabled Gecko helper forkserver, prelaunch, and idle process retention.")
+    NSLog("RootHide injection detected; disabled Gecko helper forkserver, prelaunch, speculative networking, and idle process retention.")
 }
 
 @available(iOS, introduced: 13.0, obsoleted: 14.0)
