@@ -47,7 +47,12 @@ FORK_OWNED = (
 # Markers that identify a fork-side change as RootHide work worth keeping.
 GUARD = (
     "roothide",
-    "jailbreak",
+    # "jailbreak" is not a substring of "jailbroken" (break vs broken), so the
+    # shorter stem is what actually matches both spellings used across the
+    # fork's comments. Matching on "jailbreak" alone silently let the add-on
+    # sideloading change be reset on every sync.
+    "jailbro",
+    "sideload",
     "injection",
     "libhooker",
     "trimmemory",
