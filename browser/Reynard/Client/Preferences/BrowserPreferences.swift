@@ -157,9 +157,10 @@ final class BrowserPreferences {
             key("BrowsingSettings", "showImagePreviews"): true,
             key("BrowsingSettings", "openLinksInExternalApps"): true,
             key("BrowsingSettings", "defaultPageZoomLevel"): PageZoomLevels.defaultLevel,
-            key("BrowsingSettings", "useReaderAutomatically"): false,
-            key("BrowsingSettings", "readerViewFontSizeStep"): 3,
-            key("BrowsingSettings", "readerViewFontType"): ReaderViewFontType.serif.rawValue,
+            key("BrowsingSettings", "hidesChromeOnScroll"): true,
+            key("BrowsingSettings", "historyGestureMode"): HistoryGestureMode.edge.rawValue,
+            key("BrowsingSettings", "pullToRefreshEnabled"): true,
+            key("BrowsingSettings", "twoFingerLongPressDismissesKeyboard"): true,
             
             // New Tab
             key("NewTabSettings", "newTabDisplayOption"): NewTabDisplayOption.homepage.rawValue,
@@ -248,6 +249,7 @@ key("CompatibilitySettings", "customPlatform"): "",
 key("CompatibilitySettings", "customAppVersion"): "",
 key("CompatibilitySettings", "customOscpu"): "",
 key("CompatibilitySettings", "customBuildID"): "",
+key("BrowsingSettings", "useReaderAutomatically"): false,
         ])
     }
     
@@ -619,26 +621,9 @@ key("CompatibilitySettings", "customBuildID"): "",
                 prefs.set(newValue, forSetting: "BrowsingSettings", key: "defaultPageZoomLevel")
             }
         }
-        
-        static var useReaderAutomatically: Bool {
-            get {
-                return prefs.bool(forSetting: "BrowsingSettings", key: "useReaderAutomatically")
-            }
-            set {
-                prefs.set(newValue, forSetting: "BrowsingSettings", key: "useReaderAutomatically")
-            }
-        }
-        
-        static var readerViewFontSizeStep: Int {
-            get {
-                return min(
-                    ReaderViewAppearance.maximumFontSizeStep,
-                    max(
-                        ReaderViewAppearance.minimumFontSizeStep,
-                        prefs.integer(forSetting: "BrowsingSettings", key: "readerViewFontSizeStep")
-                    )
-                )
-            }
+
+        static var hidesChromeOnScroll: Bool {
+            get { prefs.bool(forSetting: "BrowsingSettings", key: "hidesChromeOnScroll") }
             set {
                 prefs.set(newValue, forSetting: "BrowsingSettings", key: "hidesChromeOnScroll")
                 NotificationCenter.default.post(name: .browsingPreferencesDidChange, object: nil)
@@ -725,6 +710,15 @@ key("CompatibilitySettings", "customBuildID"): "",
             }
             set {
                 prefs.set(newValue.rawValue, forSetting: "BrowsingSettings", key: "readerViewFontType")
+            }
+        }
+
+        static var useReaderAutomatically: Bool {
+            get {
+                return prefs.bool(forSetting: "BrowsingSettings", key: "useReaderAutomatically")
+            }
+            set {
+                prefs.set(newValue, forSetting: "BrowsingSettings", key: "useReaderAutomatically")
             }
         }
 }

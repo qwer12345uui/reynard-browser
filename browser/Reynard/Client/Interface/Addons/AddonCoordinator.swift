@@ -79,7 +79,7 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
     }
     
     func handleExternalResponse(_ response: ExternalResponseInfo) -> Bool {
-        guard shouldInterceptAMOInstall(response) else {
+        guard shouldInterceptAddonInstall(response) else {
             return false
         }
         
@@ -451,14 +451,21 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         return pageActionsBySession[key]?[addon.id] ?? addon.pageAction
     }
     
-    private func shouldInterceptAMOInstall(_ response: ExternalResponseInfo) -> Bool {
-        guard let url = URL(string: response.url),
-              url.host?.lowercased() == "addons.mozilla.org" else {
+    // Accept add-on packages from any origin, not just addons.mozilla.org.
+    // Sideloading a local or self-hosted .xpi is often the only way to install
+    // an extension on a jailbroken device, so restricting the host would block
+    // legitimate packages. The add-on still goes through the normal install
+    // and permission prompt flow.
+    private func shouldInterceptAddonInstall(_ response: ExternalResponseInfo) -> Bool {
+        guard let url = URL(string: response.url) else {
             return false
         }
-        
-        let path = url.path.lowercased()
-        return path.contains("/firefox/downloads/file/") && path.hasSuffix(".xpi")
+
+        if url.isFileURL {
+            return url.pathExtension.lowercased() == "xpi"
+        }
+
+        return url.path.lowercased().hasSuffix(".xpi")
     }
     
     // MARK: - Presentation

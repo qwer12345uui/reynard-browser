@@ -56,27 +56,31 @@ fi
 trap restore_mozconfig EXIT HUP INT TERM
 
 {
-	echo "ac_add_options --enable-application=mobile/ios"
-	echo "ac_add_options --target=$TARGET"
-	echo "ac_add_options --enable-ios-target=13.0"
-	echo "ac_add_options --enable-optimize"
-	echo "ac_add_options --enable-release"
-	echo "ac_add_options --enable-rust-simd"
-	echo "ac_add_options --enable-lto"
-	echo "ac_add_options --disable-debug"
-	echo "ac_add_options --disable-tests"
-	echo "ac_add_options --enable-bootstrap"
-	if [ "$USE_SCCACHE" = true ]; then
-		echo "mk_add_options 'export RUSTC_WRAPPER=$SCCACHE_BIN'"
-		echo "ac_add_options --with-ccache=$SCCACHE_BIN"
-	fi
-	if [ "$DISABLE_JEMALLOC" = true ]; then
-		echo "ac_add_options --disable-jemalloc"
-	fi
-	if [ "$AUTO_CLOBBER" = true ]; then
-		echo "mk_add_options AUTOCLOBBER=1"
-	fi
-} > "$FIREFOX_DIR/.mozconfig"
+    echo "ac_add_options --enable-application=mobile/ios"
+    echo "ac_add_options --target=$TARGET"
+    echo "ac_add_options --enable-ios-target=13.0"
+    echo "ac_add_options --enable-webrtc"
+    echo "ac_add_options --enable-optimize"
+    echo "ac_add_options --enable-release"
+    echo "ac_add_options --enable-rust-simd"
+    echo "ac_add_options --enable-lto"
+    echo "ac_add_options --disable-debug"
+    echo "ac_add_options --disable-tests"
+    # The hosted macOS toolchain does not provide the WASM sandbox libraries
+    # required by Firefox's desktop configuration.
+    echo "ac_add_options --without-wasm-sandboxed-libraries"
+    echo "ac_add_options --enable-bootstrap"
+    if [ "$USE_SCCACHE" = true ]; then
+        echo "mk_add_options 'export RUSTC_WRAPPER=$SCCACHE_BIN'"
+        echo "ac_add_options --with-ccache=$SCCACHE_BIN"
+    fi
+    if [ "$DISABLE_JEMALLOC" = true ]; then
+        echo "ac_add_options --disable-jemalloc"
+    fi
+    if [ "$AUTO_CLOBBER" = true ]; then
+        echo "mk_add_options AUTOCLOBBER=1"
+    fi
+} > "$MOZCONFIG_PATH"
 
 if ! rustup target list | grep -q "^$TARGET (installed)"; then
     rustup target add "$TARGET"

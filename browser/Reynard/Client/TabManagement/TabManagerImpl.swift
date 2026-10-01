@@ -1215,6 +1215,20 @@ final class TabManagerImplementation: NSObject, TabManager {
         sessionManager.invalidateNavigationThumbnails()
     }
     
+    // Drop cached images that can be regenerated on demand when the system is
+    // under memory pressure. Tabs, browsing history, and page state are left
+    // untouched, so nothing the user can lose is discarded here.
+    func trimMemory() {
+        sessionManager.invalidateNavigationThumbnails()
+        
+        for mode in [TabMode.regular, TabMode.private] {
+            for tab in tabs(for: mode) {
+                tab.thumbnail = nil
+            }
+        }
+    }
+    
+    
     func setMuted(_ muted: Bool, for tabID: UUID) {
         guard let location = tabLocation(for: tabID) else {
             return
