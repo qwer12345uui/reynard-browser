@@ -55,13 +55,29 @@ jobs:
           # never actually be compiled.
 
       - name: Reuse the validated Gecko patch set
-        # The reusable engine product was compiled from the patch tree of
-        # 4577a44. The upstream sync replaced four patches afterwards, which
-        # changes the product key and forces a six hour rebuild. Pinning the
-        # patch tree keeps source-only changes cheap. Remove this step when the
-        # engine genuinely has to be rebuilt from newer patches.
+        # A full Gecko build costs hours, so the engine product is only rebuilt
+        # when the engine version itself moves. ENGINE_PIN_REF records the
+        # patch tree the cached product was compiled from: as long as
+        # engine/release.txt still matches it, patch churn coming from an
+        # upstream sync is ignored and the cached engine is reused.
+        #
+        # When upstream bumps the release the pin is skipped on purpose. The
+        # new source needs its own patches, so pinning would apply a stale
+        # patch tree to a newer tree and fail. The compiler cache below covers
+        # most of that rebuild instead. Bump ENGINE_PIN_REF to the commit that
+        # produced the newest product once a new engine has been built.
+        env:
+          ENGINE_PIN_REF: 4577a44
         run: |
-          git checkout 4577a44 -- patches/
+          set -euo pipefail
+          pinned_release="$(git show "$ENGINE_PIN_REF:engine/release.txt" 2>/dev/null || true)"
+          current_release="$(tr -d '\000\r' < engine/release.txt | tr -d '[:space:]')"
+          if [ -n "$pinned_release" ] && [ "$pinned_release" = "$current_release" ]; then
+            git checkout "$ENGINE_PIN_REF" -- patches/
+            echo "Pinned patches/ to $ENGINE_PIN_REF (engine $current_release); reusing the cached engine product."
+          else
+            echo "Engine version moved: '$pinned_release' -> '$current_release'. Building from the current patch set."
+          fi
           git --no-pager diff --stat HEAD -- patches | tail -n 6
 
       - name: Compute Gecko product key
@@ -110,6 +126,22 @@ jobs:
             echo "found=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # Layer 2: compiler cache. An engine release bump invalidates the engine
+      # product, but the large majority of translation units are unchanged
+      # between two Firefox releases, so sccache turns the "new release" build
+      # into a mostly incremental one. The key deliberately excludes patches/:
+      # a patch edit changes a handful of objects and must not throw away the
+      # whole cache, and restore-keys reach back across releases.
+      - name: Restore Gecko compiler cache
+        if: steps.gecko-product.outputs.found != 'true'
+        id: compiler-cache
+        uses: actions/cache/restore@v4
+        with:
+          key: reynard-sccache-${{ runner.os }}-${{ runner.arch }}-ios-arm64-roothide-no-jemalloc-v2-${{ hashFiles('engine/release.txt') }}
+          restore-keys: |
+            reynard-sccache-${{ runner.os }}-${{ runner.arch }}-ios-arm64-roothide-no-jemalloc-v2-
+          path: ${{ runner.temp }}/reynard-sccache
+
       - name: Verify Xcode and iOS SDK
         if: steps.gecko-product.outputs.found != 'true'
         run: |
@@ -119,8 +151,7 @@ jobs:
       - name: Install Gecko build dependencies
         if: steps.gecko-product.outputs.found != 'true'
         run: |
-          brew update
-          brew install ldid cbindgen
+          brew install ldid cbindgen sccache
           rustup target add aarch64-apple-ios
 
       - name: Synchronize Gecko source
@@ -185,10 +216,27 @@ jobs:
           export CC="$apple_clang -B$toolchain_dir"
           export CXX="$apple_clangxx -B$toolchain_dir"
           export SDKROOT="$macos_sdk"
+          # Compiler cache. sccache wraps both clang and rustc, so objects that
+          # are byte-identical to the previous engine release come straight
+          # from disk instead of burning CPU for hours.
+          SCCACHE_BIN="$(command -v sccache || true)"
+          BUILD_ARGS="--disable-jemalloc"
+          if [ -n "$SCCACHE_BIN" ]; then
+            export SCCACHE_DIR="$RUNNER_TEMP/reynard-sccache"
+            export SCCACHE_CACHE_SIZE=8G
+            export SCCACHE_PATH="$SCCACHE_BIN"
+            BUILD_ARGS="$BUILD_ARGS --use-sccache"
+            echo "Compiler cache: $SCCACHE_BIN -> $SCCACHE_DIR"
+          else
+            echo "::warning title=sccache::sccache is unavailable; building without a compiler cache."
+          fi
           # RootHide injection commonly uses libhooker. Avoid jemalloc so its
           # allocator hooks do not cause helper-process CPU spikes or stalls.
-          sh ./tools/development/build-gecko.sh --disable-jemalloc 2>&1 | tee gecko-build.log
+          sh ./tools/development/build-gecko.sh $BUILD_ARGS 2>&1 | tee gecko-build.log
           status=${PIPESTATUS[0]}
+          if [ -n "$SCCACHE_BIN" ]; then
+            "$SCCACHE_BIN" --show-stats || true
+          fi
           if [ "$status" -ne 0 ]; then
             failed_line="$(grep -n -m1 'failed to run custom build command' gecko-build.log | cut -d: -f1)"
             if [ -n "$failed_line" ]; then
@@ -205,6 +253,17 @@ jobs:
             echo "::error file=.github/workflows/build-trollstore.yml,title=Gecko compiler diagnostics::$message"
             exit "$status"
           fi
+
+      # Saved even when the build fails: a partial engine build still produced
+      # object files worth keeping, and the next attempt then resumes rather
+      # than starting from nothing.
+      - name: Save Gecko compiler cache
+        if: ${{ !cancelled() && steps.gecko-product.outputs.found != 'true' && steps.compiler-cache.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          key: reynard-sccache-${{ runner.os }}-${{ runner.arch }}-ios-arm64-roothide-no-jemalloc-v2-${{ hashFiles('engine/release.txt') }}
+          path: ${{ runner.temp }}/reynard-sccache
 
       - name: Upload Gecko diagnostics on failure
         if: failure()
@@ -314,6 +373,14 @@ jobs:
           else:
               print('::warning title=Unsigned build patch::Embed Process Extensions phase not found; project left unchanged.')
           PY
+
+      # Upstream's build-app.sh does not carry the fork's preference repair,
+      # and a merged BrowserPreferences can still hold duplicate registrations
+      # or a structurally damaged section after an upstream sync. Running the
+      # repair here keeps the iOS 15 launch-crash fix in the pipeline without
+      # pinning build-app.sh to the fork's version. The script is idempotent.
+      - name: Repair merged browser sources
+        run: python3 tools/ci/repair_preferences.py
 
       - name: Build unsigned Reynard app
         shell: bash
