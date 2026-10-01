@@ -191,14 +191,6 @@ final class TabOverviewCard: UICollectionViewCell {
         setSwipeOffset(0, progress: 0)
     }
     
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        webpagePreviewShadowView.layer.shadowPath = UIBezierPath(
-            roundedRect: webpagePreviewShadowView.bounds,
-            cornerRadius: UX.webpagePreviewCornerRadius
-        ).cgPath
-    }
-    
     // MARK: - Content
     
     func configure(

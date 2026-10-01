@@ -100,6 +100,7 @@
 		018C67B02F2F289E001F0BBB /* Exceptions for "Reynard" folder in "Reynard" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				JIT/RPPairing/libidevice_ffi.a,
 				JIT/Unsandboxed/ptrace_jit.c,
 				Resources/Info.plist,
 			);
@@ -373,6 +374,7 @@
 				pl,
 				"zh-Hant",
 				de,
+				vi,
 			);
 			mainGroup = 018C67952F2F289C001F0BBB;
 			minimizedProjectReferenceProxies = 1;
@@ -543,6 +545,7 @@
 					"-lmozavutil",
 					"-lgkcodecs",
 					"-lmozinference",
+					"-Wl,-hidden-lidevice_ffi",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.minh-ton.Reynard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -612,6 +615,7 @@
 					"-lmozavutil",
 					"-lgkcodecs",
 					"-lmozinference",
+					"-Wl,-hidden-lidevice_ffi",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.minh-ton.Reynard";
 				PRODUCT_NAME = "$(TARGET_NAME)";

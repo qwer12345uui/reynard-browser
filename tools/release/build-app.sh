@@ -161,5 +161,21 @@ else
 		-sdk iphoneos \
 		-arch arm64 \
 		-configuration Release \
-		-xcconfig "$BUILD_XCCONFIG_PATH"
+		-xcconfig "$BUILD_XCCONFIG_PATH" \
+		"$@"
+}
+
+if [ "$NO_SIGNING" = true ]; then
+	run_xcodebuild \
+		CODE_SIGNING_ALLOWED=NO \
+		CODE_SIGNING_REQUIRED=NO \
+		CODE_SIGN_IDENTITY="" \
+		PROVISIONING_PROFILE_SPECIFIER=""
+
+	# Strip bitcode because the archive bypasses signing: https://developer.apple.com/documentation/Xcode-Release-Notes/xcode-13_3_1-release-notes?changes=_1
+	SWIFT_CONCURRENCY_PATH="$DIST_DIR/Reynard.xcarchive/Products/Applications/Reynard.app/Frameworks/libswift_Concurrency.dylib"
+	xcrun bitcode_strip "$SWIFT_CONCURRENCY_PATH" -r -o "$SWIFT_CONCURRENCY_PATH"
+	/usr/bin/codesign --force --sign - --verbose "$SWIFT_CONCURRENCY_PATH"
+else
+	run_xcodebuild
 fi

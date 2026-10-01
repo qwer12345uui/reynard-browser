@@ -131,6 +131,12 @@ public class GeckoSession {
         set { promptHandler.setDelegate(newValue) }
     }
     
+    lazy var printHandler = newPrintHandler(self)
+    public var printDelegate: PrintDelegate? {
+        get { printHandler.delegate(as: PrintDelegate.self) }
+        set { printHandler.setDelegate(newValue) }
+    }
+    
     lazy var selectionActionHandler = newSelectionActionHandler(self)
     public var selectionActionDelegate: SelectionActionDelegate? {
         get { selectionActionHandler.delegate(as: SelectionActionDelegate.self) }
@@ -169,6 +175,7 @@ public class GeckoSession {
         progressHandler,
         scrollHandler,
         promptHandler,
+        printHandler,
         selectionActionHandler,
         mediaSessionHandler,
         autofillHandler,
@@ -265,6 +272,7 @@ public class GeckoSession {
         progressDelegate = nil
         scrollDelegate = nil
         promptDelegate = nil
+        printDelegate = nil
         selectionActionDelegate = nil
         mediaSessionDelegate?.onDeactivated(session: self)
         mediaSessionDelegate = nil
@@ -394,6 +402,67 @@ public class GeckoSession {
             ])
     }
     
+    // MARK: - Printing
+    
+    @MainActor
+    public func printToPDF(browsingContextId: Int64? = nil) async throws -> URL {
+        guard let window else {
+            throw GeckoHandlerError("session window is unavailable")
+        }
+        
+        if browsingContextId == nil,
+           let isPDFDocument = try? await dispatcher.query(type: "GeckoView:IsPdfJs"),
+           PayloadValue.bool(isPDFDocument) == true {
+            let response = try await dispatcher.query(type: "GeckoView:PDFSave")
+            let payload: [String: Any?]
+            
+            if let values = response as? [String: Any] {
+                payload = values.mapValues { $0 }
+            } else if let values = response as? [String: Any?] {
+                payload = values
+            } else {
+                throw GeckoHandlerError("Invalid PDF document response")
+            }
+            
+            guard let sourceURL = PayloadValue.string(payload["url"]) else {
+                throw GeckoHandlerError("PDF document source is unavailable")
+            }
+            
+            return try await savePDFDocument(from: sourceURL, using: window)
+        }
+        
+        if browsingContextId == nil {
+            setFocused(true)
+        }
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let browsingContextId = browsingContextId.map { NSNumber(value: $0) }
+            window.printToPDF(browsingContextId: browsingContextId) { fileURL, error in
+                if let fileURL {
+                    continuation.resume(returning: fileURL)
+                } else {
+                    continuation.resume(throwing: error ?? GeckoHandlerError("PDF generation failed"))
+                }
+            }
+        }
+    }
+    
+    @MainActor
+    private func savePDFDocument(
+        from sourceURL: String,
+        using window: GeckoViewWindow
+    ) async throws -> URL {
+        return try await withCheckedThrowingContinuation { continuation in
+            window.savePDFDocument(sourceURL: sourceURL) { fileURL, error in
+                if let fileURL {
+                    continuation.resume(returning: fileURL)
+                } else {
+                    continuation.resume(throwing: error ?? GeckoHandlerError("PDF document save failed"))
+                }
+            }
+        }
+    }
+    
     // MARK: - State Updates
     
     public func setActive(_ active: Bool) {
@@ -488,8 +557,9 @@ public class GeckoSession {
     }
     
     // MARK: - Toolbar
-    public func setDynamicToolbarMaxHeight(_ height: CGFloat) {
-        window?.setDynamicToolbarMaxHeight(max(0, height))
+    public func setDynamicToolbarMaxHeight(_ height: CGFloat, minHeight: CGFloat) {
+        let maxHeight = max(0, height)
+        window?.setDynamicToolbarMaxHeight(maxHeight, minHeight: min(max(0, minHeight), maxHeight))
     }
     
     public func setContentOffsets(top: CGFloat, bottom: CGFloat, topInset: CGFloat, bottomInset: CGFloat) {

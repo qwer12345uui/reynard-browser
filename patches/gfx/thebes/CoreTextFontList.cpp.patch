@@ -1,5 +1,5 @@
 diff --git a/gfx/thebes/CoreTextFontList.cpp b/gfx/thebes/CoreTextFontList.cpp
-index b6696c70c4b9..2398f93e44bd 100644
+index b6696c70c4b9..fa5d2bb2288b 100644
 --- a/gfx/thebes/CoreTextFontList.cpp
 +++ b/gfx/thebes/CoreTextFontList.cpp
 @@ -351,6 +351,12 @@ nsresult CTFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
@@ -118,7 +118,7 @@ index b6696c70c4b9..2398f93e44bd 100644
  
        // Set the appropriate style, assuming it may not have a variation range.
        CTFontSymbolicTraits traits = CTFontGetSymbolicTraits(aFont);
-@@ -1010,17 +1071,18 @@ void CTFontFamily::FindStyleVariationsLocked(FontInfoData* aFontInfoData) {
+@@ -1010,17 +1071,20 @@ void CTFontFamily::FindStyleVariationsLocked(FontInfoData* aFontInfoData) {
        AddFontEntryLocked(fe);
      };
  
@@ -130,7 +130,9 @@ index b6696c70c4b9..2398f93e44bd 100644
 -        mForSystemFont, 0.0, nullptr, kCTFontTraitItalic, kCTFontTraitItalic));
 -    if (italicFont != mForSystemFont) {
 -      addToFamily(italicFont);
-+    if (mDescriptorProvenance == UnscaledFont::DescriptorProvenance::SystemUI) {
++    if (mDescriptorProvenance == UnscaledFont::DescriptorProvenance::SystemUI ||
++        mDescriptorProvenance ==
++            UnscaledFont::DescriptorProvenance::SystemUISerif) {
 +      AutoCFTypeRef<CTFontRef> italicFont(CTFontCreateCopyWithSymbolicTraits(
 +          mSeedFont, 0.0, nullptr, kCTFontTraitItalic, kCTFontTraitItalic));
 +      if (italicFont != mSeedFont) {
@@ -145,7 +147,7 @@ index b6696c70c4b9..2398f93e44bd 100644
  
      SetHasStyles(true);
  
-@@ -1473,6 +1535,22 @@ gfxFontEntry* CoreTextFontList::PlatformGlobalFontFallback(
+@@ -1473,6 +1537,22 @@ gfxFontEntry* CoreTextFontList::PlatformGlobalFontFallback(
            }
          }
        }
@@ -168,7 +170,7 @@ index b6696c70c4b9..2398f93e44bd 100644
      }
    }
  
-@@ -1967,7 +2045,9 @@ void CoreTextFontList::InitSystemFontNames() {
+@@ -1967,7 +2047,9 @@ void CoreTextFontList::InitSystemFontNames() {
    // shared fontlist to manage "normal" fonts, because the hidden system fonts
    // may be excluded from the font list altogether. This family will be
    // populated based on the given NSFont.
@@ -179,7 +181,7 @@ index b6696c70c4b9..2398f93e44bd 100644
    if (fam) {
      nsAutoCString key;
      GenerateFontListKey(mSystemFontFamilyName, key);
-@@ -1978,14 +2058,10 @@ void CoreTextFontList::InitSystemFontNames() {
+@@ -1978,14 +2060,10 @@ void CoreTextFontList::InitSystemFontNames() {
  FontFamily CoreTextFontList::GetDefaultFontForPlatform(
      FontVisibilityProvider* aFontVisibilityProvider, const gfxFontStyle* aStyle,
      nsAtom* aLanguage) {

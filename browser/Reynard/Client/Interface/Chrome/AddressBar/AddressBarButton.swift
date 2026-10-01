@@ -13,11 +13,14 @@ final class AddressBarButton: UIButton {
         static let addressBarButtonSymbolPointSize: CGFloat = 14
     }
     
+    var horizontalTouchTargetExpansion: CGFloat?
+    
     private var isMenuVisible = false
     
     private var pendingMenuAfterDismissal: UIMenu?
     private var pendingMenuDismissalHandlers: [() -> Void] = []
     private var legacyMenuDelegate: LegacyContextMenuDelegate?
+    private var menuProvider: (() -> UIMenu?)?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -76,6 +79,14 @@ final class AddressBarButton: UIButton {
         }
     }
     
+    func setMenuProvider(_ provider: @escaping () -> UIMenu?) {
+        menuProvider = provider
+        legacyMenuDelegate?.menuProvider = provider
+        if #available(iOS 14.0, *) {
+            menu = makeDeferredMenu()
+        }
+    }
+    
     func performAfterMenuDismissal(_ action: @escaping () -> Void) {
         guard isMenuVisible else {
             action()
@@ -114,6 +125,8 @@ final class AddressBarButton: UIButton {
                let pendingMenuAfterDismissal {
                 self.menu = pendingMenuAfterDismissal
                 self.pendingMenuAfterDismissal = nil
+            } else if #available(iOS 14.0, *), self.menuProvider != nil {
+                self.menu = self.makeDeferredMenu()
             }
             
             let handlers = self.pendingMenuDismissalHandlers
@@ -127,6 +140,14 @@ final class AddressBarButton: UIButton {
         }
         
         finalizeDismissal()
+    }
+    
+    @available(iOS 14.0, *)
+    private func makeDeferredMenu() -> UIMenu {
+        let deferredElement = UIDeferredMenuElement { [weak self] completion in
+            completion(self?.menuProvider?()?.children ?? [])
+        }
+        return UIMenu(children: [deferredElement])
     }
     
     fileprivate func legacyContextMenuWillDisplay() {
@@ -161,7 +182,7 @@ final class AddressBarButton: UIButton {
         }
         
         let bounds = self.bounds
-        let widthIncrease = bounds.width * (UX.addressBarButtonTouchTargetScale - 1) / 2
+        let widthIncrease = horizontalTouchTargetExpansion ?? bounds.width * (UX.addressBarButtonTouchTargetScale - 1) / 2
         let heightIncrease = bounds.height * (UX.addressBarButtonTouchTargetScale - 1) / 2
         let hitFrame = bounds.insetBy(dx: -widthIncrease, dy: -heightIncrease)
         
@@ -174,6 +195,7 @@ final class AddressBarButton: UIButton {
 private final class LegacyContextMenuDelegate: NSObject, UIContextMenuInteractionDelegate {
     weak var owner: AddressBarButton?
     var menu: UIMenu?
+    var menuProvider: (() -> UIMenu?)?
     
     init(owner: AddressBarButton) {
         self.owner = owner
@@ -183,7 +205,7 @@ private final class LegacyContextMenuDelegate: NSObject, UIContextMenuInteractio
         _ interaction: UIContextMenuInteraction,
         configurationForMenuAtLocation location: CGPoint
     ) -> UIContextMenuConfiguration? {
-        guard let menu else {
+        guard let menu = menuProvider?() ?? menu else {
             return nil
         }
         

@@ -69,21 +69,21 @@ private final class ProcessBootstrap {
 }
 
 open class BrowserHelper: NSObject, GeckoProcessExtension, NSExtensionRequestHandling {
-	public required override init() {
-		super.init()
-	}
-
-	open func beginRequest(with context: NSExtensionContext) {
-		Task { @MainActor in
-			do {
-				try ProcessBootstrap.start(context: context, process: self)
-			} catch {
-				context.cancelRequest(withError: error)
-			}
-		}
-	}
-
-	open func lockdownSandbox(_ revision: String!) {}
+    public required override init() {
+        super.init()
+    }
+    
+    open func beginRequest(with context: NSExtensionContext) {
+        Task { @MainActor in
+            do {
+                try ProcessBootstrap.start(context: context, process: self)
+            } catch {
+                context.cancelRequest(withError: error)
+            }
+        }
+    }
+    
+    open func lockdownSandbox(_ revision: String) {}
 }
 
 @objc(ReynardHelperMain)

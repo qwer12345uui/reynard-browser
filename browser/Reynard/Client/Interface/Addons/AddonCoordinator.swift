@@ -490,8 +490,10 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
             presentation: isPopover ? .popover : .sheet
         )
         if !isPopover {
-            // Hack: Use .overFullScreen so GeckoView can scroll
-            popupViewController.modalPresentationStyle = .overFullScreen
+            if #unavailable(iOS 26.0) {
+                // Hack: Use .overFullScreen so GeckoView can scroll
+                popupViewController.modalPresentationStyle = .overFullScreen
+            }
             popupViewController.isModalInPresentation = true
         }
         delegate?.presentAddonViewController(self, popupViewController)

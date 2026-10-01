@@ -118,6 +118,7 @@ final class ToolbarController {
         }
         contentView.setToolbarLimits(
             maxHeight: canHideToolbar ? offsetLimits.total : 0,
+            minHeight: canHideToolbar ? offsetLimits.total - maxToolbarOffset : 0,
             contentTopInset: canHideToolbar ? offsetLimits.top : 0,
             contentBottomInset: canHideToolbar && chromeMode == .phone ? minimizedHeight : 0,
             webContentBottomOffset: webContentBottomOffset
@@ -207,7 +208,7 @@ final class ToolbarController {
         guard Prefs.AppearanceSettings.scrollToHideToolbarEnabled,
               maxToolbarOffset > 0,
               !isCollapsedUntilReset,
-              lockReasons.isEmpty else {
+              lockReasons.subtracting([.pageNavigation]).isEmpty else {
             return
         }
         
@@ -313,12 +314,14 @@ final class ToolbarController {
         guard isBottomToolbarCollapsed else { return }
         cancelAnimation()
         isBottomToolbarCollapsed = false
+        isCollapsedUntilReset = false
+        targetOffset = 0
         UIView.animate(
             withDuration: UIAccessibility.isReduceMotionEnabled ? 0 : UX.snapDuration,
             delay: 0,
             options: [.beginFromCurrentState, .allowUserInteraction, .curveEaseOut]
         ) {
-            self.setTransitionOffset(self.transitionOffset, refresh: true, animatesContent: false)
+            self.setTransitionOffset(0, refresh: true, animatesContent: false)
         }
     }
     
