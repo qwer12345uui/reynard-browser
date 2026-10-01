@@ -19,6 +19,9 @@ on:
       - ".github/workflows/sync-upstream.yml"
       - "tools/ci/sync_roothide.py"
       - "tools/ci/prefs_merge.py"
+      - "tools/ci/align_browser_sources.py"
+      - "tools/ci/apply_roothide_fixes.py"
+      - "tools/ci/repair_preferences.py"
 
 permissions:
   contents: write
@@ -52,6 +55,16 @@ jobs:
       # Reset those files to upstream, keeping the ones carrying RootHide code.
       - name: Align browser sources with upstream
         run: python3 tools/ci/align_browser_sources.py
+
+      # The alignment resets every file whose fork-side difference does not
+      # carry a RootHide marker, which can undo a fix applied one step earlier.
+      # Re-running the fixes on the aligned tree repairs whatever was dropped
+      # and no-ops when nothing was, because every fix is idempotent. This is
+      # also where the sync asserts that RootHide support is still present, so
+      # a silent regression fails here instead of shipping a browser with no
+      # network fallback or no plugin injection.
+      - name: Re-apply RootHide fixes after alignment
+        run: python3 tools/ci/apply_roothide_fixes.py
 
       # The alignment can leave SceneDelegate calling RootHide entry points
       # that no longer exist, and the preference merge can leave
