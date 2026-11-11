@@ -1,18 +1,21 @@
 diff --git a/docshell/base/BrowsingContext.h b/docshell/base/BrowsingContext.h
-index e910da61612d..65a69aafb004 100644
+index ba4d98522b7c..7eb02d5add24 100644
 --- a/docshell/base/BrowsingContext.h
 +++ b/docshell/base/BrowsingContext.h
-@@ -230,6 +230,9 @@ struct EmbedderColorSchemes {
-   FIELD(HasSessionHistory, bool)                                              \
-   FIELD(UseErrorPages, bool)                                                  \
-   FIELD(PlatformOverride, nsString)                                           \
-+  FIELD(AppVersionOverride, nsString)                                         \
-+  FIELD(OscpuOverride, nsString)                                              \
-+  FIELD(BuildIDOverride, nsString)                                            \
-   /* Specifies if this BC has loaded documents besides the initial            \
-    * about:blank document. about:privatebrowsing, about:home, about:newtab    \
-    * and non-initial about:blank are not considered to be initial             \
-@@ -896,6 +899,19 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
+@@ -262,6 +262,12 @@ struct EmbedderColorSchemes {
+         {.mCanSet = CanSet::EmbedderOnly, .mDefault = [] { return true; }})    \
+   FIELD(PlatformOverride, nsString,                                            \
+         {.mTopOnly = true, .mCanSet = CanSet::Custom})                         \
++  FIELD(AppVersionOverride, nsString,                                         \
++        {.mTopOnly = true, .mCanSet = CanSet::Custom})                         \
++  FIELD(OscpuOverride, nsString,                                              \
++        {.mTopOnly = true, .mCanSet = CanSet::Custom})                         \
++  FIELD(BuildIDOverride, nsString,                                            \
++        {.mTopOnly = true, .mCanSet = CanSet::Custom})                         \
+   /* Specifies if this BC has loaded documents besides the initial             \
+    * about:blank document. about:privatebrowsing, about:home, about:newtab     \
+    * and non-initial about:blank are not considered to be initial              \
+@@ -961,6 +967,19 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
    }
    void SetCustomPlatform(const nsAString& aPlatform, ErrorResult& aRv);
  
@@ -32,7 +35,7 @@ index e910da61612d..65a69aafb004 100644
    JSObject* WrapObject(JSContext* aCx);
  
    static JSObject* ReadStructuredClone(JSContext* aCx,
-@@ -1498,6 +1514,19 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
+@@ -1462,6 +1481,19 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
                        const nsString& aPlatformOverride,
                        ContentParent* aSource);
  
@@ -51,4 +54,4 @@ index e910da61612d..65a69aafb004 100644
 +
    void DidSet(FieldIndex<IDX_UserAgentOverride>);
    CanSetResult CanSet(FieldIndex<IDX_UserAgentOverride>,
-                       const nsString& aUserAgent, ContentParent* aSource);
+                       const nsCString& aUserAgent, ContentParent* aSource);

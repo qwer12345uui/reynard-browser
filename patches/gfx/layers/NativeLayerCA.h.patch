@@ -1,16 +1,40 @@
 diff --git a/gfx/layers/NativeLayerCA.h b/gfx/layers/NativeLayerCA.h
-index 1456d03f8962..e49071195b87 100644
+index c7156fca6e5e..91ff34d976de 100644
 --- a/gfx/layers/NativeLayerCA.h
 +++ b/gfx/layers/NativeLayerCA.h
-@@ -8,6 +8,7 @@
- #include <CoreMedia/CoreMedia.h>
- #include <IOSurface/IOSurfaceRef.h>
+@@ -10,6 +10,11 @@
  
-+#include <functional>
  #include <ostream>
  
++#ifdef MOZ_WIDGET_UIKIT
++#  include <functional>
++#  include "mozilla/ipc/ByteBuf.h"
++#endif
++
  #include "mozilla/Mutex.h"
-@@ -157,6 +158,12 @@ class NativeLayerRootCA final : public NativeLayerRoot {
+ #include "mozilla/TimeStamp.h"
+ 
+@@ -143,6 +148,19 @@ class NativeLayerRootCA final : public NativeLayerRoot {
+ 
+   bool AreOffMainThreadCommitsSuspended();
+ 
++#ifdef MOZ_WIDGET_UIKIT
++  void SetOnscreenCommitData(mozilla::ipc::ByteBuf&& aData) override;
++
++  void SetOnscreenCommitCallback(
++      std::function<void(mozilla::ipc::ByteBuf&&)> aCallback);
++
++  // Schedule a main-thread commit when onscreen commit data is pending.
++  void SetMainThreadCommitCallback(std::function<void()> aCallback);
++
++  // Prevent onscreen commits from applying an incomplete remote update batch.
++  Mutex& LayerUpdateMutex() { return mLayerUpdateMutex; }
++#endif
++
+   void DumpLayerTreeToFile(const char* aPath,
+                            const MutexAutoLock& aProofOfLock);
+ 
+@@ -157,6 +175,12 @@ class NativeLayerRootCA final : public NativeLayerRoot {
    void SetLayers(const nsTArray<RefPtr<NativeLayer>>& aLayers) override;
    UniquePtr<NativeLayerRootSnapshotter> CreateSnapshotter() override;
  
@@ -23,41 +47,34 @@ index 1456d03f8962..e49071195b87 100644
    void SetBackingScale(float aBackingScale);
    float BackingScale();
  
-@@ -172,6 +179,10 @@ class NativeLayerRootCA final : public NativeLayerRoot {
+@@ -214,7 +238,12 @@ class NativeLayerRootCA final : public NativeLayerRoot {
+     RefPtr<NativeLayerRootCA> mLayerRoot;
+   };
  
-   void SetWindowIsFullscreen(bool aFullscreen);
- 
-+  CALayer* CopyPictureInPictureSource();
-+  void SetPictureInPictureSourceChangedCallback(
-+      std::function<void()>&& aCallback);
+-  Mutex mMutex MOZ_UNANNOTATED;              // protects all other fields
++#ifdef MOZ_WIDGET_UIKIT
++  Mutex mLayerUpdateMutex{"NativeLayerRootCA::mLayerUpdateMutex"};
++  std::function<void(mozilla::ipc::ByteBuf&&)> mOnscreenCommitCallback;
++#endif
 +
-   VideoLowPowerType CheckVideoLowPower(const MutexAutoLock& aProofOfLock);
- 
-  protected:
-@@ -189,6 +200,10 @@ class NativeLayerRootCA final : public NativeLayerRoot {
-                             bool aMutatedLayerStructure,
-                             bool aWindowIsFullscreen);
- 
-+  CALayer* FindPictureInPictureSource(const MutexAutoLock& aProofOfLock);
-+  bool UpdatePictureInPictureSource(const MutexAutoLock& aProofOfLock);
-+  void DispatchPictureInPictureSourceChanged();
-+
-   void SetMutatedLayerStructure();
- 
-   using UpdateType = NativeLayerCAUpdateType;
-@@ -218,7 +233,10 @@ class NativeLayerRootCA final : public NativeLayerRoot {
++  Mutex mMutex MOZ_UNANNOTATED;              // protects the fields below
    CALayer* mOnscreenRootCALayer = nullptr;   // strong
    CALayer* mOffscreenRootCALayer = nullptr;  // strong
    NativeLayerRootSnapshotterCA* mWeakSnapshotter = nullptr;
--  nsTArray<RefPtr<NativeLayerCA>> mSublayers;  // in z-order
-+  nsTArray<RefPtr<NativeLayerCA>> mSublayers;       // in z-order
-+  CALayer* mPictureInPictureSourceLayer = nullptr;  // strong
-+  std::function<void()> mPictureInPictureSourceChangedCallback;
-+  bool mPictureInPictureNotificationPending = false;
-   float mBackingScale = 1.0f;
-   bool mMutated = false;
+@@ -234,6 +263,12 @@ class NativeLayerRootCA final : public NativeLayerRoot {
+   // opportunity.
+   bool mCommitPending = false;
  
-@@ -242,6 +260,10 @@ class NativeLayerRootCA final : public NativeLayerRoot {
++#ifdef MOZ_WIDGET_UIKIT
++  std::function<void()> mMainThreadCommitCallback;
++  bool mMainThreadCommitScheduled = false;
++  Maybe<mozilla::ipc::ByteBuf> mOnscreenCommitData;
++#endif
++
+   // Updated by the layer's view's window to match the fullscreen state
+   // of that window.
+   bool mWindowIsFullscreen = false;
+@@ -242,6 +277,10 @@ class NativeLayerRootCA final : public NativeLayerRoot {
    bool mMutatedOnscreenLayerStructure = false;
    bool mMutatedOffscreenLayerStructure = false;
  
@@ -68,24 +85,7 @@ index 1456d03f8962..e49071195b87 100644
    // How many times have we committed since the last time we emitted
    // telemetry?
    unsigned int mTelemetryCommitCount = 0;
-@@ -292,6 +314,8 @@ struct NativeLayerCARepresentation {
-     return mWrappingCALayerHasExtent ? mWrappingCALayer : nullptr;
-   }
- 
-+  CALayer* PictureInPictureSourceLayer();
-+
-   bool EnqueueSurface(IOSurfaceRef aSurfaceRef, bool aIsHDR);
- 
-   // Applies buffered changes to the native CALayers. The contract with the
-@@ -331,6 +355,7 @@ struct NativeLayerCARepresentation {
-   CALayer* mRoundedClipCALayer = nullptr;   // strong
-   CALayer* mContentCALayer = nullptr;       // strong
-   CALayer* mOpaquenessTintLayer = nullptr;  // strong
-+  bool mPictureInPictureFailureLatched = false;
- 
- #ifdef NIGHTLY_BUILD
-   bool mLogNextVideoSurface = false;
-@@ -438,6 +463,10 @@ class NativeLayerCA : public NativeLayer {
+@@ -443,6 +482,10 @@ class NativeLayerCA : public NativeLayer {
    bool ApplyChanges(WhichRepresentation aRepresentation, UpdateType aUpdate,
                      bool* aMustRebuild);
  
@@ -96,12 +96,3 @@ index 1456d03f8962..e49071195b87 100644
    void SetBackingScale(float aBackingScale);
  
    // Invalidate aUpdateRegion and make sure that mInProgressSurface retains any
-@@ -452,6 +481,8 @@ class NativeLayerCA : public NativeLayer {
-                            const gfx::IntRegion& aUpdateRegion, F&& aCopyFn);
- 
-   bool IsVideo(const MutexAutoLock& aProofOfLock);
-+  bool IsPictureInPictureEligibleSurface(const MutexAutoLock& aProofOfLock);
-+  CALayer* PictureInPictureSourceLayer();
-   bool ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock);
- 
-   // This function returns a CGRect if a clip should be applied to the layer.

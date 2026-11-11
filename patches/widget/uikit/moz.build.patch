@@ -1,8 +1,8 @@
 diff --git a/widget/uikit/moz.build b/widget/uikit/moz.build
-index f5d8821773c0..4ddd530d3293 100644
+index 3f86e230427a..fd216e214f72 100644
 --- a/widget/uikit/moz.build
 +++ b/widget/uikit/moz.build
-@@ -8,35 +8,59 @@ with Files("**"):
+@@ -8,35 +8,61 @@ with Files("**"):
  with Files("*TextInput*"):
      BUG_COMPONENT = ("Core", "DOM: UI Events & Focus Handling")
  
@@ -37,9 +37,11 @@ index f5d8821773c0..4ddd530d3293 100644
      "EventDispatcher.mm",
 +    "ExternalResponseService.mm",
 +    "GeckoEditableSupport.mm",
++    "GeckoGamepadSupport.mm",
 +    "GeckoKeyboardSupport.mm",
 +    "GeckoPencilSupport.mm",
 +    "GeckoPointerSupport.mm",
++    "GeckoTextDragSupport.mm",
 +    "GeckoTouchSupport.mm",
 +    "GeckoViewPrintSupport.mm",
      "GfxInfo.cpp",
@@ -49,23 +51,26 @@ index f5d8821773c0..4ddd530d3293 100644
      "nsBidiKeyboard.mm",
 +    "nsClipboard.mm",
 +    "nsDeviceContextUIKit.mm",
++    "nsDragService.mm",
      "nsLookAndFeel.mm",
      "nsNativeThemeUIKit.mm",
 +    "nsPrintSettingsServiceUIKit.mm",
      "nsUserIdleServiceUIKit.cpp",
      "nsWidgetFactory.mm",
      "nsWindow.mm",
-+    "PictureInPictureSupport.mm",
      "ScreenHelperUIKit.mm",
      "TextInputHandler.mm",
 +    "UIKitCompositorWidget.cpp",
      "UIKitUtils.mm",
  ]
  
-@@ -55,5 +79,6 @@ XPCOM_MANIFESTS += [
+@@ -55,6 +81,9 @@ XPCOM_MANIFESTS += [
  ]
  
  OS_LIBS += [
 +    "-framework CoreGraphics",
++    "-framework CoreHaptics",
++    "-framework GameController",
      "-framework UIKit",
  ]
+ 

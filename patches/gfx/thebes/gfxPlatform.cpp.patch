@@ -1,16 +1,16 @@
 diff --git a/gfx/thebes/gfxPlatform.cpp b/gfx/thebes/gfxPlatform.cpp
-index 18afa458763f..ec8665b8251d 100644
+index 5acefcdb75c0..da2382eeb5a2 100644
 --- a/gfx/thebes/gfxPlatform.cpp
 +++ b/gfx/thebes/gfxPlatform.cpp
-@@ -45,6 +45,7 @@
- #include "mozilla/image/ImageMemoryReporter.h"
+@@ -46,6 +46,7 @@
+ #include "mozilla/layers/CompositeProcessFencesHolderMap.h"
  #include "mozilla/layers/CompositorBridgeChild.h"
  #include "mozilla/layers/CompositorManagerChild.h"
 +#include "mozilla/layers/CompositorManagerParent.h"
  #include "mozilla/layers/CompositorThread.h"
  #include "mozilla/layers/ISurfaceAllocator.h"  // for GfxMemoryImageReporter
  #include "mozilla/layers/ImageBridgeChild.h"
-@@ -416,7 +417,22 @@ void gfxPlatform::OnMemoryPressure(layers::MemoryPressureReason aWhy) {
+@@ -415,7 +416,22 @@ void gfxPlatform::OnMemoryPressure(layers::MemoryPressureReason aWhy) {
    gfxGradientCache::PurgeAllCaches();
    gfxFontMissingGlyphs::Purge();
    PurgeSkiaFontCache();
@@ -33,7 +33,7 @@ index 18afa458763f..ec8665b8251d 100644
      layers::CompositorManagerChild* manager =
          CompositorManagerChild::GetInstance();
      if (manager) {
-@@ -3402,7 +3418,7 @@ void gfxPlatform::InitWebGPUConfig() {
+@@ -3210,7 +3226,7 @@ void gfxPlatform::InitWebGPUConfig() {
      featureExternalTexture.Disable(FeatureStatus::Blocklisted, message.get(),
                                     failureId);
    }

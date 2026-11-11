@@ -14,11 +14,19 @@ public class GeckoView: UIView {
         }
     }
     
+    public weak var keyCommandDelegate: GeckoViewKeyCommandDelegate? {
+        didSet {
+            session?.window?.setKeyCommandDelegate(keyCommandDelegate)
+        }
+    }
+    
     public var session: GeckoSession? {
         didSet {
             oldValue?.window?.setInteractionDelegate(nil)
+            oldValue?.window?.setKeyCommandDelegate(nil)
             embedSessionView()
             session?.window?.setInteractionDelegate(interactionDelegate)
+            session?.window?.setKeyCommandDelegate(keyCommandDelegate)
         }
     }
     
@@ -32,6 +40,7 @@ public class GeckoView: UIView {
     
     deinit {
         session?.window?.setInteractionDelegate(nil)
+        session?.window?.setKeyCommandDelegate(nil)
     }
     
     private func embedSessionView() {

@@ -1,8 +1,8 @@
 diff --git a/ipc/glue/BackgroundParentImpl.h b/ipc/glue/BackgroundParentImpl.h
-index 663721274f8f..cccaa851ff70 100644
+index 194abe47c7a9..ec608d293af0 100644
 --- a/ipc/glue/BackgroundParentImpl.h
 +++ b/ipc/glue/BackgroundParentImpl.h
-@@ -338,7 +338,8 @@ class BackgroundParentImpl : public PBackgroundParent {
+@@ -337,7 +337,8 @@ class BackgroundParentImpl : public PBackgroundParent {
        EnsureUtilityProcessAndCreateBridgeResolver&& aResolver) override;
  
    mozilla::ipc::IPCResult RecvRequestCameraAccess(

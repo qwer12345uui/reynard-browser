@@ -5,6 +5,7 @@
 //  Created by Minh Ton on 16/6/26.
 //
 
+import GeckoView
 import UIKit
 
 final class ImagePreviewViewController: UIViewController {
@@ -13,14 +14,16 @@ final class ImagePreviewViewController: UIViewController {
     }
     
     private let url: URL
+    private let session: GeckoSession
     private var imageLoadTask: Task<Void, Never>?
     
     private let imageView = UIImageView()
     
     // MARK: - Lifecycle
     
-    init(url: URL) {
+    init(url: URL, session: GeckoSession) {
         self.url = url
+        self.session = session
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -71,8 +74,8 @@ final class ImagePreviewViewController: UIViewController {
     
     private func loadImage() {
         imageView.image = nil
-        imageLoadTask = Task { [weak self, url] in
-            guard let image = await ImagePreviewLoader.image(from: url),
+        imageLoadTask = Task { [weak self, url, session] in
+            guard let image = await ImagePreviewLoader.image(from: url, in: session),
                   !Task.isCancelled else {
                 return
             }

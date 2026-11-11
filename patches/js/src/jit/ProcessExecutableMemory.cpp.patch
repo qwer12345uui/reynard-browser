@@ -1,8 +1,8 @@
 diff --git a/js/src/jit/ProcessExecutableMemory.cpp b/js/src/jit/ProcessExecutableMemory.cpp
-index cea7d764ca96..c9ef61b53f7d 100644
+index cea7d764ca96..b3ab704c140d 100644
 --- a/js/src/jit/ProcessExecutableMemory.cpp
 +++ b/js/src/jit/ProcessExecutableMemory.cpp
-@@ -14,6 +14,12 @@
+@@ -14,6 +14,14 @@
  
  #include <errno.h>
  
@@ -12,18 +12,12 @@ index cea7d764ca96..c9ef61b53f7d 100644
 +#  include <signal.h>
 +#endif
 +
++#include "mozilla/widget/GeckoViewRuntimeSupport.h"
++
  #include "jsfriendapi.h"
  
  #include "gc/Memory.h"
-@@ -26,6 +32,7 @@
- #include "util/RandomSeed.h"
- #include "util/WindowsWrapper.h"
- #include "vm/MutexIDs.h"
-+#include "mozilla/widget/GeckoViewRuntimeSupport.h"
- 
- #ifdef XP_WIN
- #  include "mozilla/StackWalk_windows.h"
-@@ -47,6 +54,99 @@
+@@ -47,6 +55,99 @@
  using namespace js;
  using namespace js::jit;
  
@@ -65,7 +59,7 @@ index cea7d764ca96..c9ef61b53f7d 100644
 +  auto* executable = static_cast<uint8_t*>(addr);
 +  MOZ_RELEASE_ASSERT(executable >= sExecutableMemoryBase &&
 +                     executable + bytes <=
-+                         sExecutableMemoryBase + MaxCodeBytesPerProcess);
++                         sExecutableMemoryBase + ExecutableMemoryCapacity());
 +  return sWritableExecutableMemoryBase + (executable - sExecutableMemoryBase);
 +}
 +
@@ -123,7 +117,7 @@ index cea7d764ca96..c9ef61b53f7d 100644
  #ifdef XP_WIN
  #  if defined(HAVE_64BIT_BUILD)
  #    define NEED_JIT_UNWIND_HANDLING
-@@ -463,6 +563,20 @@ static void* ComputeRandomAllocationAddress() {
+@@ -463,6 +564,20 @@ static void* ComputeRandomAllocationAddress() {
  static void DecommitPages(void* addr, size_t bytes);
  
  static void* ReserveProcessExecutableMemory(size_t bytes) {
@@ -144,7 +138,7 @@ index cea7d764ca96..c9ef61b53f7d 100644
    // On most Unix platforms our strategy is as follows:
    //
    // * Reserve:  mmap with PROT_NONE
-@@ -507,21 +621,22 @@ static void* ReserveProcessExecutableMemory(size_t bytes) {
+@@ -507,21 +622,22 @@ static void* ReserveProcessExecutableMemory(size_t bytes) {
    void* randomAddr = ComputeRandomAllocationAddress();
    unsigned protection = PROT_NONE;
    unsigned flags = MAP_NORESERVE | MAP_PRIVATE | MAP_ANON;
@@ -172,7 +166,7 @@ index cea7d764ca96..c9ef61b53f7d 100644
  }
  
  static void DeallocateProcessExecutableMemory(void* addr, size_t bytes) {
-@@ -561,8 +676,30 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
+@@ -561,8 +677,30 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
  
  [[nodiscard]] static bool CommitPages(void* addr, size_t bytes,
                                        ProtectionSetting protection) {
@@ -204,7 +198,7 @@ index cea7d764ca96..c9ef61b53f7d 100644
    int ret;
    do {
      ret = madvise(addr, bytes, MADV_FREE_REUSE);
-@@ -570,14 +707,14 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
+@@ -570,14 +708,14 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
    if (ret != 0) {
      return false;
    }
@@ -222,7 +216,7 @@ index cea7d764ca96..c9ef61b53f7d 100644
    unsigned flags = ProtectionSettingToFlags(protection);
    void* p = MozTaggedAnonymousMmap(addr, bytes, flags,
                                     MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0,
-@@ -587,28 +724,51 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
+@@ -587,28 +725,51 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
    }
    MOZ_RELEASE_ASSERT(p == addr);
    return true;
@@ -278,53 +272,95 @@ index cea7d764ca96..c9ef61b53f7d 100644
  #  endif
  }
  #endif
-@@ -722,8 +882,42 @@ class ProcessExecutableMemory {
+@@ -662,8 +823,8 @@ class PageBitSet {
+ #endif
+ };
+ 
+-// Per-process executable memory allocator. It reserves a block of memory of
+-// MaxCodeBytesPerProcess bytes, then allocates/deallocates pages from that.
++// Per-process executable memory allocator. It reserves a block of memory of up
++// to MaxCodeBytesPerProcess bytes, then allocates/deallocates pages from that.
+ //
+ // This has a number of benefits compared to raw mmap/VirtualAlloc:
+ //
+@@ -684,11 +845,12 @@ class ProcessExecutableMemory {
+   static const size_t MaxCodePages =
+       MaxCodeBytesPerProcess / ExecutableCodePageSize;
+ 
+-  // Start of the MaxCodeBytesPerProcess memory block or nullptr if
+-  // uninitialized. Note that this is NOT guaranteed to be aligned to
+-  // ExecutableCodePageSize.
++  // Start of the reserved memory block or nullptr if uninitialized.
++  // Note that this is NOT guaranteed to be aligned to ExecutableCodePageSize.
+   uint8_t* base_;
+ 
++  size_t capacity_;
++
+   // The fields below should only be accessed while we hold the lock.
+   Mutex lock_ MOZ_UNANNOTATED;
+ 
+@@ -702,9 +864,13 @@ class ProcessExecutableMemory {
+   mozilla::Maybe<mozilla::non_crypto::XorShift128PlusRNG> rng_;
+   PageBitSet<MaxCodePages> pages_;
+ 
++  size_t maxPages() const { return capacity_ / ExecutableCodePageSize; }
++  [[nodiscard]] bool reserve(size_t bytes);
++
+  public:
+   ProcessExecutableMemory()
+       : base_(nullptr),
++        capacity_(MaxCodeBytesPerProcess),
+         lock_(mutexid::ProcessExecutableRegion),
+         pagesAllocated_(0),
+         cursor_(0),
+@@ -717,13 +883,26 @@ class ProcessExecutableMemory {
+     MOZ_RELEASE_ASSERT(HasJitBackend());
+     MOZ_RELEASE_ASSERT(gc::SystemPageSize() <= ExecutableCodePageSize);
+ 
+-    void* p = ReserveProcessExecutableMemory(MaxCodeBytesPerProcess);
+-    if (!p) {
++    if (!reserve(MaxCodeBytesPerProcess)) {
++#ifdef XP_IOS
++      // First we try MaxCodeBytesPerProcess, which is 2044 MiB. This fallback
++      // exists because:
++      //
++      // * For devices with ≤ 3 GiB of RAM, the default VA space is smaller,
++      // so reserving a 2044 MiB block may fail. The extended VA entitlement
++      // can expand this space on iOS 14+, but is unavailable on iOS 13.
++      // https://github.com/apple-oss-distributions/xnu/blob/xnu-11417.140.69/osfmk/arm/pmap/pmap.c#L11854
++      //
++      // * So we retry with 1024 MiB if the full reservation fails. Processes
++      // that successfully reserve 2044 MiB keep the original limit.
++      if (!reserve(1024 * 1024 * 1024)) {
++        return false;
++      }
++#else
        return false;
++#endif
      }
  
-+#ifdef XP_IOS
-+    if (sDeviceOSMajorVersion >= 26) {
-+      // iOS 26+
-+      vm_address_t mirrored = 0;
-+      vm_prot_t cur_prot, max_prot;
-+      kern_return_t ret =
-+          vm_remap(mach_task_self(), &mirrored, MaxCodeBytesPerProcess, 0,
-+                   VM_FLAGS_ANYWHERE, mach_task_self(),
-+                   reinterpret_cast<vm_address_t>(p), false, &cur_prot,
-+                   &max_prot, VM_INHERIT_SHARE);
-+      if (ret != KERN_SUCCESS) {
-+        mozilla::DebugOnly<int> unmapResult = munmap(p, MaxCodeBytesPerProcess);
-+        MOZ_ASSERT(!unmapResult || errno == ENOMEM);
-+        errno = int(ret);
-+        return false;
-+      }
-+      if (vm_protect(mach_task_self(), mirrored, MaxCodeBytesPerProcess, false,
-+                     VM_PROT_NONE) != KERN_SUCCESS) {
-+        vm_deallocate(mach_task_self(), mirrored, MaxCodeBytesPerProcess);
-+        mozilla::DebugOnly<int> unmapResult = munmap(p, MaxCodeBytesPerProcess);
-+        MOZ_ASSERT(!unmapResult || errno == ENOMEM);
-+        return false;
-+      }
-+      sWritableExecutableMemoryBase = reinterpret_cast<uint8_t*>(mirrored);
-+    } else {
-+      // Pre-iOS 26
-+      sWritableExecutableMemoryBase = nullptr;
-+    }
-+#endif
-+
-     base_ = static_cast<uint8_t*>(p);
- 
-+#ifdef XP_IOS
-+    sExecutableMemoryBase = base_;
-+#endif
-+
+-    base_ = static_cast<uint8_t*>(p);
+-
      mozilla::Array<uint64_t, 2> seed;
      GenerateXorShift128PlusSeed(seed);
      rng_.emplace(seed[0], seed[1]);
-@@ -743,6 +937,20 @@ class ProcessExecutableMemory {
+@@ -734,8 +913,10 @@ class ProcessExecutableMemory {
+ 
+   bool initialized() const { return base_ != nullptr; }
+ 
++  size_t capacity() const { return capacity_; }
++
+   size_t bytesAllocated() const {
+-    MOZ_ASSERT(pagesAllocated_ <= MaxCodePages);
++    MOZ_ASSERT(pagesAllocated_ <= maxPages());
+     return pagesAllocated_ * ExecutableCodePageSize;
+   }
+ 
+@@ -743,21 +924,34 @@ class ProcessExecutableMemory {
      MOZ_ASSERT(initialized());
      MOZ_ASSERT(pages_.empty());
      MOZ_ASSERT(pagesAllocated_ == 0);
+-    DeallocateProcessExecutableMemory(base_, MaxCodeBytesPerProcess);
 +
 +#ifdef XP_IOS
 +    // iOS 26+
@@ -332,20 +368,131 @@ index cea7d764ca96..c9ef61b53f7d 100644
 +      kern_return_t result = vm_deallocate(
 +          mach_task_self(),
 +          reinterpret_cast<vm_address_t>(sWritableExecutableMemoryBase),
-+          MaxCodeBytesPerProcess);
++          capacity_);
 +      MOZ_RELEASE_ASSERT(result == KERN_SUCCESS);
 +      sWritableExecutableMemoryBase = nullptr;
 +    }
 +    sExecutableMemoryBase = nullptr;
 +#endif
 +
-     DeallocateProcessExecutableMemory(base_, MaxCodeBytesPerProcess);
++    DeallocateProcessExecutableMemory(base_, capacity_);
      base_ = nullptr;
++    capacity_ = MaxCodeBytesPerProcess;
      rng_.reset();
-@@ -901,6 +1109,17 @@ bool js::jit::InitProcessExecutableMemory() { return execMemory.init(); }
+     MOZ_ASSERT(!initialized());
+   }
+ 
+   void assertValidAddress(void* p, size_t bytes) const {
+     MOZ_RELEASE_ASSERT(p >= base_ &&
+-                       uintptr_t(p) + bytes <=
+-                           uintptr_t(base_) + MaxCodeBytesPerProcess);
++                       uintptr_t(p) + bytes <= uintptr_t(base_) + capacity_);
+   }
+ 
+   bool containsAddress(const void* p) const {
+-    return p >= base_ &&
+-           uintptr_t(p) < uintptr_t(base_) + MaxCodeBytesPerProcess;
++    return p >= base_ && uintptr_t(p) < uintptr_t(base_) + capacity_;
+   }
+ 
+   void* allocate(size_t bytes, ProtectionSetting protection,
+@@ -765,6 +959,54 @@ class ProcessExecutableMemory {
+   void deallocate(void* addr, size_t bytes, bool decommit);
+ };
+ 
++bool ProcessExecutableMemory::reserve(size_t bytes) {
++  void* p = ReserveProcessExecutableMemory(bytes);
++  if (!p) {
++    return false;
++  }
++
++#ifdef XP_IOS
++  if (sDeviceOSMajorVersion >= 26) {
++    // iOS 26+
++    vm_address_t mirrored = 0;
++    vm_prot_t cur_prot, max_prot;
++    kern_return_t ret =
++        vm_remap(mach_task_self(), &mirrored, bytes, 0, VM_FLAGS_ANYWHERE,
++                 mach_task_self(), reinterpret_cast<vm_address_t>(p), false,
++                 &cur_prot, &max_prot, VM_INHERIT_SHARE);
++
++    if (ret != KERN_SUCCESS) {
++      mozilla::DebugOnly<int> unmapResult = munmap(p, bytes);
++      MOZ_ASSERT(!unmapResult || errno == ENOMEM);
++      errno = int(ret);
++      return false;
++    }
++
++    if (vm_protect(mach_task_self(), mirrored, bytes, false, VM_PROT_NONE) !=
++        KERN_SUCCESS) {
++      vm_deallocate(mach_task_self(), mirrored, bytes);
++      mozilla::DebugOnly<int> unmapResult = munmap(p, bytes);
++      MOZ_ASSERT(!unmapResult || errno == ENOMEM);
++      return false;
++    }
++
++    sWritableExecutableMemoryBase = reinterpret_cast<uint8_t*>(mirrored);
++  } else {
++    // Pre-iOS 26
++    sWritableExecutableMemoryBase = nullptr;
++  }
++#endif
++
++  base_ = static_cast<uint8_t*>(p);
++  capacity_ = bytes;
++
++#ifdef XP_IOS
++  sExecutableMemoryBase = base_;
++#endif
++
++  return true;
++}
++
+ void* ProcessExecutableMemory::allocate(size_t bytes,
+                                         ProtectionSetting protection,
+                                         MemCheckKind checkKind) {
+@@ -779,21 +1021,21 @@ void* ProcessExecutableMemory::allocate(size_t bytes,
+   void* p = nullptr;
+   {
+     LockGuard<Mutex> guard(lock_);
+-    MOZ_ASSERT(pagesAllocated_ <= MaxCodePages);
++    MOZ_ASSERT(pagesAllocated_ <= maxPages());
+ 
+     // Check if we have enough pages available.
+-    if (pagesAllocated_ + numPages >= MaxCodePages) {
++    if (pagesAllocated_ + numPages >= maxPages()) {
+       return nullptr;
+     }
+ 
+-    MOZ_ASSERT(bytes <= MaxCodeBytesPerProcess);
++    MOZ_ASSERT(bytes <= capacity_);
+ 
+     // Maybe skip a page to make allocations less predictable.
+     size_t page = cursor_ + (rng_.ref().next() % 2);
+ 
+-    for (size_t i = 0; i < MaxCodePages; i++) {
++    for (size_t i = 0; i < maxPages(); i++) {
+       // Make sure page + numPages - 1 is a valid index.
+-      if (page + numPages > MaxCodePages) {
++      if (page + numPages > maxPages()) {
+         page = 0;
+       }
+ 
+@@ -815,7 +1057,7 @@ void* ProcessExecutableMemory::allocate(size_t bytes,
+       }
+ 
+       pagesAllocated_ += numPages;
+-      MOZ_ASSERT(pagesAllocated_ <= MaxCodePages);
++      MOZ_ASSERT(pagesAllocated_ <= maxPages());
+ 
+       // If we allocated a small number of pages, move cursor_ to the
+       // next page. We don't do this for larger allocations to avoid
+@@ -901,9 +1143,22 @@ bool js::jit::InitProcessExecutableMemory() { return execMemory.init(); }
  
  void js::jit::ReleaseProcessExecutableMemory() { execMemory.release(); }
  
++size_t js::jit::ExecutableMemoryCapacity() { return execMemory.capacity(); }
++
 +void js::jit::SetJITRuntimeInfo(const JITRuntimeInfo& aRuntimeInfo) {
 +#ifdef XP_IOS
 +  sHasTXMSupport = aRuntimeInfo.hasTXMSupport != 0;
@@ -359,8 +506,23 @@ index cea7d764ca96..c9ef61b53f7d 100644
 +
  size_t js::jit::LikelyAvailableExecutableMemory() {
    // Round down available memory to the closest MB.
-   return MaxCodeBytesPerProcess -
-@@ -920,6 +1139,19 @@ bool js::jit::AddressIsInExecutableMemory(const void* p) {
+-  return MaxCodeBytesPerProcess -
++  return execMemory.capacity() -
+          AlignBytes(execMemory.bytesAllocated(), 0x100000U);
+ }
+ 
+@@ -911,15 +1166,28 @@ bool js::jit::CanLikelyAllocateMoreExecutableMemory() {
+   // Use a 8 MB buffer.
+   static const size_t BufferSize = 8 * 1024 * 1024;
+ 
+-  MOZ_ASSERT(execMemory.bytesAllocated() <= MaxCodeBytesPerProcess);
++  MOZ_ASSERT(execMemory.bytesAllocated() <= execMemory.capacity());
+ 
+-  return execMemory.bytesAllocated() + BufferSize <= MaxCodeBytesPerProcess;
++  return execMemory.bytesAllocated() + BufferSize <= execMemory.capacity();
+ }
+ 
+ bool js::jit::AddressIsInExecutableMemory(const void* p) {
    return execMemory.containsAddress(p);
  }
  
@@ -380,7 +542,7 @@ index cea7d764ca96..c9ef61b53f7d 100644
  bool js::jit::ReprotectRegion(void* start, size_t size,
                                ProtectionSetting protection,
                                MustFlushICache flushICache) {
-@@ -969,7 +1201,30 @@ bool js::jit::ReprotectRegion(void* start, size_t size,
+@@ -969,7 +1237,30 @@ bool js::jit::ReprotectRegion(void* start, size_t size,
      return true;
    }
  

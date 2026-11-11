@@ -1,5 +1,5 @@
 diff --git a/widget/uikit/nsAppShell.mm b/widget/uikit/nsAppShell.mm
-index 13436918ecd2..592fd9317012 100644
+index c412407b112a..6b29e2048325 100644
 --- a/widget/uikit/nsAppShell.mm
 +++ b/widget/uikit/nsAppShell.mm
 @@ -3,17 +3,25 @@
@@ -28,7 +28,17 @@ index 13436918ecd2..592fd9317012 100644
  #include "mozilla/widget/ScreenManager.h"
  #include "nsAppRunner.h"
  #include "nsAppShell.h"
-@@ -42,25 +50,150 @@
+@@ -21,7 +29,9 @@
+ #include "nsComponentManager.h"
+ #include "nsDirectoryServiceDefs.h"
+ #include "nsIAppStartup.h"
++#include "nsIDOMWakeLockListener.h"
+ #include "nsIObserverService.h"
++#include "nsIPowerManagerService.h"
+ #include "nsIRollupListener.h"
+ #include "nsIWidget.h"
+ #include "nsMemoryPressure.h"
+@@ -42,25 +52,145 @@
    fprintf(stderr, "\n")
  
  static void ApplicationWillTerminate(bool aCallExit);
@@ -62,19 +72,14 @@ index 13436918ecd2..592fd9317012 100644
 +  MOZ_ASSERT(NS_IsMainThread());
 +
 +  IOSMemoryPressureLevel pressureLevel;
-+  switch (aPressureFlags) {
-+    case DISPATCH_MEMORYPRESSURE_NORMAL:
-+      pressureLevel = IOSMemoryPressureLevel::Value::eNormal;
-+      break;
-+    case DISPATCH_MEMORYPRESSURE_WARN:
-+      pressureLevel = IOSMemoryPressureLevel::Value::eWarning;
-+      break;
-+    case DISPATCH_MEMORYPRESSURE_CRITICAL:
-+      pressureLevel = IOSMemoryPressureLevel::Value::eCritical;
-+      break;
-+    default:
-+      pressureLevel = IOSMemoryPressureLevel::Value::eUnexpected;
-+      break;
++  if (aPressureFlags & DISPATCH_MEMORYPRESSURE_CRITICAL) {
++    pressureLevel = IOSMemoryPressureLevel::Value::eCritical;
++  } else if (aPressureFlags & DISPATCH_MEMORYPRESSURE_WARN) {
++    pressureLevel = IOSMemoryPressureLevel::Value::eWarning;
++  } else if (aPressureFlags & DISPATCH_MEMORYPRESSURE_NORMAL) {
++    pressureLevel = IOSMemoryPressureLevel::Value::eNormal;
++  } else {
++    pressureLevel = IOSMemoryPressureLevel::Value::eUnexpected;
 +  }
 +
 +  RefPtr<nsAvailableMemoryWatcherBase> watcher =
@@ -180,7 +185,7 @@ index 13436918ecd2..592fd9317012 100644
  - (void)applicationWillTerminate:(UIApplication*)application {
    ALOG("[AppShellDelegate applicationWillTerminate:]");
    ApplicationWillTerminate(/* aCallExit */ false);
-@@ -68,15 +201,129 @@ - (void)applicationWillTerminate:(UIApplication*)application {
+@@ -68,18 +198,162 @@ - (void)applicationWillTerminate:(UIApplication*)application {
  
  - (void)applicationDidBecomeActive:(UIApplication*)application {
    ALOG("[AppShellDelegate applicationDidBecomeActive:]");
@@ -311,7 +316,40 @@ index 13436918ecd2..592fd9317012 100644
  }
  @end
  
-@@ -112,6 +359,7 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
++class ScreenWakeLockListener final : public nsIDOMMozWakeLockListener {
++ public:
++  NS_DECL_ISUPPORTS
++
++  NS_IMETHOD Callback(const nsAString& aTopic,
++                      const nsAString& aState) override {
++    MOZ_ASSERT([NSThread isMainThread]);
++
++    if (aTopic.EqualsLiteral("video-playing")) {
++      mVideoPlaying = aState.EqualsLiteral("locked-foreground");
++    } else if (aTopic.EqualsLiteral("screen")) {
++      mScreenLocked = aState.EqualsLiteral("locked-foreground");
++    } else {
++      return NS_OK;
++    }
++
++    [UIApplication sharedApplication].idleTimerDisabled =
++        mVideoPlaying || mScreenLocked;
++    return NS_OK;
++  }
++
++ private:
++  ~ScreenWakeLockListener() = default;
++
++  bool mVideoPlaying = false;
++  bool mScreenLocked = false;
++};
++
++NS_IMPL_ISUPPORTS(ScreenWakeLockListener, nsIDOMMozWakeLockListener)
++
+ // nsAppShell implementation
+ 
+ NS_IMETHODIMP
+@@ -112,6 +386,7 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
    }
  
    gAppShell = NULL;
@@ -319,7 +357,7 @@ index 13436918ecd2..592fd9317012 100644
  }
  
  // Init
-@@ -154,6 +402,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+@@ -154,6 +429,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
  
    nsresult rv = nsBaseAppShell::Init();
  
@@ -330,9 +368,23 @@ index 13436918ecd2..592fd9317012 100644
    nsCOMPtr<nsIObserverService> obsServ =
        mozilla::services::GetObserverService();
    if (obsServ) {
-@@ -281,7 +533,12 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+@@ -280,8 +559,26 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+ nsAppShell::Run(void) {
    ALOG("nsAppShell::Run");
  
++  nsCOMPtr<nsIPowerManagerService> powerManager;
++  RefPtr<ScreenWakeLockListener> wakeLockListener;
++  if (XRE_IsParentProcess()) {
++    powerManager = do_GetService(POWERMANAGERSERVICE_CONTRACTID);
++    if (powerManager) {
++      wakeLockListener = new ScreenWakeLockListener();
++      powerManager->AddWakeLockListener(wakeLockListener);
++    } else {
++      NS_WARNING(
++          "Failed to retrieve PowerManagerService, wakelocks will be broken!");
++    }
++  }
++
    nsresult rv = NS_OK;
 -  if (mUsingNativeEventLoop) {
 +  // Extension child processes already run under NSExtensionMain's
@@ -344,7 +396,19 @@ index 13436918ecd2..592fd9317012 100644
      char argv[1][4] = {"app"};
      UIApplicationMain(1, (char**)argv, nil, @"AppShellDelegate");
      // UIApplicationMain doesn't exit. :-(
-@@ -298,7 +555,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+@@ -289,6 +586,11 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+     rv = nsBaseAppShell::Run();
+   }
+ 
++  if (powerManager) {
++    powerManager->RemoveWakeLockListener(wakeLockListener);
++    [UIApplication sharedApplication].idleTimerDisabled = NO;
++  }
++
+   return rv;
+ }
+ 
+@@ -298,7 +600,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
  
    mTerminated = true;
  
@@ -356,7 +420,7 @@ index 13436918ecd2..592fd9317012 100644
      // Dispatch a native event to the main queue to terminate. XPCOM doesn't
      // like being shut down from within an XPCOM runnable, so we cannot use
      // `NS_DispatchToMainThread` here.
-@@ -318,6 +578,11 @@ static void ApplicationWillTerminate(bool aCallExit) {
+@@ -318,6 +623,11 @@ static void ApplicationWillTerminate(bool aCallExit) {
      return;
    }
  
@@ -368,7 +432,7 @@ index 13436918ecd2..592fd9317012 100644
    // Perform the steps which would normally happen after nsAppShell::Run, such
    // as `~ScopedXPCOMStartup`, as UIApplicationMain will never shutdown.
    if (nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service()) {
-@@ -331,12 +596,19 @@ static void ApplicationWillTerminate(bool aCallExit) {
+@@ -330,12 +640,18 @@ static void ApplicationWillTerminate(bool aCallExit) {
  
    gDirServiceProvider->DoShutdown();
  
@@ -384,10 +448,9 @@ index 13436918ecd2..592fd9317012 100644
 +
 +  // So we skip those entirely, force invalidates these extensions
 +  // manually and terminate them.
-+  mozilla::ipc::GeckoChildProcessHost::GetAll(
-+      [](mozilla::ipc::GeckoChildProcessHost* aHost) {
-+        aHost->ForceInvalidateForTermination();
-+      });
++  for (const auto& host : mozilla::ipc::GeckoChildProcessHost::GetAll()) {
++    host->ForceInvalidateForTermination();
++  }
 +
 +  WriteConsoleLog();
  

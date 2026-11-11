@@ -1,0 +1,54 @@
+diff --git a/toolkit/components/processtools/ProcInfo.h b/toolkit/components/processtools/ProcInfo.h
+index f88c888cc9a1..accab484f684 100644
+--- a/toolkit/components/processtools/ProcInfo.h
++++ b/toolkit/components/processtools/ProcInfo.h
+@@ -13,6 +13,11 @@
+ #include "mozilla/HashTable.h"
+ #include "mozilla/MozPromise.h"
+ 
++#ifdef XP_IOS
++#  include <xpc/xpc.h>
++#  include "mozilla/DarwinObjectPtr.h"
++#endif
++
+ namespace mozilla {
+ 
+ namespace ipc {
+@@ -168,7 +173,7 @@ typedef MozPromise<mozilla::HashMap<base::ProcessId, ProcInfo>, nsresult, true>
+  *
+  * Note that this structure contains a mix of:
+  * - low-level handles that we need to request low-level process info
+- *    (`aChildTask` on macOS, `aPid` on other platforms); and
++ *    (`aChildTask` on macOS, `aChildConnection` on iOS, `aPid` elsewhere); and
+  * - high-level data that we already acquired while looking for
+  * `aPid`/`aChildTask` and that we will need further down the road.
+  */
+@@ -179,6 +184,9 @@ struct ProcInfoRequest {
+ #ifdef XP_MACOSX
+                   ,
+                   mach_port_t aChildTask = 0
++#elif defined(XP_IOS)
++                  ,
++                  DarwinObjectPtr<xpc_connection_t> aChildConnection = nullptr
+ #endif  // XP_DARWIN
+                   )
+       : pid(aPid),
+@@ -190,6 +198,9 @@ struct ProcInfoRequest {
+ #ifdef XP_MACOSX
+         ,
+         childTask(aChildTask)
++#elif defined(XP_IOS)
++        ,
++        childConnection(std::move(aChildConnection))
+ #endif  // XP_DARWIN
+   {
+   }
+@@ -202,6 +213,8 @@ struct ProcInfoRequest {
+   const int32_t childId;
+ #ifdef XP_MACOSX
+   const mach_port_t childTask;
++#elif defined(XP_IOS)
++  const DarwinObjectPtr<xpc_connection_t> childConnection;
+ #endif  // XP_DARWIN
+ };
+ 

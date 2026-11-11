@@ -27,7 +27,6 @@ protocol TabManager: AnyObject {
     var selectedTabIndex: Int { get }
     var selectedTab: Tab? { get }
     
-    func applicationWillResignActive()
     func applicationDidBecomeActive()
     func createInitialTab()
     @discardableResult
@@ -66,6 +65,7 @@ enum TabManagerUpdateReason {
     case favicon
     case navigationState
     case loading
+    case loadError
     case thumbnail
     case pageBackgroundColor
     case readerMode
@@ -80,8 +80,7 @@ protocol TabManagerDelegate: AnyObject {
     func tabManager(_ tabManager: TabManager, didUpdateTabAt index: Int, reason: TabManagerUpdateReason)
     func tabManager(_ tabManager: TabManager, didFinishLoading session: GeckoSession)
     func tabManager(_ tabManager: TabManager, captureHistoryThumbnailForTabAt index: Int, mode: TabMode, url: String)
-    func tabManager(_ tabManager: TabManager, didChangeFullscreen fullScreen: Bool, mediaIsPlaying: Bool, for session: GeckoSession)
-    func tabManager(_ tabManager: TabManager, didChangeMediaPlayback isPlaying: Bool, for session: GeckoSession)
+    func tabManager(_ tabManager: TabManager, didChangeFullscreen fullScreen: Bool, for session: GeckoSession)
     func tabManager(_ tabManager: TabManager, animateReturnTo tab: Tab, completion: @escaping () -> Void)
     func tabManager(_ tabManager: TabManager, animateNewTabSelectionAt index: Int, completion: @escaping () -> Void)
     func tabManager(_ tabManager: TabManager, didRequestDownload download: DownloadStore.PendingDownload)
@@ -90,6 +89,7 @@ protocol TabManagerDelegate: AnyObject {
     func tabManager(_ tabManager: TabManager, didCompleteExternalResponseAt localFilePath: String, succeeded: Bool)
     func tabManager(_ tabManager: TabManager, didRequestContextMenuAt point: CGPoint, for element: ContextElement, in session: GeckoSession)
     func tabManager(_ tabManager: TabManager, didRequestContentKeyboardFocusFor session: GeckoSession)
+    func tabManager(_ tabManager: TabManager, didRequestFindInPage query: String, in session: GeckoSession)
 }
 
 extension TabManagerDelegate {

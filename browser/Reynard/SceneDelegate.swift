@@ -70,8 +70,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         browserViewController.stopScreenOrientationHandling()
         // Pause active Gecko work as soon as the scene loses focus. Sessions
         // remain open for reuse; the PiP session stays active in SessionManager.
+        // Upstream dropped TabManager.applicationWillResignActive(), so the
+        // pause is now driven through the session manager only.
         browserViewController.sessionManager.setApplicationForeground(false)
-        browserViewController.tabManager.applicationWillResignActive()
         browserViewController.sessionManager.applicationWillResignActive()
     }
     

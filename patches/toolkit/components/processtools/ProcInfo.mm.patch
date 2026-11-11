@@ -1,0 +1,51 @@
+diff --git a/toolkit/components/processtools/ProcInfo.mm b/toolkit/components/processtools/ProcInfo.mm
+index 8e5b6a4aa346..2c4a22e79568 100644
+--- a/toolkit/components/processtools/ProcInfo.mm
++++ b/toolkit/components/processtools/ProcInfo.mm
+@@ -84,8 +84,10 @@ nsresult GetGpuTimeSinceProcessStartInMs(uint64_t* aResult) {
+     return result;
+   }
+ 
++#ifdef XP_MACOSX
+   mach_timebase_info_data_t timebase;
+   GetTimeBase(&timebase);
++#endif
+ 
+   for (const auto& request : aRequests) {
+     ProcInfo info;
+@@ -188,6 +190,35 @@ nsresult GetGpuTimeSinceProcessStartInMs(uint64_t* aResult) {
+       thread->name.AssignASCII(threadInfoData.pth_name);
+       thread->tid = identifierInfo.thread_id;
+     }
++#elif defined(XP_IOS)
++    uint64_t cpuTimeMs;
++    if (request.processType == ProcType::Browser) {
++      if (NS_FAILED(GetCurrentProcessMemoryUsage(&info.memory)) ||
++          NS_FAILED(GetCpuTimeSinceProcessStartInMs(&cpuTimeMs))) {
++        continue;
++      }
++    } else {
++      if (!request.childConnection) {
++        continue;
++      }
++
++      auto message =
++          AdoptDarwinObject(xpc_dictionary_create(nullptr, nullptr, 0));
++      xpc_dictionary_set_string(message.get(), "message-name", "process-info");
++
++      auto reply =
++          AdoptDarwinObject(xpc_connection_send_message_with_reply_sync(
++              request.childConnection.get(), message.get()));
++      if (xpc_get_type(reply.get()) != XPC_TYPE_DICTIONARY ||
++          !xpc_dictionary_get_bool(reply.get(), "success")) {
++        continue;
++      }
++
++      info.memory = xpc_dictionary_get_uint64(reply.get(), "memory");
++      cpuTimeMs = xpc_dictionary_get_uint64(reply.get(), "cpu-time-ms");
++    }
++
++    info.cpuTime = cpuTimeMs * PR_NSEC_PER_MSEC;
+ #endif
+ 
+     if (!gathered.put(request.pid, std::move(info))) {

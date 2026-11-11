@@ -52,11 +52,23 @@ func newPromptHandler(_ session: GeckoSession) -> GeckoSessionHandler {
         let delegate = delegate as? PromptDelegate
         switch event {
         case .prompt:
-            guard let promptData = message?["prompt"] as? [String: Any],
-                  let request = parsePromptRequest(promptData) else {
+            guard let promptData = message?["prompt"] as? [String: Any] else {
                 return nil
             }
-            return await delegate?.onPrompt(session: session, request: request)?.geckoMessage
+            guard let request = parsePromptRequest(promptData) else {
+                let promptType = promptData["type"] as? String
+                if promptType == "repost" {
+                    session.progressDelegate?.onReloadCancelled(session: session)
+                }
+                return nil
+            }
+            
+            let response = await delegate?.onPrompt(session: session, request: request)
+            if case .beforeUnload = request,
+               response?.geckoMessage["allow"] as? Bool != true {
+                session.progressDelegate?.onReloadCancelled(session: session)
+            }
+            return response?.geckoMessage
             
         case .promptUpdate:
             guard let promptData = message?["prompt"] as? [String: Any],

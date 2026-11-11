@@ -12,12 +12,14 @@ extension BrowserViewController: TabManagerDelegate {
     func tabManagerDidChangeTabs(_ tabManager: TabManager) {
         if let selectedTab = tabManager.selectedTab {
             if !contentView.isDisplaying(session: selectedTab.session) {
+                browserChrome.addressBar.clearKeyCommandHint()
                 contentView.setTab(
                     selectedTab,
                     pageBackgroundColor: sessionManager.pageBackgroundColor(for: selectedTab.session)
                 )
             }
         } else {
+            browserChrome.addressBar.clearKeyCommandHint()
             contentView.setTab(nil)
         }
         refreshAddressBar()
@@ -40,7 +42,7 @@ extension BrowserViewController: TabManagerDelegate {
         }
         
         toolbarController.reset()
-        contentView.showPageError(for: tab.url)
+        contentView.updateLoadError(for: tab)
         captureThumbnail(
             forTabAt: tabManager.selectedTabIndex,
             mode: tabManager.selectedTabMode
@@ -52,6 +54,7 @@ extension BrowserViewController: TabManagerDelegate {
     }
     
     func tabManager(_ tabManager: TabManager, didSelectTabAt index: Int, previousIndex: Int?) {
+        browserChrome.addressBar.clearKeyCommandHint()
         toolbarController.unlock(for: .pageNavigation)
         toolbarController.reset()
         tabBar.setPendingExpansion(at: nil)
@@ -89,11 +92,14 @@ extension BrowserViewController: TabManagerDelegate {
         
         if isShowingFullscreenMedia,
            fullscreenSession !== selectedTab.session {
-            applyFullscreenState(false, for: fullscreenSession, mediaIsPlaying: false)
+            applyFullscreenState(false, for: fullscreenSession)
         }
+        
+        requestHomepageAddressBarFocus()
     }
     
     func tabManager(_ tabManager: TabManager, didReplaceSelectedSession previousSession: GeckoSession, with replacementSession: GeckoSession) {
+        browserChrome.addressBar.clearKeyCommandHint()
         if contentView.isDisplaying(session: previousSession) {
             contentView.setTab(
                 tabManager.selectedTab,
@@ -107,6 +113,14 @@ extension BrowserViewController: TabManagerDelegate {
     
     func tabManager(_ tabManager: TabManager, didRequestContentKeyboardFocusFor session: GeckoSession) {
         requestContentKeyboardFocus(for: session)
+    }
+    
+    func tabManager(_ tabManager: TabManager, didRequestFindInPage query: String, in session: GeckoSession) {
+        guard tabManager.selectedTab?.session === session else {
+            return
+        }
+        
+        browserChrome.showActionBar(.findInPage(query: query), animated: true)
     }
     
     func tabManager(_ tabManager: TabManager, captureHistoryThumbnailForTabAt index: Int, mode: TabMode, url: String) {
@@ -140,19 +154,11 @@ extension BrowserViewController: TabManagerDelegate {
         contextMenuCoordinator.present(at: point, target: .link(url), allowsPreview: !element.isMouseInput)
     }
     
-    func tabManager(_ tabManager: TabManager, didChangeFullscreen fullScreen: Bool, mediaIsPlaying: Bool, for session: GeckoSession) {
+    func tabManager(_ tabManager: TabManager, didChangeFullscreen fullScreen: Bool, for session: GeckoSession) {
         guard tabManager.selectedTab?.session === session else {
             return
         }
-        applyFullscreenState(fullScreen, for: session, mediaIsPlaying: mediaIsPlaying)
-    }
-    
-    func tabManager(_ tabManager: TabManager, didChangeMediaPlayback isPlaying: Bool, for session: GeckoSession) {
-        guard isShowingFullscreenMedia,
-              fullscreenSession === session else {
-            return
-        }
-        UIApplication.shared.isIdleTimerDisabled = isPlaying
+        applyFullscreenState(fullScreen, for: session)
     }
     
     func tabManager(_ tabManager: TabManager, didUpdateTabAt index: Int, reason: TabManagerUpdateReason) {
@@ -172,6 +178,8 @@ extension BrowserViewController: TabManagerDelegate {
             
         case .location:
             if index == tabManager.selectedTabIndex {
+                contentView.keyCommandDelegate = self
+                browserChrome.addressBar.clearKeyCommandHint()
                 contentView.resetScrollTracking()
                 toolbarController.reset(preserveManualCollapse: true)
                 contentView.noteHistoryLocationChange()
@@ -179,6 +187,7 @@ extension BrowserViewController: TabManagerDelegate {
                 browserChrome.updatePageZoomLevel(tab.session.settings.pageZoom.level)
                 updateNavigationButtons()
                 homepageOverlayCoordinator.updatePresentation(animated: true)
+                requestHomepageAddressBarFocus()
             }
             
         case .favicon:
@@ -190,6 +199,15 @@ extension BrowserViewController: TabManagerDelegate {
         case .navigationState:
             if index == tabManager.selectedTabIndex {
                 updateNavigationButtons()
+                contentView.updateLoadError(for: tab)
+            }
+            
+        case .loadError:
+            if index == tabManager.selectedTabIndex {
+                contentView.updateLoadError(for: tab)
+                refreshAddressBar()
+                homepageOverlayCoordinator.updatePresentation(animated: false)
+                toolbarController.reset()
             }
             
         case .loading:
@@ -200,6 +218,7 @@ extension BrowserViewController: TabManagerDelegate {
                 )
                 
                 if tab.state.loadingState.isLoading {
+                    contentView.updateLoadError(for: tab)
                     contentView.resetScrollTracking()
                     toolbarController.lock(for: .pageNavigation)
                 } else {
@@ -337,7 +356,7 @@ extension BrowserViewController {
         }
         
         let targetTabID = targetTab.id
-        if homepageOverlayCoordinator.needsHomepageThumbnail(for: targetTab) {
+        if homepageOverlayCoordinator.isHomepageTab(targetTab) {
             homepageOverlayCoordinator.captureHomepageThumbnail(targetTab) { [weak self] thumbnail in
                 guard let self,
                       let thumbnail,

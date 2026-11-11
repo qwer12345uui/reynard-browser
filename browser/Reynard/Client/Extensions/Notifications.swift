@@ -23,6 +23,7 @@ extension Notification.Name {
     static let downloadStoreDidStartDownload = Notification.Name("DownloadStore.DidStartDownload")
     static let historyStoreDidChange = Notification.Name("HistoryStore.DidChange")
     static let geckoRuntimeChildProcessDidStart = Notification.Name("GeckoRuntime.ChildProcessDidStart")
+    static let selectionSystemUIDidDismiss = Notification.Name("Selection.SystemUIDidDismiss")
     static let jitEndpointMonitorDidFail = Notification.Name("JIT.EndpointMonitorDidFail")
     static let jitlessModeDidActivate = Notification.Name("JITless.ModeDidActivate")
 }

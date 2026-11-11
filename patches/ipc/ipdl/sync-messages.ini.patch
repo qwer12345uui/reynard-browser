@@ -1,0 +1,23 @@
+diff --git a/ipc/ipdl/sync-messages.ini b/ipc/ipdl/sync-messages.ini
+index effd3b7bc8dc..9b5b683ab122 100644
+--- a/ipc/ipdl/sync-messages.ini
++++ b/ipc/ipdl/sync-messages.ini
+@@ -126,6 +126,18 @@ description = legacy sync IPC - please add detailed description
+ description = legacy sync IPC - please add detailed description
+ [PBrowser::GetInputContext]
+ description = legacy sync IPC - please add detailed description
++[PBrowser::QueryNativeTextInput]
++description = UIKit needs text, selection, and layout information before its input callbacks return.
++[PBrowser::NativeKeyEvent]
++description = Handle the key event before UIKit reads the updated text and selection.
++[PBrowser::NativeCompositionEvent]
++description = Update or commit marked text before UIKit reads the updated text and caret position.
++[PBrowser::NativeSelectionEvent]
++description = Apply the selection before UIKit reads it or deletes the selected text.
++[PBrowser::NativeSimpleContentCommandEvent]
++description = Finish deletion, undo, or redo before UIKit reads the updated text and selection for its next edit.
++[PBrowser::NativeInsertText]
++description = Insert the text before UIKit reads the updated text and caret position for its next edit.
+ [PBrowser::RequestNativeKeyBindings]
+ description = legacy sync IPC - please add detailed description
+ [PBrowser::DispatchWheelEvent]

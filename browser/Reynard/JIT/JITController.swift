@@ -46,15 +46,19 @@ final class JITController {
     }
     
     func start() {
+        // Upstream re-checks pending JIT failure UI when the app returns to the
+        // foreground. Register it before the RootHide early return so the
+        // observer set stays identical in both modes.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleApplicationDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+
         if isRootHideEnvironment {
             NSLog("RootHide injection detected; starting in JIT-less mode to avoid ptrace helper conflicts.")
             activateJITLessMode()
-            return
-        }
-
-        guard usePtraceJIT() || !isDDIMissing() else {
-            hasHandledFailure = true
-            presentMissingDDIFailureScreen()
             return
         }
         
@@ -70,12 +74,12 @@ final class JITController {
             name: .jitEndpointMonitorDidFail,
             object: nil
         )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleApplicationDidBecomeActive),
-            name: UIApplication.didBecomeActiveNotification,
-            object: nil
-        )
+        
+        guard usePtraceJIT() || !isDDIMissing() else {
+            hasHandledFailure = true
+            presentMissingDDIFailureScreen()
+            return
+        }
     }
     
     private func isDDIMissing() -> Bool {

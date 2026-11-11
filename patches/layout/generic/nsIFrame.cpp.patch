@@ -1,8 +1,8 @@
 diff --git a/layout/generic/nsIFrame.cpp b/layout/generic/nsIFrame.cpp
-index 0d1a43be430d..cfdd24d0af18 100644
+index 69a270cf4ea7..e3d83d98819c 100644
 --- a/layout/generic/nsIFrame.cpp
 +++ b/layout/generic/nsIFrame.cpp
-@@ -3436,6 +3436,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
+@@ -3485,6 +3485,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
    const bool useFixedPosition =
        disp->mPosition == StylePositionProperty::Fixed &&
        aBuilder->IsPaintingToWindow() && !IsMenuPopupFrame() &&
@@ -12,26 +12,33 @@ index 0d1a43be430d..cfdd24d0af18 100644
        (DisplayPortUtils::IsFixedPosFrameInDisplayPort(this) ||
         BuilderHasScrolledClip(aBuilder));
  
-@@ -5011,7 +5014,26 @@ bool nsIFrame::IsSelectable(StyleUserSelect* aSelectStyle) const {
+@@ -5092,7 +5095,33 @@ bool nsIFrame::IsSelectable(StyleUserSelect* aSelectStyle) const {
    return style != StyleUserSelect::None;
  }
  
-+static bool IsInEditableTextSelectionContext(const nsIFrame* aFrame) {
-+  for (const nsIFrame* frame = aFrame; frame; frame = frame->GetParent()) {
-+    if (frame->IsTextInputFrame() || frame->ContentIsEditable()) {
-+      return true;
-+    }
-+    if (frame->Style()->GetPseudoType() ==
-+        PseudoStyleType::MozTextControlEditingRoot) {
-+      return true;
-+    }
++#if defined(XP_IOS)
++static bool IsInNativeTextSelectionContext(const nsIFrame* aFrame) {
++  nsIContent* content = aFrame->GetContent();
++  if (!content) {
++    return false;
 +  }
-+  return false;
++
++  nsIContent* control =
++      content->IsInNativeAnonymousSubtree()
++          ? content->GetClosestNativeAnonymousSubtreeRootParentOrHost()
++          : content;
++  if (auto* textControl = TextControlElement::FromNodeOrNull(control)) {
++    return textControl->IsSingleLineTextControlOrTextArea() &&
++           !textControl->IsDisabled();
++  }
++
++  return content->GetInclusiveEditableAncestor() != nullptr;
 +}
++#endif
 +
  bool nsIFrame::ShouldPaintNormalSelection() const {
 +#if defined(XP_IOS)
-+  if (IsInEditableTextSelectionContext(this)) {
++  if (IsInNativeTextSelectionContext(this)) {
 +    return false;
 +  }
 +#endif

@@ -1,8 +1,8 @@
 diff --git a/gfx/layers/NativeLayerRootRemoteMacParent.mm b/gfx/layers/NativeLayerRootRemoteMacParent.mm
-index 7a4614038e1d..58d7d395eaa7 100644
+index 7a4614038e1d..f21e35966f3d 100644
 --- a/gfx/layers/NativeLayerRootRemoteMacParent.mm
 +++ b/gfx/layers/NativeLayerRootRemoteMacParent.mm
-@@ -15,9 +15,25 @@
+@@ -15,9 +15,30 @@
    MOZ_ASSERT(mRealNativeLayerRoot);
  }
  
@@ -25,10 +25,41 @@ index 7a4614038e1d..58d7d395eaa7 100644
 +    return IPC_OK();
 +  }
 +
++#ifdef MOZ_WIDGET_UIKIT
++  ReleasableMutexAutoLock layerUpdateLock(
++      mRealNativeLayerRoot->LayerUpdateMutex());
++#endif
++
    for (auto& command : aCommands) {
      switch (command.type()) {
        case NativeLayerCommand::TCommandCreateLayer: {
-@@ -91,6 +107,10 @@
+@@ -77,6 +98,15 @@
+         break;
+       }
+ 
++      case NativeLayerCommand::TCommandOnscreenCommitData: {
++#ifdef MOZ_WIDGET_UIKIT
++        auto& commitData = command.get_CommandOnscreenCommitData();
++        mRealNativeLayerRoot->SetOnscreenCommitData(
++            std::move(commitData.Data()));
++#endif
++        break;
++      }
++
+       default: {
+         gfxWarning() << "Unknown NativeLayerCommand.";
+         break;
+@@ -84,6 +114,9 @@
+     }
+   }
+ 
++#ifdef MOZ_WIDGET_UIKIT
++  layerUpdateLock.Unlock();
++#endif
+   mRealNativeLayerRoot->CommitToScreen();
+ 
+   return IPC_OK();
+@@ -91,6 +124,10 @@
  
  mozilla::ipc::IPCResult NativeLayerRootRemoteMacParent::RecvRequestReadback(
      IntSize aSize, Shmem* const aPixels) {
@@ -39,7 +70,7 @@ index 7a4614038e1d..58d7d395eaa7 100644
    if (!xpc::IsInAutomation()) {
      return IPC_FAIL(this, "Should only be called from automation.");
    }
-@@ -154,6 +174,11 @@
+@@ -154,6 +191,11 @@
  }
  
  void NativeLayerRootRemoteMacParent::HandleLayerDestroyed(uint64_t aID) {

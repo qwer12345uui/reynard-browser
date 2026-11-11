@@ -12,17 +12,21 @@ import UIKit
 final class SelectionActionPresenter: SelectionActionPresenting {
     private var menuHosts: [ObjectIdentifier: SelectionActionMenuHostView] = [:]
     private let onMenuDismissed: (GeckoSession) -> Void
+    private let onFindInPage: (GeckoSession, String) -> Void
     
     // MARK: - Lifecycle
     
-    init(onMenuDismissed: @escaping (GeckoSession) -> Void) {
+    init(
+        onMenuDismissed: @escaping (GeckoSession) -> Void,
+        onFindInPage: @escaping (GeckoSession, String) -> Void
+    ) {
         self.onMenuDismissed = onMenuDismissed
+        self.onFindInPage = onFindInPage
+        _ = Self.systemUIDismissalHook
     }
     
     func show(_ request: SelectionActionRequest, for session: GeckoSession) {
         guard request.editable == false,
-              request.actions.contains(SelectionActionCommand.copy) ||
-                request.actions.contains(SelectionActionCommand.selectAll),
               !request.selection.isEmpty,
               let targetView = session.engineView,
               let selectionRect = localRect(for: request.clientRect, in: targetView) else {
@@ -36,6 +40,7 @@ final class SelectionActionPresenter: SelectionActionPresenting {
             session: session,
             actionId: request.actionId,
             anchorRect: selectionRect,
+            selection: request.selection,
             actions: request.actions
         )
     }
@@ -43,6 +48,27 @@ final class SelectionActionPresenter: SelectionActionPresenting {
     func hide(for session: GeckoSession) {
         existingMenuHost(for: session)?.hideMenu()
     }
+    
+    // MARK: - System UI Dismissal
+    
+    private static let systemUIDismissalHook: Void = {
+        let dismissSelector = NSSelectorFromString("sessionDidDismiss")
+        guard let serviceClass = NSClassFromString("_UITextServiceSession"),
+              let dismissMethod = class_getInstanceMethod(serviceClass, dismissSelector),
+              let sourceIvar = class_getInstanceVariable(serviceClass, "_contextView") else {
+            return
+        }
+        
+        typealias DismissService = @convention(c) (AnyObject, Selector) -> Void
+        let dismiss = unsafeBitCast(method_getImplementation(dismissMethod), to: DismissService.self)
+        
+        let dismissHook: @convention(block) (AnyObject) -> Void = { service in
+            let source = object_getIvar(service, sourceIvar)
+            dismiss(service, dismissSelector)
+            NotificationCenter.default.post(name: .selectionSystemUIDidDismiss, object: source)
+        }
+        method_setImplementation(dismissMethod, imp_implementationWithBlock(dismissHook))
+    }()
     
     // MARK: - Hosts
     
@@ -56,7 +82,10 @@ final class SelectionActionPresenter: SelectionActionPresenting {
             return host
         }
         
-        let host = SelectionActionMenuHostView(onDismissed: onMenuDismissed)
+        let host = SelectionActionMenuHostView(
+            onDismissed: onMenuDismissed,
+            onFindInPage: onFindInPage
+        )
         menuHosts[key] = host
         return host
     }

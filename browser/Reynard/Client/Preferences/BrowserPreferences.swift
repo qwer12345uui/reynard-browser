@@ -111,7 +111,6 @@ final class BrowserPreferences {
             key("JITSettings", "isJITEnabled"): false,
             
             // Experimental
-            key("ExperimentalSettings", "isVideoPictureInPictureEnabled"): false,
             
             // Downloads
             key("DownloadSettings", "confirmManualDownloads"): true,
@@ -212,6 +211,7 @@ final class BrowserPreferences {
             key("SitePermissionSettings", "defaultCrossOriginStorageAccessPermission"): SitePermissionAction.askToAllow.rawValue,
             key("SitePermissionSettings", "defaultLocalDeviceAccessPermission"): SitePermissionAction.askToAllow.rawValue,
             key("SitePermissionSettings", "defaultLocalNetworkAccessPermission"): SitePermissionAction.askToAllow.rawValue,
+            key("SitePermissionSettings", "defaultMidiPermission"): SitePermissionAction.askToAllow.rawValue,
             
             // Clear Browsing Data
             key("ClearBrowsingData", "clearsBrowsingHistory"): true,
@@ -1172,6 +1172,20 @@ key("BrowsingSettings", "useReaderAutomatically"): false,
                 prefs.set(newValue.rawValue, forSetting: "SitePermissionSettings", key: "defaultLocalNetworkAccessPermission")
             }
         }
+        
+        static var defaultMidiPermission: SitePermissionAction {
+            get {
+                let rawValue = prefs.string(forSetting: "SitePermissionSettings", key: "defaultMidiPermission")
+                guard let rawValue,
+                      let action = SitePermissionAction(rawValue: rawValue) else {
+                    return .askToAllow
+                }
+                return action
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "SitePermissionSettings", key: "defaultMidiPermission")
+            }
+        }
     }
     
     // MARK: - Compatibility
@@ -1346,18 +1360,6 @@ key("BrowsingSettings", "useReaderAutomatically"): false,
             }
             set {
                 prefs.set(hasPairingFile && newValue, forSetting: "JITSettings", key: "isJITEnabled")
-            }
-        }
-    }
-    
-    // MARK: - Experimental
-    struct ExperimentalSettings {
-        static var isVideoPictureInPictureEnabled: Bool {
-            get {
-                return prefs.bool(forSetting: "ExperimentalSettings", key: "isVideoPictureInPictureEnabled")
-            }
-            set {
-                prefs.set(newValue, forSetting: "ExperimentalSettings", key: "isVideoPictureInPictureEnabled")
             }
         }
     }

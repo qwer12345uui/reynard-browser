@@ -1,13 +1,8 @@
 diff --git a/widget/uikit/GeckoViewSwiftSupport.h b/widget/uikit/GeckoViewSwiftSupport.h
-index e68fca9134c0..5df7c8977cd0 100644
+index d91f21ba1ab2..990b42781a49 100644
 --- a/widget/uikit/GeckoViewSwiftSupport.h
 +++ b/widget/uikit/GeckoViewSwiftSupport.h
-@@ -17,15 +17,73 @@
- #  define MOZ_END_EXTERN_C
- #endif
- 
-+#import <AVFoundation/AVSampleBufferDisplayLayer.h>
- #import <Foundation/Foundation.h>
+@@ -23,11 +23,77 @@
  #import <UIKit/UIKit.h>
  #import <xpc/xpc.h>
  
@@ -63,6 +58,15 @@ index e68fca9134c0..5df7c8977cd0 100644
 +- (void)edgeSwipeDidEnd;
 +@end
 +
++@protocol GeckoViewKeyCommandDelegate <NSObject>
++- (nullable UIKeyCommand*)keyCommandForInput:(NSString*)input
++                               modifierFlags:(UIKeyModifierFlags)modifierFlags;
++- (BOOL)shouldDispatchKeyCommandToContent:(UIKeyCommand*)command
++    NS_SWIFT_NAME(shouldDispatchKeyCommandToContent(_:));
++- (void)contentDidHandleKeyCommand:(UIKeyCommand*)command
++    NS_SWIFT_NAME(contentDidHandleKeyCommand(_:));
++@end
++
  @protocol SwiftGeckoViewRuntime <NSObject>
  - (id<SwiftEventDispatcher>)runtimeDispatcher;
  - (id<SwiftEventDispatcher>)dispatcherByName:(const char*)name;
@@ -76,7 +80,7 @@ index e68fca9134c0..5df7c8977cd0 100644
  @end
  
  @protocol GeckoProcessExtension <NSObject>
-@@ -33,38 +91,72 @@
+@@ -35,38 +101,80 @@
  @end
  
  @protocol EventCallback <NSObject>
@@ -118,20 +122,28 @@ index e68fca9134c0..5df7c8977cd0 100644
 +- (void)setInteractionDelegate:
 +    (nullable id<GeckoViewInteractionDelegate>)delegate;
 +
-+// PiP
-+- (nullable AVSampleBufferDisplayLayer*)pictureInPictureDisplayLayer;
-+
 +// Layout
 +- (void)setDynamicToolbarMaxHeight:(CGFloat)height minHeight:(CGFloat)minHeight;
 +- (void)setContentOffsets:(CGFloat)top
 +                   bottom:(CGFloat)bottom
 +                 topInset:(CGFloat)topInset
-+              bottomInset:(CGFloat)bottomInset;
++              bottomInset:(CGFloat)bottomInset
++      contentTranslationY:(CGFloat)contentTranslationY;
 +- (void)updateScreenOrientation:(NSInteger)interfaceOrientation;
 +
 +// Keyboard
++- (void)setKeyCommandDelegate:
++    (nullable id<GeckoViewKeyCommandDelegate>)delegate;
++- (void)dismissSoftwareKeyboard;
 +- (BOOL)focusForHardwareKeyboard;
 +- (BOOL)isInHardwareKeyboardMode;
++
++// Error pages
++- (nullable NSString*)errorPageURI;
++- (BOOL)addCertExceptionForPageURI:(NSString*)pageURI
++    NS_SWIFT_NAME(addCertException(pageURI:));
++- (BOOL)reloadWithHttpsOnlyExceptionForPageURI:(NSString*)pageURI
++    NS_SWIFT_NAME(reloadWithHttpsOnlyException(pageURI:));
 +
 +// Printing
 +- (void)printToPDFWithBrowsingContextId:(nullable NSNumber*)browsingContextId
@@ -148,7 +160,7 @@ index e68fca9134c0..5df7c8977cd0 100644
  
  MOZ_BEGIN_EXTERN_C
  
- MOZ_EXPORT id<GeckoViewWindow> GeckoViewOpenWindow(
+ MOZ_EXPORT MOZ_CAN_RUN_SCRIPT_BOUNDARY id<GeckoViewWindow> GeckoViewOpenWindow(
 -    NSString* aId, id<SwiftEventDispatcher> aDispatcher,
 +    NSString* _Nullable aId, id<SwiftEventDispatcher> aDispatcher,
      NSDictionary* aInitData, bool aPrivateMode);

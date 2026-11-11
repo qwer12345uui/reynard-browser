@@ -25,7 +25,8 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
             displayText?.isEmpty == false ? displayText : selectedURL,
             locationText: selectedURL,
             locationTitle: selectedTab?.title,
-            showsBarMenu: displayText?.isEmpty != false && selectedURL?.isEmpty == false
+            showsBarMenu: displayText?.isEmpty != false && selectedURL?.isEmpty == false,
+            isErrorPage: selectedTab?.state.loadError != nil
         )
         browserChrome.setAddressBarLoadingProgress(
             selectedTab?.state.loadingState.progress ?? 0,
@@ -133,7 +134,7 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
             return
         }
         
-        browserChrome.showActionBar(.findInPage, animated: true)
+        browserChrome.showActionBar(.findInPage(), animated: true)
     }
     
     func addressBarDidRequestReader(_ addressBar: AddressBar) {
@@ -150,7 +151,7 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
         )
         controller.onFindInPage = { [weak self] in
             guard let self, self.tabManager.selectedTab === tab else { return }
-            self.browserChrome.showActionBar(.findInPage, animated: true)
+            self.browserChrome.showActionBar(.findInPage(), animated: true)
         }
         controller.configurePresentation(asPopover: browserLayout.chromeMode == .pad)
         if controller.modalPresentationStyle == .pageSheet {
@@ -321,7 +322,7 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
     
     private func captureTabThumbnailIfNeeded() {
         if let tab = tabManager.activeTabs[safe: tabManager.selectedTabIndex],
-           homepageOverlayCoordinator.needsHomepageThumbnail(for: tab) {
+           homepageOverlayCoordinator.isHomepageTab(tab) {
             if let thumbnail = homepageOverlayCoordinator.previewImage(for: tab) {
                 tabManager.updateThumbnail(thumbnail, forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode)
             }
@@ -332,7 +333,7 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
     }
     
     func storedContentPreview(from tab: Tab) -> UIImage? {
-        guard homepageOverlayCoordinator.needsHomepageThumbnail(for: tab) else {
+        guard homepageOverlayCoordinator.isHomepageTab(tab) else {
             return nil
         }
         

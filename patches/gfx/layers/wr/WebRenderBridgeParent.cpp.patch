@@ -1,8 +1,8 @@
 diff --git a/gfx/layers/wr/WebRenderBridgeParent.cpp b/gfx/layers/wr/WebRenderBridgeParent.cpp
-index 3418a82fafc7..f2da20ddaa64 100644
+index b32bf4975d9f..c1ac4aacbeea 100644
 --- a/gfx/layers/wr/WebRenderBridgeParent.cpp
 +++ b/gfx/layers/wr/WebRenderBridgeParent.cpp
-@@ -779,7 +779,8 @@ bool WebRenderBridgeParent::UpdateResources(
+@@ -843,7 +843,8 @@ bool WebRenderBridgeParent::UpdateResources(
  
          wr::Vec<uint8_t> bytes;
          if (reader.Read(op.bytes(), bytes)) {
@@ -12,3 +12,19 @@ index 3418a82fafc7..f2da20ddaa64 100644
          } else {
            gfxCriticalNote << "TOpAddFontDescriptor failed";
            success = false;
+@@ -1356,6 +1357,15 @@ void WebRenderBridgeParent::SetAPZSampleTime() {
+       animationTime = mLateInit->mCompositorScheduler->GetLastComposeTime();
+     }
+     TimeDuration frameInterval = cbp->GetVsyncInterval();
++
++#ifdef MOZ_WIDGET_UIKIT
++    if (animationTime.Type() == SampleTime::eVsync) {
++      frameInterval =
++          mLateInit->mCompositorScheduler->GetLastVsyncOutputTime() -
++          animationTime.Time();
++    }
++#endif
++
+     // As with the non-webrender codepath in AsyncCompositionManager, we want to
+     // use the timestamp for the next vsync when advancing animations.
+     if (frameInterval != TimeDuration::Forever()) {

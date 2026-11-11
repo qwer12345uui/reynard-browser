@@ -54,7 +54,25 @@ private func configureRootHideRuntimePolicy() {
         "dom.min_background_timeout_value": 1000,
         "dom.timeout.background_throttling_max_budget": 15000,
         "image.mem.decodeondraw": true,
-        "browser.cache.disk.capacity": 51200
+        "browser.cache.disk.capacity": 51200,
+        // Gecko's media and image caches ship with desktop-sized budgets: a
+        // 500 MB media cache and a surface cache that is free to grow into the
+        // hundreds of megabytes. On a jailed handset that headroom does not
+        // exist, so the OS kills the app in the background long before Gecko
+        // trims anything. Hold both to phone-sized budgets instead.
+        "media.cache_size": 51200,
+        "image.mem.surfacecache.max_size_kb": 65536,
+        "browser.cache.memory.capacity": 16384,
+        // Persist session state half as often: the write frequency is a pure
+        // idle wakeup cost and 30 s is still far more often than the user can
+        // notice losing.
+        "browser.sessionstore.interval": 30000,
+        // Off-screen animations and transitions otherwise keep scheduling
+        // frames for content nobody is looking at.
+        "dom.animations.offscreen-throttling": true,
+        // Fewer parallel sockets per host keeps per-connection buffers, and the
+        // CPU spent servicing them, in check on a memory-constrained device.
+        "network.http.max-persistent-connections-per-server": 4
     ])
     NSLog("RootHide injection detected; disabled Gecko helper forkserver, prelaunch, speculative networking, and idle process retention.")
 }

@@ -1,0 +1,13 @@
+diff --git a/widget/TextEvents.h b/widget/TextEvents.h
+index bccec5a150d4..1559f07ff4c1 100644
+--- a/widget/TextEvents.h
++++ b/widget/TextEvents.h
+@@ -1471,6 +1471,8 @@ class WidgetSelectionEvent final : public WidgetGUIEvent {
+   // Cluster-based or character-based
+   ExpandToClusterBoundary mExpandToClusterBoundary =
+       ExpandToClusterBoundary::Yes;
++  // At a line wrap, native text controls can choose which line gets the caret.
++  Maybe<bool> mAssociateWithNext;
+   // true if setting selection succeeded.
+   bool mSucceeded = false;
+   // true if TextEventDispatcher dispatches this event.

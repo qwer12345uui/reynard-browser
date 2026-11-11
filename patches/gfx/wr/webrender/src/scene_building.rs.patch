@@ -1,8 +1,8 @@
 diff --git a/gfx/wr/webrender/src/scene_building.rs b/gfx/wr/webrender/src/scene_building.rs
-index cebd20e9deb0..f6f0b5d24dbc 100644
+index 1c25768b93ef..46f5f0776e57 100644
 --- a/gfx/wr/webrender/src/scene_building.rs
 +++ b/gfx/wr/webrender/src/scene_building.rs
-@@ -1478,17 +1478,29 @@ impl<'a> SceneBuilder<'a> {
+@@ -1490,17 +1490,29 @@ impl<'a> SceneBuilder<'a> {
                      transformed_aa_edges: EdgeMask::empty(),
                  };
  

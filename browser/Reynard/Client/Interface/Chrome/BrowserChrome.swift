@@ -312,7 +312,7 @@ final class BrowserChrome: UIView, UIGestureRecognizerDelegate {
         pageZoomDismissView.isHidden = true
         guard !actionBar.isHidden else { return }
         if #available(iOS 26.0, *), animated,
-           actionBar.item == .pageZoom || actionBar.item == .findInPage {
+           actionBar.item == .pageZoom || actionBar.isShowingFindInPage {
             guard modernActionBarDismissalID == nil else { return }
             
             let dismissalID = UUID()
@@ -501,13 +501,15 @@ final class BrowserChrome: UIView, UIGestureRecognizerDelegate {
         _ text: String?,
         locationText: String?,
         locationTitle: String?,
-        showsBarMenu: Bool
+        showsBarMenu: Bool,
+        isErrorPage: Bool
     ) {
         addressBar.setText(
             text,
             locationText: locationText,
             locationTitle: locationTitle,
-            showsBarMenu: showsBarMenu
+            showsBarMenu: showsBarMenu,
+            isErrorPage: isErrorPage
         )
         _ = updateToolbarTextTransition(textCenterProgress: toolbarTextCenterProgress)
     }

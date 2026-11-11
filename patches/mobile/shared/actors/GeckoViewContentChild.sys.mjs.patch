@@ -1,9 +1,70 @@
 diff --git a/mobile/shared/actors/GeckoViewContentChild.sys.mjs b/mobile/shared/actors/GeckoViewContentChild.sys.mjs
-index 9ca6e15bed3e..bae638b3b3c4 100644
+index 9ca6e15bed3e..8f2cc35ead7f 100644
 --- a/mobile/shared/actors/GeckoViewContentChild.sys.mjs
 +++ b/mobile/shared/actors/GeckoViewContentChild.sys.mjs
-@@ -67,6 +67,113 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
+@@ -21,6 +21,7 @@ const SCREEN_ORIENTATION_LANDSCAPE = 1;
+ const lazy = {};
+ 
+ ChromeUtils.defineESModuleGetters(lazy, {
++  NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
+   PrivacyFilter: "resource://gre/modules/sessionstore/PrivacyFilter.sys.mjs",
+ });
+ 
+@@ -67,6 +68,37 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
      return windowUtils.SCROLL_MODE_SMOOTH;
+   }
+ 
++  collectSessionState() {
++    const { docShell, contentWindow } = this;
++    const history = lazy.SessionHistory.collect(docShell);
++    let formdata = SessionStoreUtils.collectFormData(contentWindow);
++    let scrolldata = SessionStoreUtils.collectScrollPosition(contentWindow);
++
++    // Save the current document resolution.
++    let zoom = 1;
++    const domWindowUtils = contentWindow.windowUtils;
++    zoom = domWindowUtils.getResolution();
++    scrolldata = scrolldata || {};
++    scrolldata.zoom = {};
++    scrolldata.zoom.resolution = zoom;
++
++    // Save some data that'll help in adjusting the zoom level
++    // when restoring in a different screen orientation.
++    const displaySize = {};
++    const width = {},
++      height = {};
++    domWindowUtils.getDocumentViewerSize(width, height);
++
++    displaySize.width = width.value;
++    displaySize.height = height.value;
++
++    scrolldata.zoom.displaySize = displaySize;
++
++    formdata = lazy.PrivacyFilter.filterFormData(formdata || {});
++
++    return { history, formdata, scrolldata };
++  }
++
+   orientation() {
+     const currentOrientationType = this.contentWindow?.screen.orientation.type;
+     if (!currentOrientationType) {
+@@ -84,6 +116,14 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
+     const { name } = message;
+     debug`receiveMessage: ${name}`;
+ 
++    // New events (isn't Gecko's default)
++    switch (name) {
++      case "GetFocusedInputMetrics":
++        return this.getFocusedInputMetrics();
++      case "FetchImage":
++        return this.fetchImage(message.data.url);
++    }
++
+     switch (name) {
+       case "GeckoView:DOMFullscreenEntered": {
+         const windowUtils = this.contentWindow?.windowUtils;
+@@ -199,6 +239,128 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
+     return false;
    }
  
 +  getFocusedInputBounds(focusedElement, viewportHeight) {
@@ -82,47 +143,52 @@ index 9ca6e15bed3e..bae638b3b3c4 100644
 +    return metrics;
 +  }
 +
-+  collectSessionState() {
-+    const { docShell, contentWindow } = this;
-+    const history = lazy.SessionHistory.collect(docShell);
-+    let formdata = SessionStoreUtils.collectFormData(contentWindow);
-+    let scrolldata = SessionStoreUtils.collectScrollPosition(contentWindow);
++  fetchImage(url) {
++    const channel = lazy.NetUtil.newChannel({
++      uri: url,
++      loadingNode: this.document,
++      securityFlags:
++        Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
++      contentPolicyType: Ci.nsIContentPolicy.TYPE_IMAGE,
++    });
 +
-+    // Save the current document resolution.
-+    let zoom = 1;
-+    const domWindowUtils = contentWindow.windowUtils;
-+    zoom = domWindowUtils.getResolution();
-+    scrolldata = scrolldata || {};
-+    scrolldata.zoom = {};
-+    scrolldata.zoom.resolution = zoom;
++    if (channel instanceof Ci.nsIHttpChannel) {
++      const referrer = Cc["@mozilla.org/referrer-info;1"].createInstance(
++        Ci.nsIReferrerInfo
++      );
++      referrer.initWithDocument(this.document);
++      channel.referrerInfo = referrer;
++    }
 +
-+    // Save some data that'll help in adjusting the zoom level
-+    // when restoring in a different screen orientation.
-+    const displaySize = {};
-+    const width = {},
-+      height = {};
-+    domWindowUtils.getDocumentViewerSize(width, height);
++    return new Promise((resolve, reject) => {
++      lazy.NetUtil.asyncFetch(channel, (stream, status, request) => {
++        try {
++          if (!Components.isSuccessCode(status)) {
++            throw new Error(`Image request failed: ${status}`);
++          }
++          if (
++            request instanceof Ci.nsIHttpChannel &&
++            !request.requestSucceeded
++          ) {
++            throw new Error(
++              `Image request returned HTTP ${request.responseStatus}`
++            );
++          }
 +
-+    displaySize.width = width.value;
-+    displaySize.height = height.value;
-+
-+    scrolldata.zoom.displaySize = displaySize;
-+
-+    formdata = lazy.PrivacyFilter.filterFormData(formdata || {});
-+
-+    return { history, formdata, scrolldata };
++          const reader = Cc[
++            "@mozilla.org/binaryinputstream;1"
++          ].createInstance(Ci.nsIBinaryInputStream);
++          reader.setInputStream(stream);
++          resolve(btoa(reader.readBytes(reader.available())));
++        } catch (error) {
++          reject(error);
++        } finally {
++          stream.close();
++        }
++      });
++    });
 +  }
 +
-   orientation() {
-     const currentOrientationType = this.contentWindow?.screen.orientation.type;
-     if (!currentOrientationType) {
-@@ -184,6 +291,9 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
-       case "ContainsFormData": {
-         return this.containsFormData();
-       }
-+      case "GetFocusedInputMetrics": {
-+        return this.getFocusedInputMetrics();
-+      }
-     }
- 
-     return null;
+   // eslint-disable-next-line complexity
+   handleEvent(aEvent) {
+     debug`handleEvent: ${aEvent.type}`;

@@ -5,10 +5,11 @@
 //  Created by Minh Ton on 16/6/26.
 //
 
+import GeckoView
 import UIKit
 
 struct ImagePreviewLoader {
-    static func image(from url: URL) async -> UIImage? {
+    static func image(from url: URL, in session: GeckoSession) async -> UIImage? {
         if url.isFileURL {
             return UIImage(contentsOfFile: url.path)
         }
@@ -17,7 +18,7 @@ struct ImagePreviewLoader {
             return imageFromDataURL(url.absoluteString)
         }
         
-        guard let (data, _) = try? await URLSession.shared.data(from: url) else {
+        guard let data = try? await session.fetchImageData(from: url) else {
             return nil
         }
         return UIImage(data: data)

@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoPointerSupport.mm b/widget/uikit/GeckoPointerSupport.mm
 new file mode 100644
-index 000000000000..d8ec993deb1a
+index 000000000000..e7e5c5eceee2
 --- /dev/null
 +++ b/widget/uikit/GeckoPointerSupport.mm
-@@ -0,0 +1,790 @@
+@@ -0,0 +1,789 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -34,7 +34,7 @@ index 000000000000..d8ec993deb1a
 +namespace SimpleGestureEventBinding = mozilla::dom::SimpleGestureEvent_Binding;
 +
 +@interface ChildView : UIView
-+- (void)showEditMenuForSecondaryClick;
++- (void)showEditMenuForSecondaryClickAtPoint:(CGPoint)aPoint;
 +@end
 +
 +@interface UIPanGestureRecognizer (Private)
@@ -85,10 +85,6 @@ index 000000000000..d8ec993deb1a
 +static TimeStamp GeckoTimeStampForUIKitTimestamp(NSTimeInterval aTimestamp) {
 +  NSTimeInterval age = NSProcessInfo.processInfo.systemUptime - aTimestamp;
 +  return TimeStamp::Now() - TimeDuration::FromSeconds(age);
-+}
-+
-+static TimeStamp GeckoTimeStampForUIKitEvent(UIEvent* aEvent) {
-+  return GeckoTimeStampForUIKitTimestamp(aEvent.timestamp);
 +}
 +
 +static MouseButton GeckoMouseButtonForUIKitButton(NSInteger aButtonNumber) {
@@ -288,7 +284,7 @@ index 000000000000..d8ec993deb1a
 +  if (contextMenuStatus.mApzStatus != nsEventStatus_eConsumeNoDefault &&
 +      contextMenuStatus.mContentStatus != nsEventStatus_eConsumeNoDefault &&
 +      insideFocusedEditor) {
-+    [mView showEditMenuForSecondaryClick];
++    [mView showEditMenuForSecondaryClickAtPoint:location];
 +  }
 +}
 +
@@ -332,12 +328,12 @@ index 000000000000..d8ec993deb1a
 +
 +- (BOOL)isPointInsideFocusedEditor:(CGPoint)point {
 +  if (![mView isFirstResponder] || !mGeckoChild ||
-+      mGeckoChild->IsVirtualKeyboardDisabled()) {
++      !mGeckoChild->GetInputContext().mIMEState.IsEditable()) {
 +    return NO;
 +  }
 +
 +  TextInputHandler* handler = mGeckoChild->GetTextInputHandler();
-+  LayoutDeviceIntRect editorDevRect;
++  LayoutDeviceRect editorDevRect;
 +  if (!handler || !handler->EditorRect(editorDevRect)) {
 +    return NO;
 +  }
@@ -378,7 +374,8 @@ index 000000000000..d8ec993deb1a
 +                         clickCount:touch.tapCount
 +                          modifiers:GeckoModifiersForUIKitModifiers(
 +                                        event.modifierFlags)
-+                          timestamp:GeckoTimeStampForUIKitEvent(event)
++                          timestamp:GeckoTimeStampForUIKitTimestamp(
++                                        event.timestamp)
 +                         allowClick:YES];
 +  }
 +}
@@ -412,7 +409,8 @@ index 000000000000..d8ec993deb1a
 +                         clickCount:touch.tapCount
 +                          modifiers:GeckoModifiersForUIKitModifiers(
 +                                        event.modifierFlags)
-+                          timestamp:GeckoTimeStampForUIKitEvent(event)
++                          timestamp:GeckoTimeStampForUIKitTimestamp(
++                                        event.timestamp)
 +                         allowClick:YES];
 +  }
 +}
@@ -426,7 +424,7 @@ index 000000000000..d8ec993deb1a
 +  for (UITouch* touch in pointerTouches) {
 +    CGPoint location = [touch locationInView:mView];
 +    Modifiers modifiers = GeckoModifiersForUIKitModifiers(event.modifierFlags);
-+    TimeStamp timestamp = GeckoTimeStampForUIKitEvent(event);
++    TimeStamp timestamp = GeckoTimeStampForUIKitTimestamp(event.timestamp);
 +    [self synchronizePointerButtons:event.buttonMask
 +                           location:location
 +                         clickCount:touch.tapCount
@@ -706,8 +704,9 @@ index 000000000000..d8ec993deb1a
 +        GeckoPointForUIKitPoint(mLastPointerLocation, mView);
 +    PanGestureInput panEvent(
 +        PanGestureInput::PANGESTURE_MAYSTART,
-+        GeckoTimeStampForUIKitEvent(event), ScreenPoint(point.x, point.y),
-+        ScreenPoint(), GeckoModifiersForUIKitModifiers(event.modifierFlags));
++        GeckoTimeStampForUIKitTimestamp(event.timestamp),
++        ScreenPoint(point.x, point.y), ScreenPoint(),
++        GeckoModifiersForUIKitModifiers(event.modifierFlags));
 +    mGeckoChild->DispatchPanGestureInput(panEvent);
 +  }
 +  if (gestureRecognizer == mPinchRecognizer) {

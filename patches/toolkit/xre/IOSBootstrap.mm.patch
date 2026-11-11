@@ -1,11 +1,12 @@
 diff --git a/toolkit/xre/IOSBootstrap.mm b/toolkit/xre/IOSBootstrap.mm
-index 264320aed775..d2a65793d098 100644
+index 264320aed775..0cd53a4b53c5 100644
 --- a/toolkit/xre/IOSBootstrap.mm
 +++ b/toolkit/xre/IOSBootstrap.mm
-@@ -8,13 +8,25 @@
+@@ -8,13 +8,26 @@
  #include "mozilla/Bootstrap.h"
  #include "mozilla/DarwinObjectPtr.h"
  #include "mozilla/GeckoArgs.h"
++#include "mozilla/ProcInfo.h"
 +#include "mozilla/widget/GeckoViewRuntimeSupport.h"
  #include "mozilla/widget/GeckoViewSupport.h"
  #include "nsDebug.h"
@@ -28,7 +29,7 @@ index 264320aed775..d2a65793d098 100644
  static id<SwiftGeckoViewRuntime> gRuntime;
  
  id<SwiftGeckoViewRuntime> mozilla::widget::GetSwiftRuntime() {
-@@ -22,11 +34,97 @@
+@@ -22,11 +35,97 @@
  }
  
  static id<GeckoProcessExtension> gCurrentProcessExtension;
@@ -126,7 +127,31 @@ index 264320aed775..d2a65793d098 100644
  int MainProcessInit(int aArgc, char** aArgv,
                      id<SwiftGeckoViewRuntime> aRuntime) {
    auto bootstrap = mozilla::GetBootstrap();
-@@ -85,6 +183,11 @@ void ChildProcessInit(xpc_connection_t aXpcConnection,
+@@ -45,6 +144,7 @@ int MainProcessInit(int aArgc, char** aArgv,
+ }
+ 
+ static void HandleBootstrapMessage(xpc_object_t aEvent);
++static void HandleProcessInfoMessage(xpc_object_t aEvent);
+ 
+ void ChildProcessInit(xpc_connection_t aXpcConnection,
+                       id<GeckoProcessExtension> aProcess,
+@@ -77,14 +177,25 @@ void ChildProcessInit(xpc_connection_t aXpcConnection,
+       HandleBootstrapMessage(aEvent);
+       // Errors on the XPC channel no longer indicate we should shut down.
+       geckoViewStarted = true;
+-    } else {
+-      NS_WARNING(nsPrintfCString("Unknown XPC message: %s", messageName).get());
++      return;
+     }
++
++    if (!strcmp(messageName, "process-info")) {
++      HandleProcessInfoMessage(aEvent);
++      return;
++    }
++
++    NS_WARNING(nsPrintfCString("Unknown XPC message: %s", messageName).get());
+   });
+ 
    xpc_connection_activate(aXpcConnection);
  }
  
@@ -138,7 +163,7 @@ index 264320aed775..d2a65793d098 100644
  static int ChildProcessInitImpl(int aArgc, char** aArgv) {
    auto bootstrap = mozilla::GetBootstrap();
    if (bootstrap.isErr()) {
-@@ -102,6 +205,8 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
+@@ -102,6 +213,8 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
    // done later in common code.
    mozilla::SetGeckoProcessType(aArgv[aArgc - 1]);
  
@@ -147,7 +172,7 @@ index 264320aed775..d2a65793d098 100644
    XREChildData childData;
  
    mozilla::SetGeckoChildID(aArgv[aArgc - 2]);
-@@ -111,12 +216,76 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
+@@ -111,12 +224,76 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
        /* aRandomizeSmall */ !XRE_IsContentProcess());
  #endif
  
@@ -224,7 +249,7 @@ index 264320aed775..d2a65793d098 100644
  void HandleBootstrapMessage(xpc_object_t aEvent) {
    // Set up stdout and stderr if they were provided.
    int fd = xpc_dictionary_dup_fd(aEvent, "stdout");
-@@ -132,6 +301,11 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
+@@ -132,6 +309,11 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
      close(fd);
    }
  
@@ -236,7 +261,7 @@ index 264320aed775..d2a65793d098 100644
    // Immediately send a reply with our pid
    auto reply = mozilla::AdoptDarwinObject(xpc_dictionary_create_reply(aEvent));
    xpc_dictionary_set_int64(reply.get(), "pid", getpid());
-@@ -198,6 +372,18 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
+@@ -198,6 +380,36 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
    }
    argv[argc] = nullptr;
  
@@ -255,4 +280,22 @@ index 264320aed775..d2a65793d098 100644
 +  // crash during deep JS execution. So we use a pthread thread with a large
 +  // stack size instead!
 +  LaunchChildBootstrapThread(argc, argv);
++}
++
++void HandleProcessInfoMessage(xpc_object_t aEvent) {
++  uint64_t memory;
++  uint64_t cpuTimeMs;
++  bool success =
++      NS_SUCCEEDED(mozilla::GetCurrentProcessMemoryUsage(&memory)) &&
++      NS_SUCCEEDED(mozilla::GetCpuTimeSinceProcessStartInMs(&cpuTimeMs));
++
++  auto reply = mozilla::AdoptDarwinObject(xpc_dictionary_create_reply(aEvent));
++  xpc_dictionary_set_bool(reply.get(), "success", success);
++  if (success) {
++    xpc_dictionary_set_uint64(reply.get(), "memory", memory);
++    xpc_dictionary_set_uint64(reply.get(), "cpu-time-ms", cpuTimeMs);
++  }
++
++  xpc_connection_send_message(xpc_dictionary_get_remote_connection(aEvent),
++                              reply.get());
  }
