@@ -46,12 +46,26 @@ BOOL isRootHideInjectionActive(void) {
     static BOOL isActive = NO;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
+        // RootHide's injector does not always land at /usr/lib on newer
+        // bootstraps: rootless installs prefix it with /var/jb, and app-bundled
+        // copies keep the library name without that directory at all. Matching
+        // only "/usr/lib/roothideinit.dylib" silently misses those installs,
+        // and a miss means the app takes the ptrace JIT path it cannot survive.
+        // Any loaded image whose name mentions RootHide is enough.
+        static const char *kRootHideMarkers[] = {
+            "roothideinit.dylib",
+            "libroothide",
+            "/var/jb/usr/lib/roothide"
+        };
         uint32_t imageCount = _dyld_image_count();
-        for (uint32_t index = 0; index < imageCount; index++) {
+        for (uint32_t index = 0; index < imageCount && !isActive; index++) {
             const char *imagePath = _dyld_get_image_name(index);
-            if (imagePath && strstr(imagePath, "/usr/lib/roothideinit.dylib")) {
-                isActive = YES;
-                break;
+            if (!imagePath) continue;
+            for (size_t marker = 0; marker < sizeof(kRootHideMarkers) / sizeof(kRootHideMarkers[0]); marker++) {
+                if (strcasestr(imagePath, kRootHideMarkers[marker])) {
+                    isActive = YES;
+                    break;
+                }
             }
         }
     });

@@ -72,7 +72,14 @@ private func configureRootHideRuntimePolicy() {
         "dom.animations.offscreen-throttling": true,
         // Fewer parallel sockets per host keeps per-connection buffers, and the
         // CPU spent servicing them, in check on a memory-constrained device.
-        "network.http.max-persistent-connections-per-server": 4
+        "network.http.max-persistent-connections-per-server": 4,
+        // Gecko's captive-portal probe wakes up on every network change and its
+        // verdict is another link-status guess that RootHide injection makes
+        // unreliable; iOS already handles portal sign-in itself.
+        "network.captive-portal-service.enabled": false,
+        // Nothing in this build reports usage data anywhere.
+        "datareporting.healthreport.uploadEnabled": false,
+        "toolkit.telemetry.enabled": false
     ])
     NSLog("RootHide injection detected; disabled Gecko helper forkserver, prelaunch, speculative networking, and idle process retention.")
 }

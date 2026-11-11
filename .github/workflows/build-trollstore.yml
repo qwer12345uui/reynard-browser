@@ -67,7 +67,7 @@ jobs:
         # most of that rebuild instead. Bump ENGINE_PIN_REF to the commit that
         # produced the newest product once a new engine has been built.
         env:
-          ENGINE_PIN_REF: 4577a44
+          ENGINE_PIN_REF: 1c651bf5
         run: |
           set -euo pipefail
           pinned_release="$(git show "$ENGINE_PIN_REF:engine/release.txt" 2>/dev/null || true)"
