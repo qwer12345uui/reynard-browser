@@ -59,17 +59,28 @@ jobs:
               --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id // empty')"
           fi
           if [ -z "$RUN_ID" ]; then
-            echo "::error title=No source run::No successful Build RootHide IPA run was found."
-            exit 1
+            echo "::notice title=Nothing to publish::No successful Build RootHide IPA run exists yet; skipping."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
           if [ -z "$HEAD_SHA" ]; then
             HEAD_SHA="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" --jq .head_sha)"
           fi
+          # A push-triggered run must not publish an older build under the
+          # rolling tag: the download would silently hand out stale binaries.
+          tip="$(git rev-parse HEAD)"
+          if [ "$HEAD_SHA" != "$tip" ]; then
+            echo "::notice title=Nothing to publish::The newest successful build is ${HEAD_SHA:0:7}, not this commit ${tip:0:7}; skipping."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "publish=true" >> "$GITHUB_OUTPUT"
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
           echo "sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
           echo "Publishing artifacts of run $RUN_ID (${HEAD_SHA:0:7})"
 
       - name: Download the verified IPA artifact
+        if: steps.source.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -94,6 +105,7 @@ jobs:
           ls -l out
 
       - name: Publish the release
+        if: steps.source.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

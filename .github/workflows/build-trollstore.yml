@@ -41,6 +41,16 @@ jobs:
     name: Prepare reusable Gecko engine
     runs-on: macos-26
     timeout-minutes: 360
+    env:
+      # Store every compiled object in the Actions cache service as it is
+      # produced instead of packing a directory at the end of the job. A job is
+      # killed at the 6 hour ceiling with no chance to run another step, so a
+      # directory cache is only ever written by a build that already succeeded
+      # and therefore never shortens the first build after an engine bump. With
+      # the remote backend the engine is resumed across runs: each attempt keeps
+      # whatever it translated before the ceiling, and the next one picks it up.
+      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_VERSION: ios-arm64-roothide-no-jemalloc-v3
     outputs:
       key: ${{ steps.key.outputs.value }}
     steps:
@@ -129,18 +139,15 @@ jobs:
       # Layer 2: compiler cache. An engine release bump invalidates the engine
       # product, but the large majority of translation units are unchanged
       # between two Firefox releases, so sccache turns the "new release" build
-      # into a mostly incremental one. The key deliberately excludes patches/:
-      # a patch edit changes a handful of objects and must not throw away the
-      # whole cache, and restore-keys reach back across releases.
-      - name: Restore Gecko compiler cache
+      # into a mostly incremental one. The cache lives in the Actions cache
+      # service (SCCACHE_GHA_ENABLED), which is written object by object while
+      # the build runs, so an attempt that is cut off at the job time limit
+      # still hands its progress to the next run.
+      - name: Set up sccache
         if: steps.gecko-product.outputs.found != 'true'
-        id: compiler-cache
-        uses: actions/cache/restore@v4
+        uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          key: reynard-sccache-${{ runner.os }}-${{ runner.arch }}-ios-arm64-roothide-no-jemalloc-v2-${{ hashFiles('engine/release.txt') }}
-          restore-keys: |
-            reynard-sccache-${{ runner.os }}-${{ runner.arch }}-ios-arm64-roothide-no-jemalloc-v2-
-          path: ${{ runner.temp }}/reynard-sccache
+          version: "v0.10.0"
 
       - name: Verify Xcode and iOS SDK
         if: steps.gecko-product.outputs.found != 'true'
@@ -151,7 +158,7 @@ jobs:
       - name: Install Gecko build dependencies
         if: steps.gecko-product.outputs.found != 'true'
         run: |
-          brew install ldid cbindgen sccache
+          brew install ldid cbindgen
           rustup target add aarch64-apple-ios
 
       - name: Synchronize Gecko source
@@ -222,11 +229,11 @@ jobs:
           SCCACHE_BIN="$(command -v sccache || true)"
           BUILD_ARGS="--disable-jemalloc"
           if [ -n "$SCCACHE_BIN" ]; then
-            export SCCACHE_DIR="$RUNNER_TEMP/reynard-sccache"
-            export SCCACHE_CACHE_SIZE=8G
             export SCCACHE_PATH="$SCCACHE_BIN"
+            export SCCACHE_GHA_ENABLED=true
+            export SCCACHE_IDLE_TIMEOUT=0
             BUILD_ARGS="$BUILD_ARGS --use-sccache"
-            echo "Compiler cache: $SCCACHE_BIN -> $SCCACHE_DIR"
+            echo "Compiler cache: $SCCACHE_BIN (remote Actions cache)"
           else
             echo "::warning title=sccache::sccache is unavailable; building without a compiler cache."
           fi
@@ -253,17 +260,6 @@ jobs:
             echo "::error file=.github/workflows/build-trollstore.yml,title=Gecko compiler diagnostics::$message"
             exit "$status"
           fi
-
-      # Saved even when the build fails: a partial engine build still produced
-      # object files worth keeping, and the next attempt then resumes rather
-      # than starting from nothing.
-      - name: Save Gecko compiler cache
-        if: ${{ !cancelled() && steps.gecko-product.outputs.found != 'true' && steps.compiler-cache.outputs.cache-hit != 'true' }}
-        continue-on-error: true
-        uses: actions/cache/save@v4
-        with:
-          key: reynard-sccache-${{ runner.os }}-${{ runner.arch }}-ios-arm64-roothide-no-jemalloc-v2-${{ hashFiles('engine/release.txt') }}
-          path: ${{ runner.temp }}/reynard-sccache
 
       - name: Upload Gecko diagnostics on failure
         if: failure()
