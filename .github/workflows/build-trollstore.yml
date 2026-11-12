@@ -37,258 +37,57 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gecko:
-    name: Prepare reusable Gecko engine
-    runs-on: macos-26
-    timeout-minutes: 360
-    env:
-      # Store every compiled object in the Actions cache service as it is
-      # produced instead of packing a directory at the end of the job. A job is
-      # killed at the 6 hour ceiling with no chance to run another step, so a
-      # directory cache is only ever written by a build that already succeeded
-      # and therefore never shortens the first build after an engine bump. With
-      # the remote backend the engine is resumed across runs: each attempt keeps
-      # whatever it translated before the ceiling, and the next one picks it up.
-      SCCACHE_GHA_ENABLED: "true"
-      SCCACHE_GHA_VERSION: ios-arm64-roothide-no-jemalloc-v3
-    outputs:
-      key: ${{ steps.key.outputs.value }}
-    steps:
-      - name: Check out source
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          submodules: false
-          # Always build the commit this run is recorded against. Using
-          # workflow_run.head_sha would check out the commit that triggered the
-          # upstream sync, i.e. the pre-sync tree, so the merged result would
-          # never actually be compiled.
-
-      - name: Reuse the validated Gecko patch set
-        # A full Gecko build costs hours, so the engine product is only rebuilt
-        # when the engine version itself moves. ENGINE_PIN_REF records the
-        # patch tree the cached product was compiled from: as long as
-        # engine/release.txt still matches it, patch churn coming from an
-        # upstream sync is ignored and the cached engine is reused.
-        #
-        # When upstream bumps the release the pin is skipped on purpose. The
-        # new source needs its own patches, so pinning would apply a stale
-        # patch tree to a newer tree and fail. The compiler cache below covers
-        # most of that rebuild instead. Bump ENGINE_PIN_REF to the commit that
-        # produced the newest product once a new engine has been built.
-        env:
-          ENGINE_PIN_REF: 1c651bf5
-        run: |
-          set -euo pipefail
-          pinned_release="$(git show "$ENGINE_PIN_REF:engine/release.txt" 2>/dev/null || true)"
-          current_release="$(tr -d '\000\r' < engine/release.txt | tr -d '[:space:]')"
-          if [ -n "$pinned_release" ] && [ "$pinned_release" = "$current_release" ]; then
-            git checkout "$ENGINE_PIN_REF" -- patches/
-            echo "Pinned patches/ to $ENGINE_PIN_REF (engine $current_release); reusing the cached engine product."
-          else
-            echo "Engine version moved: '$pinned_release' -> '$current_release'. Building from the current patch set."
-          fi
-          git --no-pager diff --stat HEAD -- patches | tail -n 6
-
-      - name: Compute Gecko product key
-        id: key
-        env:
-          GECKO_HASH: ${{ hashFiles('engine/release.txt', 'patches/**/*.patch', 'tools/development/build-gecko.sh', 'tools/development/apply-patches.sh', 'tools/development/update-gecko.sh') }}
-          GECKO_BUILD_VARIANT: ios-arm64-roothide-no-jemalloc-v2
-        run: |
-          echo "value=${{ runner.os }}-${{ runner.arch }}-${GECKO_HASH}-${GECKO_BUILD_VARIANT}" >> "$GITHUB_OUTPUT"
-
-      # Layer 1: retain the complete, validated Gecko product as a long-lived
-      # immutable Actions artifact. This is intentionally not a short-lived
-      # dependency cache: a full engine build is expensive and must survive
-      # ordinary app/UI commits for as long as the repository allows.
-      - name: Look up reusable Gecko product
-        id: gecko-product
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ARTIFACT_NAME: reynard-gecko-engine-${{ steps.key.outputs.value }}
-          FORCE_REBUILD: ${{ inputs.rebuild_gecko }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ "$FORCE_REBUILD" = "true" ]; then
-            echo "A fresh Gecko build was requested."
-            echo "found=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          count=""
-          for attempt in 1 2 3; do
-            if count="$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$ARTIFACT_NAME&per_page=100" \
-              --jq '[.artifacts[] | select(.expired == false)] | length' 2>/dev/null)"; then
-              break
-            fi
-            echo "Artifact lookup attempt $attempt failed; retrying."
-            sleep 5
-          done
-          echo "Reusable artifacts named $ARTIFACT_NAME: $count"
-          # Surfaced as a check annotation: the run log itself needs admin
-          # rights, but annotations are readable and identify key drift.
-          echo "::notice title=Gecko product key::$ARTIFACT_NAME (count=$count)"
-          if [ "$count" -gt 0 ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "found=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      # Layer 2: compiler cache. An engine release bump invalidates the engine
-      # product, but the large majority of translation units are unchanged
-      # between two Firefox releases, so sccache turns the "new release" build
-      # into a mostly incremental one. The cache lives in the Actions cache
-      # service (SCCACHE_GHA_ENABLED), which is written object by object while
-      # the build runs, so an attempt that is cut off at the job time limit
-      # still hands its progress to the next run.
-      - name: Set up sccache
-        if: steps.gecko-product.outputs.found != 'true'
-        uses: mozilla-actions/sccache-action@v0.0.11
-        with:
-          version: "v0.10.0"
-
-      - name: Verify Xcode and iOS SDK
-        if: steps.gecko-product.outputs.found != 'true'
-        run: |
-          xcodebuild -version
-          xcrun --sdk iphoneos --show-sdk-version
-
-      - name: Install Gecko build dependencies
-        if: steps.gecko-product.outputs.found != 'true'
-        run: |
-          brew install ldid cbindgen
-          rustup target add aarch64-apple-ios
-
-      - name: Synchronize Gecko source
-        if: steps.gecko-product.outputs.found != 'true'
-        # Every script is invoked through its interpreter on purpose: files
-        # updated through the API lose their executable bit, and a direct
-        # ./script call then fails with "Permission denied" (exit 126).
-        run: zsh ./tools/development/update-gecko.sh
-
-      - name: Apply Reynard patches
-        if: steps.gecko-product.outputs.found != 'true'
-        shell: bash
-        run: |
-          set +e
-          zsh ./tools/development/apply-patches.sh </dev/null 2>&1 | tee patch-apply.log
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            message="$(tail -n 40 patch-apply.log | cut -c1-400)"
-            message="${message//'%'/'%25'}"
-            message="${message//$'\n'/'%0A'}"
-            message="${message//$'\r'/'%0D'}"
-            echo "::error title=Gecko patch diagnostics::$message"
-            exit "$status"
-          fi
-
-      - name: Build Gecko engine
-        if: steps.gecko-product.outputs.found != 'true'
-        shell: bash
-        run: |
-          set +e
-          toolchain_dir="$RUNNER_TEMP/reynard-toolchain"
-          linker_log="$GITHUB_WORKSPACE/linker-diagnostics.log"
-          real_ld="$(xcrun --find ld)"
-          apple_clang="$(xcrun --find clang)"
-          apple_clangxx="$(xcrun --find clang++)"
-          macos_sdk="$(find "$(xcode-select -p)/Platforms/MacOSX.platform/Developer/SDKs" -maxdepth 1 -type d -name 'MacOSX*.sdk' | sort -V | tail -n 1)"
-          test -x "$real_ld"
-          test -x "$apple_clang"
-          test -x "$apple_clangxx"
-          test -d "$macos_sdk"
-          mkdir -p "$toolchain_dir"
-          : > "$linker_log"
-          export REYNARD_LINKER_LOG="$linker_log"
-          cat > "$toolchain_dir/ld64.lld" <<EOF
-          #!/bin/bash
-          for arg in "\$@"; do
-            if [ "\$arg" = "--version" ]; then
-              echo "LLD 19.1.0 (Apple ld compatibility wrapper)"
-              exit 0
-            fi
-          done
-          {
-            printf '\n--- ld invocation ---\n'
-            printf '%q ' "\$0" "\$@"
-            printf '\n--- ld output ---\n'
-          } >> "\$REYNARD_LINKER_LOG"
-          "$real_ld" "\$@" 2>&1 | tee -a "\$REYNARD_LINKER_LOG"
-          exit "\${PIPESTATUS[0]}"
-          EOF
-          chmod +x "$toolchain_dir/ld64.lld"
-          export PATH="$toolchain_dir:$PATH"
-          export CC="$apple_clang -B$toolchain_dir"
-          export CXX="$apple_clangxx -B$toolchain_dir"
-          export SDKROOT="$macos_sdk"
-          # Compiler cache. sccache wraps both clang and rustc, so objects that
-          # are byte-identical to the previous engine release come straight
-          # from disk instead of burning CPU for hours.
-          SCCACHE_BIN="$(command -v sccache || true)"
-          BUILD_ARGS="--disable-jemalloc"
-          if [ -n "$SCCACHE_BIN" ]; then
-            export SCCACHE_PATH="$SCCACHE_BIN"
-            export SCCACHE_GHA_ENABLED=true
-            export SCCACHE_IDLE_TIMEOUT=0
-            BUILD_ARGS="$BUILD_ARGS --use-sccache"
-            echo "Compiler cache: $SCCACHE_BIN (remote Actions cache)"
-          else
-            echo "::warning title=sccache::sccache is unavailable; building without a compiler cache."
-          fi
-          # RootHide injection commonly uses libhooker. Avoid jemalloc so its
-          # allocator hooks do not cause helper-process CPU spikes or stalls.
-          sh ./tools/development/build-gecko.sh $BUILD_ARGS 2>&1 | tee gecko-build.log
-          status=${PIPESTATUS[0]}
-          if [ -n "$SCCACHE_BIN" ]; then
-            "$SCCACHE_BIN" --show-stats || true
-          fi
-          if [ "$status" -ne 0 ]; then
-            failed_line="$(grep -n -m1 'failed to run custom build command' gecko-build.log | cut -d: -f1)"
-            if [ -n "$failed_line" ]; then
-              start=$((failed_line > 5 ? failed_line - 5 : 1))
-              end=$((failed_line + 45))
-              message="$(sed -n "${start},${end}p" gecko-build.log)"
-            else
-              message="$(grep -nE 'fatal error:|(^|[^[:alpha:]])error(\[[^]]+\]|:)|Undefined symbols|undefined reference|ld:' gecko-build.log | tail -n 30)"
-            fi
-            if [ -z "$message" ]; then message="$(tail -n 30 gecko-build.log)"; fi
-            message="${message//'%'/'%25'}"
-            message="${message//$'\n'/'%0A'}"
-            message="${message//$'\r'/'%0D'}"
-            echo "::error file=.github/workflows/build-trollstore.yml,title=Gecko compiler diagnostics::$message"
-            exit "$status"
-          fi
-
-      - name: Upload Gecko diagnostics on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gecko-build-logs-${{ github.sha }}
-          path: |
-            patch-apply.log
-            gecko-build.log
-            linker-diagnostics.log
-          if-no-files-found: ignore
-          retention-days: 14
-
-      - name: Upload reusable Gecko product
-        if: steps.gecko-product.outputs.found != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: reynard-gecko-engine-${{ steps.key.outputs.value }}
-          path: |
-            engine/firefox/obj-aarch64-apple-ios/dist
-            engine/firefox/toolkit/mozapps/extensions/default-theme
-          if-no-files-found: error
-          retention-days: 90
+  # A full Gecko build needs several times more machine time than one job is
+  # allowed to run. The engine is therefore compiled in a chain of attempts
+  # instead of by hand: each attempt resumes from the compiler cache the
+  # previous one filled, and the next attempt starts as soon as the ceiling
+  # kills the current one, so a single run keeps advancing unattended.
+  #
+  # The chain is deliberately longer than the number of attempts a complete
+  # engine needs: once the product exists, an attempt's lookup step
+  # short-circuits every remaining step and the job ends in about two minutes.
+  gecko-1:
+    uses: ./.github/workflows/gecko-engine.yml
+    with:
+      force_rebuild: ${{ inputs.rebuild_gecko == true }}
+  gecko-2:
+    needs: gecko-1
+    if: always()
+    uses: ./.github/workflows/gecko-engine.yml
+  gecko-3:
+    needs: gecko-2
+    if: always()
+    uses: ./.github/workflows/gecko-engine.yml
+  gecko-4:
+    needs: gecko-3
+    if: always()
+    uses: ./.github/workflows/gecko-engine.yml
+  gecko-5:
+    needs: gecko-4
+    if: always()
+    uses: ./.github/workflows/gecko-engine.yml
+  gecko-6:
+    needs: gecko-5
+    if: always()
+    uses: ./.github/workflows/gecko-engine.yml
+  gecko-7:
+    needs: gecko-6
+    if: always()
+    uses: ./.github/workflows/gecko-engine.yml
+  gecko-8:
+    needs: gecko-7
+    if: always()
+    uses: ./.github/workflows/gecko-engine.yml
 
   package:
     name: Build verified IPA artifacts
     runs-on: macos-26
-    timeout-minutes: 100
-    needs: gecko
+    timeout-minutes: 180
+    needs: [gecko-1, gecko-2, gecko-3, gecko-4, gecko-5, gecko-6, gecko-7, gecko-8]
+    # Run no matter how the individual attempts ended: a cancelled attempt is
+    # the normal case, and the product is what decides whether packaging can
+    # proceed. The restore step below fails loudly when it is still missing.
+    if: always()
     steps:
       - name: Check out source and submodules
         uses: actions/checkout@v5
@@ -315,7 +114,7 @@ jobs:
       - name: Restore reusable Gecko product
         env:
           GH_TOKEN: ${{ github.token }}
-          ARTIFACT_NAME: reynard-gecko-engine-${{ needs.gecko.outputs.key }}
+          ARTIFACT_NAME: reynard-gecko-engine-${{ needs.gecko-8.outputs.key }}
         shell: bash
         run: |
           set -euo pipefail
